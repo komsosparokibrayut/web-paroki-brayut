@@ -1,20 +1,26 @@
-# Blog CMS - Next.js + GitHub Storage
+# Web Paroki MD - Comprehensive Project Guide
+
+Welcome to the **Web Paroki MD** project documentation. This manual consolidates all project guides into a single comprehensive reference.
+
+---
+
+## 1. Project Overview
 
 A modern, stateless blog CMS built with Next.js 15 (App Router), using GitHub as the single source of truth for content storage and Vercel for serverless hosting. No traditional database required.
 
-## Features
+### Features
 
-- ✅ **GitHub as Storage** - All content stored as Markdown files in a GitHub repository
-- ✅ **WebP Image Optimization** - Automatic image conversion and optimization
-- ✅ **GitHub App Authentication** - Secure repository operations
-- ✅ **Password Authentication** - Simple username/password login for admins
-- ✅ **Multi-Admin Support** - Add multiple admin users via environment variables
-- ✅ **Static Generation + ISR** - Fast page loads with on-demand revalidation
-- ✅ **Markdown Editor** - Rich editing experience with preview
-- ✅ **Contact Form** - Submissions stored as GitHub issues
-- ✅ **Free Tier Compliant** - Runs entirely on free tiers (Vercel + GitHub)
+-   ✅ **GitHub as Storage** - All content stored as Markdown files in a GitHub repository
+-   ✅ **WebP Image Optimization** - Automatic image conversion and optimization
+-   ✅ **GitHub App Authentication** - Secure repository operations
+-   ✅ **Password Authentication** - Simple username/password login for admins
+-   ✅ **Multi-Admin Support** - Add multiple admin users via environment variables
+-   ✅ **Static Generation + ISR** - Fast page loads with on-demand revalidation
+-   ✅ **Markdown Editor** - Rich editing experience with preview
+-   ✅ **Contact Form** - Submissions stored as GitHub issues
+-   ✅ **Free Tier Compliant** - Runs entirely on free tiers (Vercel + GitHub)
 
-## Architecture
+### Architecture
 
 ```
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐
@@ -29,15 +35,17 @@ A modern, stateless blog CMS built with Next.js 15 (App Router), using GitHub as
                      └──────────────┘
 ```
 
-## Prerequisites
+### Prerequisites
 
-1. **GitHub Account** - For content storage and authentication
-2. **Vercel Account** - For deployment (free tier)
-3. **Node.js 18+** - For local development
+1.  **GitHub Account** - For content storage and authentication
+2.  **Vercel Account** - For deployment (free tier)
+3.  **Node.js 18+** - For local development
 
-## Setup Instructions
+---
 
-### 1. Create Content Repository
+## 2. Setup & Installation
+
+### 2.1. Create Content Repository
 
 Create a new GitHub repository for your blog content (e.g., `blog-content`):
 
@@ -53,46 +61,24 @@ git remote add origin https://github.com/YOUR_USERNAME/blog-content.git
 git push -u origin main
 ```
 
-### 2. Create GitHub App
+### 2.2. Create GitHub App
 
-1. Go to GitHub Settings → Developer settings → GitHub Apps → New GitHub App
-2. Fill in:
-   - **GitHub App name**: `blog-cms-YOUR_NAME`
-   - **Homepage URL**: `http://localhost:3000`
-   - **Webhook**: Uncheck "Active"
-   - **Repository permissions**:
-     - Contents: Read & Write
-     - Issues: Read & Write (for contact form)
-   - **Where can this GitHub App be installed?**: Only on this account
-3. Click "Create GitHub App"
-4. Generate a private key and download it
-5. Note the **App ID**
-6. Install the app on your content repository
-7. Note the **Installation ID** from the URL
+1.  Go to GitHub Settings → Developer settings → GitHub Apps → New GitHub App
+2.  Fill in:
+    -   **GitHub App name**: `blog-cms-YOUR_NAME`
+    -   **Homepage URL**: `http://localhost:3000`
+    -   **Webhook**: Uncheck "Active"
+    -   **Repository permissions**:
+        -   Contents: Read & Write
+        -   Issues: Read & Write (for contact form)
+    -   **Where can this GitHub App be installed?**: Only on this account
+3.  Click "Create GitHub App"
+4.  Generate a private key and download it
+5.  Note the **App ID**
+6.  Install the app on your content repository
+7.  Note the **Installation ID** from the URL
 
-### 3. Configure Admin Users
-
-Set up your admin credentials in `.env.local`:
-
-```env
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password_here
-ADMIN_NAME=Your Name
-ADMIN_EMAIL=your.email@example.com
-```
-
-**For multiple admins**, add numbered environment variables:
-
-```env
-ADMIN_USERNAME_2=editor
-ADMIN_PASSWORD_2=another_secure_password
-ADMIN_NAME_2=Editor Name
-ADMIN_EMAIL_2=editor@example.com
-```
-
-See [ADMIN_USERS.md](./ADMIN_USERS.md) for detailed instructions on managing multiple admins.
-
-### 4. Configure Environment Variables
+### 2.3. Configure Environment Variables
 
 Copy `.env.local.example` to `.env.local`:
 
@@ -100,7 +86,7 @@ Copy `.env.local.example` to `.env.local`:
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` and fill in your values:
+Edit `.env.local`:
 
 ```env
 # GitHub App Configuration
@@ -126,151 +112,159 @@ NEXTAUTH_URL=http://localhost:3000
 ```
 
 Generate a secure `NEXTAUTH_SECRET`:
+
 ```bash
 openssl rand -base64 32
 ```
 
-### 5. Install Dependencies
+### 2.4. Run Development Server
 
 ```bash
 npm install
-```
-
-### 6. Run Development Server
-
-```bash
 npm run dev
 ```
 
 Visit:
-- **Blog**: http://localhost:3000
-- **Admin**: http://localhost:3000/admin
+-   **Blog**: http://localhost:3000
+-   **Admin**: http://localhost:3000/admin
 
-### 7. Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add all environment variables from `.env.local`
-4. Update `NEXTAUTH_URL` to `https://your-domain.vercel.app`
-5. Deploy!
-
-**Important**: Make sure to set strong passwords in production environment variables.
-
-## Usage
-
-### Creating a Post
-
-1. Sign in at `/admin`
-2. Click "Create New Post"
-3. Fill in title, description, author, categories
-4. Upload a banner image (optional)
-5. Write content in Markdown
-6. Click "Save Draft" or "Publish"
-
-### Uploading Images
-
-1. Go to `/admin/media`
-2. Upload banner images (1920x1080 max) or inline images (1200x1200 max)
-3. Images are automatically converted to WebP
-4. Copy the path to use in posts
-
-### Contact Form
-
-Contact form submissions are automatically created as GitHub issues in your content repository with the label `contact-form`.
-
-## Project Structure
-
-```
-├── app/
-│   ├── (blog)/          # Public blog pages
-│   ├── admin/           # Admin interface
-│   └── api/             # API routes
-├── components/
-│   ├── blog/            # Blog components
-│   ├── admin/           # Admin components
-│   └── contact/         # Contact form
-├── lib/
-│   ├── github/          # GitHub API client
-│   ├── content/         # Content parsing
-│   ├── images/          # Image processing
-│   └── auth/            # Authentication
-├── actions/             # Server actions
-└── types/               # TypeScript types
-```
-
-## Content Repository Structure
-
-```
-blog-content/
-├── posts/
-│   ├── 2024-01-15-hello-world.md
-│   └── 2024-02-20-nextjs-tips.md
-└── images/
-    ├── banners/
-    │   └── hello-world.webp
-    └── inline/
-        └── diagram-1.webp
-```
-
-## Post Frontmatter Format
-
-```yaml
----
-title: "Hello World"
-slug: "hello-world"
-description: "My first blog post"
-publishedAt: "2024-01-15T10:00:00Z"
-author: "John Doe"
-categories: ["intro", "meta"]
-banner: "/images/banners/hello-world.webp"
-published: true
 ---
 
-# Your content here
+## 3. Admin User Management
+
+This guide explains how to add and manage multiple admin users for your blog CMS.
+
+### Method 1: Environment Variables (Recommended)
+
+Simply add numbered environment variables in `.env.local` - **no code changes needed**:
+
+```env
+# First admin (default)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=secure_password_1
+ADMIN_NAME=Admin User
+ADMIN_EMAIL=admin@example.com
+
+# Second admin
+ADMIN_USERNAME_2=editor
+ADMIN_PASSWORD_2=secure_password_2
+ADMIN_NAME_2=Editor User
+ADMIN_EMAIL_2=editor@example.com
+
+# Third admin
+ADMIN_USERNAME_3=author
+ADMIN_PASSWORD_3=secure_password_3
+ADMIN_NAME_3=Author User
+ADMIN_EMAIL_3=author@example.com
 ```
 
-## Free Tier Limits
+The system automatically detects and loads all admin users from environment variables. You can add as many as you need by incrementing the number suffix (_2, _3, _4, etc.).
 
-### Vercel Free Tier
-- ✅ 100GB bandwidth/month
-- ✅ 100GB-hours compute/month
-- ✅ 6,000 build minutes/month
+### Removing Admin Access
 
-### GitHub Free Tier
-- ✅ 5,000 API requests/hour
-- ✅ Unlimited public repos
-- ✅ 500MB private repos
+1.  Delete their environment variables from `.env.local` (or Vercel settings)
+2.  Restart the application (or redeploy)
 
-## Troubleshooting
+### Troubleshooting Login
 
-### "Missing GitHub App credentials"
-- Ensure all environment variables are set correctly
-- Check that private key includes `\n` for line breaks
+-   **"Invalid credentials"**: Check username/password in `.env.local` or Vercel. Ensure no trailing spaces.
+-   **Admin Panel 404/Access Denied**: Ensure you are logged in at `/admin/login`.
 
-### "Invalid credentials" on login
-- Verify `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env.local`
-- Check for typos in environment variables
-- Restart dev server after changing `.env.local`
+---
 
-### Can't access admin panel
-- Ensure you're logged in at `/admin/login`
-- Check browser cookies are enabled
-- Verify `NEXTAUTH_SECRET` is set
+## 4. Security Implementation
 
-### Images not loading
-- Check that `CONTENT_REPO_OWNER` and `CONTENT_REPO_NAME` are correct
-- Verify GitHub App has Contents: Read permission
-- Check image paths start with `/`
+### OWASP Top 10 Compliance
 
-### Rate limit exceeded
-- GitHub API allows 5,000 requests/hour
-- Reduce revalidation frequency
-- Add caching if needed
+#### A01:2021 - Broken Access Control
+-   ✅ **NextAuth JWT-based authentication** with 24-hour session timeout
+-   ✅ **Middleware protection** for all `/admin/*` routes
+-   ✅ **Rate limiting** on login attempts (5 attempts per 15 minutes)
 
-## License
+#### A02:2021 - Cryptographic Failures
+-   ✅ **Bcrypt password hashing** (cost factor: 10)
+-   ✅ **HTTPS enforcement** (via Vercel)
+-   ✅ **Secure session storage** (httpOnly cookies via NextAuth)
 
-MIT
+#### A03:2021 - Injection
+-   ✅ **XSS prevention** in markdown rendering
+-   ✅ **Script tag removal** from user inputs
+-   ✅ **Zod schema validation** for all inputs
 
-## Support
+#### A05:2021 - Security Misconfiguration
+-   ✅ **Security headers** configured (CSP, X-Frame-Options, etc.)
+-   ✅ **Default credentials removed** (fallback only for development)
 
-For issues and questions, please create an issue in the repository.
+### Password Hashing
+
+For production, you SHOULD NOT store plain text passwords in environment variables.
+
+1.  Generate a hash:
+    ```bash
+    node scripts/hash-password.js your_secure_password
+    ```
+2.  Update `.env.local`:
+    ```env
+    ADMIN_PASSWORD="$2b$10$your_bcrypt_hash_here"
+    ```
+
+---
+
+## 5. Deployment Guide
+
+### Vercel Deployment Steps
+
+1.  **Push** your code to GitHub.
+2.  **Import** the project in Vercel.
+3.  **Environment Variables**: Add all variables from `.env.local` to Vercel Project Settings.
+4.  **Update `NEXTAUTH_URL`** to `https://your-domain.vercel.app`.
+5.  **Deploy**.
+
+### Common Deployment Error
+
+If you see: `Error: [@octokit/auth-app] installationId option is required...`
+
+**Fix**: You forgot to add the GitHub App environment variables to Vercel.
+1.  Go to **Settings** → **Environment Variables**
+2.  Add `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID`, etc.
+3.  **Redeploy** (Deployments → Redeploy).
+
+---
+
+## 6. Pre-Deployment Checklist
+
+Complete this before going live:
+
+### ✅ Authentication
+-   [ ] All admin passwords are bcrypt hashes
+-   [ ] `NEXTAUTH_SECRET` is strong (32+ chars)
+-   [ ] Admin usernames are not "admin"
+
+### ✅ Environment Variables
+-   [ ] `.env.local` is NOT in Git (`.gitignore` checked)
+-   [ ] All variables set in Vercel Dashboard
+-   [ ] GitHub App private key verified (includes `\n`)
+
+### ✅ GitHub Configuration
+-   [ ] GitHub App installed ONLY on content repo
+-   [ ] Limits: Contents (Read & Write), Issues (Read & Write)
+
+### ✅ Code Security
+-   [ ] `npm audit` returns 0 high vulnerabilities
+-   [ ] Security headers active (CSP, X-Frame-Options)
+
+---
+
+## 7. Security Review
+
+Periodic review items:
+
+-   [ ] **Access Control**: Verify middleware and rate limiting
+-   [ ] **Crypto**: Ensure no plaintext passwords
+-   [ ] **Logging**: Check failed login logs
+-   [ ] **Dependencies**: Update npm packages regularly
+
+---
+
+**Last Updated:** 2026-01-19
+**Maintainer:** Paroki Brayut Dev Team
