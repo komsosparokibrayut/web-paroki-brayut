@@ -1,16 +1,14 @@
-import { getServerSession } from "next-auth";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth/nextauth.config";
-import LoginForm from "@/components/admin/LoginForm";
 
 export default async function AdminRootPage() {
-  const session = await getServerSession(authOptions);
+  const { userId } = await auth();
 
-  // If already authenticated, go to dashboard
-  if (session) {
+  // If already authenticated by Clerk, go to dashboard
+  if (userId) {
     redirect("/admin/dashboard");
   }
 
-  // Otherwise show login form
-  return <LoginForm />;
+  // Otherwise redirect to Clerk sign-in page
+  redirect("/layanan-inti");
 }

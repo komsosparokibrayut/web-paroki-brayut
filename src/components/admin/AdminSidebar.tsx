@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { useLoading } from "@/components/admin/LoadingProvider";
 import {
     LayoutDashboard,
@@ -13,7 +12,6 @@ import {
     Store,
     BarChart3,
     Calendar,
-    LogOut,
     ExternalLink,
     MapPin,
     UserIcon,
@@ -41,17 +39,9 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface AdminSidebarProps {
-    user: {
-        name?: string | null;
-        email?: string | null;
-    };
-}
-
-export function AdminSidebar({ user }: AdminSidebarProps) {
-    const { startTransition } = useLoading();
+export function AdminSidebar() {
+    const { user } = useUser();
     const pathname = usePathname();
-    const [isSignOutPending, setIsSignOutPending] = useState(false);
     const { setOpenMobile, state } = useSidebar();
 
     const isCollapsed = state === "collapsed";
@@ -83,16 +73,10 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             items: [
                 { name: "Categories", href: "/admin/master/categories", icon: PenTool },
                 { name: "Statistik", href: "/admin/data/statistik", icon: BarChart3 },
+                { name: "Admins", href: "/admin/settings/admins", icon: UserIcon },
             ]
         }
     ];
-
-    const handleSignOut = () => {
-        setIsSignOutPending(true);
-        startTransition(() => {
-            signOut({ callbackUrl: "/admin" });
-        });
-    };
 
     const isDashboardActive = pathname === "/admin/dashboard";
 
@@ -210,28 +194,21 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                             </Link>
                         </Button>
 
-                        <div className="flex items-center gap-3 px-2 py-2 rounded-md">
-                            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-                                <span className="font-semibold text-xs">
-                                    {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
-                                </span>
-                            </div>
+                        <div className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-50 transition-colors">
+                            <UserButton
+                                afterSignOutUrl="/admin"
+                                appearance={{
+                                    elements: {
+                                        userButtonAvatarBox: "size-8",
+                                        userButtonTrigger: "focus:shadow-none focus:ring-0"
+                                    }
+                                }}
+                            />
                             <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
-                                <span className="truncate font-medium text-slate-900">{user?.name || "Admin"}</span>
-                                <span className="truncate text-xs text-slate-500">{user?.email}</span>
+                                <span className="truncate font-medium text-slate-900">{user?.fullName || "Admin"}</span>
+                                <span className="truncate text-xs text-slate-500">{user?.primaryEmailAddress?.emailAddress}</span>
                             </div>
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start gap-2 h-9 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={handleSignOut}
-                            disabled={isSignOutPending}
-                        >
-                            <LogOut className="size-4" />
-                            <span>{isSignOutPending ? "Signing out..." : "Sign out"}</span>
-                        </Button>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-2">
@@ -246,31 +223,16 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
                             <TooltipContent side="right">View Site</TooltipContent>
                         </Tooltip>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white cursor-default">
-                                    <span className="font-semibold text-xs">
-                                        {user?.name ? user.name.charAt(0).toUpperCase() : "A"}
-                                    </span>
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">{user?.name || "Admin"}</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={handleSignOut}
-                                    disabled={isSignOutPending}
-                                >
-                                    <LogOut className="size-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">Sign out</TooltipContent>
-                        </Tooltip>
+                        <div className="py-1">
+                            <UserButton
+                                afterSignOutUrl="/admin"
+                                appearance={{
+                                    elements: {
+                                        userButtonAvatarBox: "size-7"
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 )}
             </SidebarFooter>

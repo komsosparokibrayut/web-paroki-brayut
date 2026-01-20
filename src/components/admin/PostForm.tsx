@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPost, updatePost, deletePost } from "@/features/news/actions/posts";
 import { toast } from "sonner";
+import { useUser } from "@clerk/nextjs";
 import { getAllCategories, addCategory } from "@/actions/categories";
 import QuillEditor from "./QuillEditor";
 import MediaPickerModal from "./MediaPickerModal";
@@ -41,7 +42,6 @@ import { cn } from "@/lib/utils";
 interface PostFormProps {
     post?: Post;
     mode: "create" | "edit";
-    user?: { name?: string | null } | null;
     categories: string[];
 }
 
@@ -61,7 +61,8 @@ const formSchema = z.object({
     ogImage: z.string().optional(),
 });
 
-export default function PostForm({ post, mode, user, categories: masterCategories }: PostFormProps) {
+export default function PostForm({ post, mode, categories: masterCategories }: PostFormProps) {
+    const { user } = useUser();
     const router = useRouter();
     const { startTransition } = useLoading();
 
@@ -72,7 +73,7 @@ export default function PostForm({ post, mode, user, categories: masterCategorie
             title: post?.frontmatter.title || "",
             slug: post?.frontmatter.slug || "",
             description: post?.frontmatter.description || "",
-            author: post?.frontmatter.author || user?.name || "Admin Paroki",
+            author: post?.frontmatter.author || user?.fullName || "Admin Paroki",
             categories: post?.frontmatter.categories || [],
             content: post?.content || { ops: [] },
             banner: post?.frontmatter.banner || "",

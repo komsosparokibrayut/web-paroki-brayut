@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth/nextauth.config";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { LoadingProvider } from "@/components/admin/LoadingProvider";
@@ -13,17 +12,17 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const { userId } = await auth();
 
-  if (!session) {
-    redirect("/admin");
+  if (!userId) {
+    redirect("/layanan-inti");
   }
 
   return (
     <div className="admin-theme font-rubik bg-[#F8FAFC]">
       <LoadingProvider>
         <SidebarProvider>
-          <AdminSidebar user={session.user || {}} />
+          <AdminSidebar />
           <SidebarInset>
             <header className="flex sticky top-0 z-40 h-14 shrink-0 items-center gap-2 border-b bg-white px-4">
               <SidebarTrigger className="-ml-1" />
@@ -40,4 +39,3 @@ export default async function AdminLayout({
     </div>
   );
 }
-
