@@ -1,8 +1,8 @@
 
 import { Metadata } from "next";
-import { getJadwalKegiatan } from "@/actions/data";
+import { getJadwalKegiatan } from "@/features/schedule/actions";
 import { getMasterCategories } from "@/actions/master-categories";
-import JadwalList from "@/components/data/JadwalList";
+import JadwalList from "@/features/schedule/components/JadwalList";
 import PageHeader from "@/components/layout/PageHeader";
 import InformationCard from "@/components/ui/InformationCard";
 

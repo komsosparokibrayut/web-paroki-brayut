@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAllPosts, getPostBySlug } from "@/actions/posts";
+import { getAllPosts, getPostBySlug } from "@/features/news/actions/posts";
 import { calculateReadingTime } from "@/lib/utils";
-import PostHeader from "@/components/blog/PostHeader";
-import PostContent from "@/components/blog/PostContent";
+import PostHeader from "@/features/news/components/PostHeader";
+import PostContent from "@/features/news/components/PostContent";
 
 type Props = {
     params: Promise<{

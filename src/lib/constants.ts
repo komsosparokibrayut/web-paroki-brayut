@@ -1,4 +1,4 @@
-import { PostCategory } from "@/types/post";
+import { PostCategory } from "@/features/news/types";
 import { BookOpen, Calendar, FileText, MessageSquare, Newspaper } from "lucide-react";
 
 export const POST_CATEGORIES: Record<PostCategory, { title: string; description: string; icon: any; color: string }> = {

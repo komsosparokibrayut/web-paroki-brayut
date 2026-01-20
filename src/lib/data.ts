@@ -1,5 +1,5 @@
 import { ChurchStatistics, ScheduleEvent, UMKM } from '@/types/data';
-import { getFile } from '@/lib/github/operations';
+import { getFile } from '@/services/github/content';
 
 export async function getChurchStatistics(): Promise<ChurchStatistics | null> {
   try {

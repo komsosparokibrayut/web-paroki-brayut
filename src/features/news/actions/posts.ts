@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getFile, listFiles, commitFiles, deleteFile } from "@/lib/github/operations";
+import { getFile, listFiles, commitFiles, deleteFile } from "@/services/github/content";
 import { parseContent, stringifyContent } from "@/lib/content/parser";
 import { validateFrontmatter, generateSlug } from "@/lib/content/validator";
-import { PostMetadata, PostFrontmatter } from "@/types/post";
+import { PostMetadata, PostFrontmatter } from "@/features/news/types";
 import { calculateReadingTime } from "@/lib/utils";
 
 export async function getAllPosts(): Promise<PostMetadata[]> {

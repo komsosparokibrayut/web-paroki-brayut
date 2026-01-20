@@ -1,6 +1,6 @@
 "use client";
 
-import { PostMetadata } from "@/types/post";
+import { PostMetadata } from "@/features/news/types";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";

@@ -1,6 +1,7 @@
 import DashboardLink from "@/components/admin/DashboardLink";
-import { getAllPosts } from "@/actions/posts";
-import { getUMKM, getJadwalKegiatan, getStatistik } from "@/actions/data";
+import { getAllPosts } from "@/features/news/actions/posts";
+import { getUMKM, getStatistik } from "@/actions/data";
+import { getJadwalKegiatan } from "@/features/schedule/actions";
 import PostTable from "@/components/admin/PostTable";
 import UmamiStats from "@/components/admin/UmamiStats";
 import { StatsCard } from "@/components/admin/StatsCard";

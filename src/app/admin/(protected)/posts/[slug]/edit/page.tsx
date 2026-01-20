@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPostBySlug } from "@/actions/posts";
+import { getPostBySlug } from "@/features/news/actions/posts";
 import PostForm from "@/components/admin/PostForm";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/nextauth.config";

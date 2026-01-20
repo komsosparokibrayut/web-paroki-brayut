@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { deletePost } from "@/actions/posts";
-import { PostMetadata } from "@/types/post";
+import { deletePost } from "@/features/news/actions/posts";
+import { PostMetadata } from "@/features/news/types";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLoading } from "./LoadingProvider";

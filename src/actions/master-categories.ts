@@ -1,6 +1,6 @@
 "use server";
 
-import { getFile, commitFiles } from "@/lib/github/operations";
+import { getFile, commitFiles } from "@/services/github/content";
 
 const FILES = {
   post: "post-categories.json",

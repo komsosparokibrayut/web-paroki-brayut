@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Search, FileText } from "lucide-react";
-import { PostMetadata } from "@/types/post";
-import PostCard from "@/components/blog/PostCard";
+import { PostMetadata } from "@/features/news/types";
+import PostCard from "@/features/news/components/PostCard";
 
 interface PostListProps {
     initialPosts: PostMetadata[];

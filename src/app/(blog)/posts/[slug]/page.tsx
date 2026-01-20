@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getAllPosts, getPostBySlug } from "@/actions/posts";
-import PostHeader from "@/components/blog/PostHeader";
-import PostContent from "@/components/blog/PostContent";
-import { isGitHubConfigured } from "@/lib/github/client";
+import { getAllPosts, getPostBySlug } from "@/features/news/actions/posts";
+import PostHeader from "@/features/news/components/PostHeader";
+import PostContent from "@/features/news/components/PostContent";
+import { isGitHubConfigured } from "@/services/github/client";
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -12,7 +12,7 @@ export async function generateStaticParams() {
     console.warn('⚠️  GitHub not configured. Skipping static generation. Pages will be generated on-demand.');
     return [];
   }
-  
+
   try {
     const posts = await getAllPosts();
     return posts.map((post) => ({

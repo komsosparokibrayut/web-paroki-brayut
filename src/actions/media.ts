@@ -1,6 +1,6 @@
 "use server";
 
-import { commitFiles, listFiles, deleteFile } from "@/lib/github/operations";
+import { commitFiles, listFiles, deleteFile } from "@/services/github/content";
 import { processImage, generateImageFilename } from "@/lib/images/processor";
 
 export async function uploadImages(

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { PostFrontmatter } from "@/types/post";
+import { PostFrontmatter } from "@/features/news/types";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 

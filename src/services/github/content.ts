@@ -192,3 +192,43 @@ export async function isCollaborator(username: string): Promise<boolean> {
     throw error;
   }
 }
+
+export async function getDownloadUrl(path: string): Promise<string | null> {
+  try {
+    const octokit = await getOctokit();
+    const { owner, repo } = getRepoConfig();
+
+    const { data } = await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path,
+    });
+
+    if (!Array.isArray(data) && "download_url" in data && data.download_url) {
+      return data.download_url;
+    }
+
+    return null;
+  } catch (error: any) {
+    if (error.status === 404) {
+      return null;
+    }
+    console.error(`Error fetching download URL for ${path}:`, error);
+    throw error;
+  }
+}
+
+export async function createIssue(options: {
+  title: string;
+  body: string;
+  labels?: string[];
+}): Promise<void> {
+  const octokit = await getOctokit();
+  const { owner, repo } = getRepoConfig();
+
+  await octokit.rest.issues.create({
+    owner,
+    repo,
+    ...options,
+  });
+}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
-import { JadwalEvent, saveJadwalKegiatan } from "@/actions/data";
+import { saveJadwalKegiatan } from "@/features/schedule/actions";
+import { JadwalEvent } from "@/features/schedule/types";
 import { Plus, Pencil, Trash2, Search, Loader2, Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";

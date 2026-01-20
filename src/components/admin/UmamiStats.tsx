@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { PostMetadata } from "@/types/post";
+import { PostMetadata } from "@/features/news/types";
 
 interface UmamiStatsData {
     pageviews: number;

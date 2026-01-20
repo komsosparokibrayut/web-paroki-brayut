@@ -2,7 +2,8 @@
 import { Metadata } from "next";
 import { Calendar, Clock, MapPin, Users, Info } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
-import { getJadwalMisa, JadwalMisaData } from "@/actions/data";
+import { getJadwalMisa } from "@/features/schedule/actions";
+import { JadwalMisaData } from "@/features/schedule/types";
 import InformationCard from "@/components/ui/InformationCard";
 
 export const metadata: Metadata = {

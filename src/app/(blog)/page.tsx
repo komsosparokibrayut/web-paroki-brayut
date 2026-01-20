@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getAllPosts } from "@/actions/posts";
+import { getAllPosts } from "@/features/news/actions/posts";
 import { getChurchStatistics, getScheduleEvents } from "@/lib/data";
 import ImmersiveHero from "@/components/home/ImmersiveHero";
 import IdentitySection from "@/components/home/IdentitySection";

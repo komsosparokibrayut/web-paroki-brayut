@@ -1,6 +1,6 @@
 "use server";
 
-import { getOctokit, getRepoConfig } from "@/lib/github/client";
+import { createIssue } from "@/services/github/content";
 import { z } from "zod";
 
 const ContactFormSchema = z.object({
@@ -35,9 +35,6 @@ export async function submitContactForm(formData: {
       .replace(/javascript:/gi, ""); // Remove javascript: protocol
 
     // Create GitHub issue (recommended free option)
-    const octokit = await getOctokit();
-    const { owner, repo } = getRepoConfig();
-
     const issueBody = `
 **From:** ${sanitizedName}
 **Email:** ${validated.email}
@@ -49,9 +46,7 @@ ${sanitizedMessage}
 *Submitted via contact form on ${new Date().toISOString()}*
     `.trim();
 
-    await octokit.rest.issues.create({
-      owner,
-      repo,
+    await createIssue({
       title: `Contact Form: ${sanitizedName.substring(0, 50)}`,
       body: issueBody,
       labels: ["contact-form"],

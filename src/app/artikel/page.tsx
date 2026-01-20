@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { getAllPosts } from "@/actions/posts";
-import PostList from "@/components/blog/PostList";
+import { getAllPosts } from "@/features/news/actions/posts";
+import PostList from "@/features/news/components/PostList";
 import { getMasterCategories } from "@/actions/master-categories";
 import PageHeader from "@/components/layout/PageHeader";
 

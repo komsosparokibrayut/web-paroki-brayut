@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { PostMetadata } from "@/types/post";
+import { PostMetadata } from "@/features/news/types";
 
 interface PostCardProps {
   post: PostMetadata;

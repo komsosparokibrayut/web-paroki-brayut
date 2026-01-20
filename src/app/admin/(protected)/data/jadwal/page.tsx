@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getJadwalKegiatan } from "@/actions/data";
+import { getJadwalKegiatan } from "@/features/schedule/actions";
 import JadwalClient from "./client";
 
 export const metadata: Metadata = {

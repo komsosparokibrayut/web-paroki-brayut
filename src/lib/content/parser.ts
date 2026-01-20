@@ -1,4 +1,4 @@
-import { Post, PostFrontmatter } from "@/types/post";
+import { Post, PostFrontmatter } from "@/features/news/types";
 
 export function parseContent(content: string, filename?: string): Post {
   try {

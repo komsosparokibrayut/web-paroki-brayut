@@ -1,11 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getFile, commitFiles } from "@/lib/github/operations";
+import { getFile, commitFiles } from "@/services/github/content";
 
 const UMKM_FILE = "umkm.json";
 const STATISTIK_FILE = "statistik.json";
-const JADWAL_FILE = "jadwal-kegiatan.json";
 
 export interface UMKMData {
   id: string;
@@ -24,19 +23,6 @@ export interface StatistikData {
   parishioners: number;
   lastUpdated?: string;
 }
-
-export interface JadwalEvent {
-  id: string;
-  title: string;
-  date: string; // YYYY-MM-DD
-  time: string;
-  location: string;
-  description: string;
-  category: "liturgi" | "kegiatan" | "rapat" | "lainnya";
-  imageUrl?: string; // Poster/Flyer
-  linkUrl?: string; // Registration or details link
-}
-
 // UMKM Actions
 export async function getUMKM(): Promise<UMKMData[]> {
   const content = await getFile(UMKM_FILE);
@@ -88,32 +74,6 @@ export async function saveStatistik(data: StatistikData) {
     revalidatePath("/data/statistik");
     revalidatePath("/profil"); // Statistics are shown in profile page too
     revalidatePath("/admin/data/statistik");
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-// Schedule Actions
-export async function getJadwalKegiatan(): Promise<JadwalEvent[]> {
-    const content = await getFile(JADWAL_FILE);
-    if (!content) return [];
-    try {
-        return JSON.parse(content);
-    } catch (e) {
-        // Return empty array for invalid JSON - error handling without console noise
-        return [];
-    }
-}
-
-export async function saveJadwalKegiatan(data: JadwalEvent[]) {
-  try {
-    await commitFiles(
-      [{ path: JADWAL_FILE, content: JSON.stringify(data, null, 2) }],
-      `Update jadwal kegiatan (${data.length} events)`
-    );
-    revalidatePath("/data/jadwal");
-    revalidatePath("/admin/data/jadwal");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -254,55 +214,3 @@ export async function saveFormulir(data: Formulir[]) {
   }
 }
 
-// Jadwal Misa Actions
-const JADWAL_MISA_FILE = "jadwal-misa.json";
-
-export interface MassTimeSlot {
-  day: string;
-  times: string[];
-  notes?: string;
-}
-
-export interface ChurchUnit {
-  id: string;
-  name: string;
-  location: string;
-  schedules: MassTimeSlot[];
-}
-
-export interface SpecialMassEvent {
-  id: string;
-  name: string;
-  time: string;
-  location: string;
-  description: string;
-}
-
-export interface JadwalMisaData {
-  churches: ChurchUnit[];
-  specialMasses: SpecialMassEvent[];
-}
-
-export async function getJadwalMisa(): Promise<JadwalMisaData | null> {
-  const content = await getFile(JADWAL_MISA_FILE);
-  if (!content) return null;
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return null;
-  }
-}
-
-export async function saveJadwalMisa(data: JadwalMisaData) {
-  try {
-    await commitFiles(
-      [{ path: JADWAL_MISA_FILE, content: JSON.stringify(data, null, 2) }],
-      `Update jadwal misa data`
-    );
-    revalidatePath("/jadwal-misa");
-    revalidatePath("/admin/data/jadwal-misa");
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}

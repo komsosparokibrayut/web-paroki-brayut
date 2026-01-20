@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOctokit, getRepoConfig, isGitHubConfigured } from "@/lib/github/client";
+import { isGitHubConfigured } from "@/services/github/client";
+import { getDownloadUrl } from "@/services/github/content";
 
 export async function GET(
   request: NextRequest,
@@ -14,27 +15,15 @@ export async function GET(
       return new NextResponse("GitHub not configured", { status: 503 });
     }
 
-    const { owner, repo } = getRepoConfig();
-    const octokit = await getOctokit();
-
     try {
-      // Get metadata to get the download_url
-      const metadataResponse = await octokit.rest.repos.getContent({
-        owner,
-        repo,
-        path: imagePath,
-      });
+      const downloadUrl = await getDownloadUrl(imagePath);
 
-      // metadataResponse.data can be array (dir) or object (file)
-      // We cast to any because TypeScript definition is complex intersection
-      const data = metadataResponse.data as any;
-
-      if (Array.isArray(data) || !data.download_url) {
+      if (!downloadUrl) {
         return new NextResponse("Not found", { status: 404 });
       }
 
       // Fetch the actual binary data from the download_url
-      const imageResponse = await fetch(data.download_url);
+      const imageResponse = await fetch(downloadUrl);
       
       if (!imageResponse.ok) {
         return new NextResponse("Failed to fetch image", { status: imageResponse.status });
@@ -53,9 +42,6 @@ export async function GET(
 
     } catch (error: any) {
       console.error(`Error fetching image ${imagePath}:`, error);
-      if (error.status === 404) {
-        return new NextResponse("Image not found", { status: 404 });
-      }
       return new NextResponse("Error fetching image", { status: 500 });
     }
   } catch (error) {
