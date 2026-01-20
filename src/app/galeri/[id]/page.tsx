@@ -8,7 +8,7 @@ import { ChevronLeft, Calendar, Image as ImageIcon } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { Separator } from "@/components/ui/separator";
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
     const { id } = await params;
     const album = await getAlbum(id);
 
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     };
 }
 
-export default async function AlbumDetailPage({ params }: { params: { id: string } }) {
+export default async function AlbumDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const album = await getAlbum(id);
 

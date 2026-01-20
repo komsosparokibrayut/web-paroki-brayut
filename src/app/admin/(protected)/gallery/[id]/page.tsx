@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { ImageCard } from "@/features/gallery/components/ImageCard";
 
-export default async function AlbumPage({ params }: { params: { id: string } }) {
+export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const album = await getAlbum(id);
 
