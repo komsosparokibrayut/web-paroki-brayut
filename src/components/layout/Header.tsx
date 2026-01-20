@@ -49,11 +49,12 @@ const navItems: NavItem[] = [
             { title: "Warta Paroki", href: "/artikel" },
             { title: "Event", href: "/event" },
             { title: "Formulir Gereja", href: "/data/formulir" },
+            { title: "Data UMKM", href: "/data/umkm" },
         ],
     },
     {
-        title: "Data UMKM",
-        href: "/data/umkm",
+        title: "Galeri",
+        href: "/galeri",
     },
 ];
 

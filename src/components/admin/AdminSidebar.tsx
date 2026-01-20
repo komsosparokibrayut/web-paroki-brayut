@@ -56,6 +56,7 @@ export function AdminSidebar() {
             items: [
                 { name: "Posts", href: "/admin/posts", icon: FileText },
                 { name: "Media", href: "/admin/media", icon: ImageIcon },
+                { name: "Gallery", href: "/admin/gallery", icon: ImageIcon },
             ]
         },
         {

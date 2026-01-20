@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { path } = await params;
-    const imagePath = `images/${path.join("/")}`;
+    const imagePath = `public/${path.join("/")}`;
 
     // Validate configuration
     if (!isGitHubConfigured()) {
