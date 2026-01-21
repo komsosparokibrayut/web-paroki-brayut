@@ -6,17 +6,8 @@ export interface ChurchStatistics {
   lastUpdated: string;
 }
 
-export interface ScheduleEvent {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  description: string;
-  category: string;
-  imageUrl?: string;
-  linkUrl?: string;
-}
+// Re-export ScheduleEvent from feature types for backward compatibility
+export type { ScheduleEvent } from "@/features/schedule/types";
 
 export interface UMKM {
   id: string;
@@ -28,3 +19,4 @@ export interface UMKM {
   description: string;
   image?: string; // Optional if not in JSON yet, but good for UI
 }
+

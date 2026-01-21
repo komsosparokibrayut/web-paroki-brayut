@@ -1,20 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getFile, listFiles, commitFiles, deleteFile } from "@/services/github/content";
+import {
+  listPosts,
+  getPostFile,
+  createPostFile,
+  updatePostFile,
+  deletePostFile,
+  renamePostFile,
+} from "@/services/github/news";
 import { parseContent, stringifyContent } from "@/lib/content/parser";
 import { validateFrontmatter, generateSlug } from "@/lib/content/validator";
 import { PostMetadata, PostFrontmatter } from "@/features/news/types";
 import { calculateReadingTime } from "@/lib/utils";
 
 export async function getAllPosts(): Promise<PostMetadata[]> {
-  const files = await listFiles("posts");
+  const files = await listPosts();
   const posts: PostMetadata[] = [];
 
   for (const item of files) {
     if (!item.path.endsWith(".json")) continue;
 
-    const content = await getFile(item.path);
+    const content = await getPostFile(item.path);
     if (!content) continue;
 
     try {
@@ -35,14 +42,14 @@ export async function getAllPosts(): Promise<PostMetadata[]> {
 
 
 export async function getPostBySlug(slug: string) {
-  const files = await listFiles("posts");
+  const files = await listPosts();
   const item = files.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
 
   if (!item) {
     return null;
   }
 
-  const content = await getFile(item.path);
+  const content = await getPostFile(item.path);
   if (!content) {
     return null;
   }
@@ -87,11 +94,8 @@ export async function createPost(formData: {
     const date = now.split("T")[0];
     const filename = `posts/${date}-${slug}.json`;
 
-    // Commit to GitHub
-    await commitFiles(
-      [{ path: filename, content: fileContent }],
-      `Add post: ${formData.title}`
-    );
+    // Commit to GitHub via service layer
+    await createPostFile(filename, fileContent, `Add post: ${formData.title}`);
 
     // Revalidate paths
     revalidatePath("/blog");
@@ -120,14 +124,14 @@ export async function updatePost(
 ) {
   try {
     // Find existing post
-    const posts = await listFiles("posts");
+    const posts = await listPosts();
     const item = posts.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
 
     if (!item) {
       return { success: false, error: "Post not found" };
     }
 
-    const existingContent = await getFile(item.path);
+    const existingContent = await getPostFile(item.path);
     if (!existingContent) {
       return { success: false, error: "Post content not found" };
     }
@@ -169,16 +173,18 @@ export async function updatePost(
       
       const newFilename = `posts/${datePrefix}-${finalSlug}.json`;
       
-      // Delete old file and create new one
-      await deleteFile(item.path, `Rename post: ${existingFrontmatter.slug} -> ${finalSlug}`);
-      await commitFiles(
-        [{ path: newFilename, content: fileContent }],
+      // Rename file via service layer
+      await renamePostFile(
+        item.path,
+        newFilename,
+        fileContent,
         `Update post: ${formData.title} (renamed)`
       );
     } else {
-      // Just update in place
-      await commitFiles(
-        [{ path: item.path, content: fileContent }],
+      // Just update in place via service layer
+      await updatePostFile(
+        item.path,
+        fileContent,
         `Update post: ${formData.title}`
       );
     }
@@ -199,14 +205,15 @@ export async function updatePost(
 
 export async function deletePost(slug: string) {
   try {
-    const files = await listFiles("posts");
+    const files = await listPosts();
     const item = files.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
 
     if (!item) {
       return { success: false, error: "Post not found" };
     }
 
-    await deleteFile(item.path, `Delete post: ${slug}`);
+    // Delete via service layer
+    await deletePostFile(item.path, `Delete post: ${slug}`);
 
     // Revalidate paths
     revalidatePath("/blog");
@@ -220,14 +227,14 @@ export async function deletePost(slug: string) {
 
 export async function publishPost(slug: string) {
   try {
-    const files = await listFiles("posts");
+    const files = await listPosts();
     const item = files.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
 
     if (!item) {
       return { success: false, error: "Post not found" };
     }
 
-    const content = await getFile(item.path);
+    const content = await getPostFile(item.path);
     if (!content) {
       return { success: false, error: "Post content not found" };
     }
@@ -238,8 +245,10 @@ export async function publishPost(slug: string) {
 
     const fileContent = stringifyContent(frontmatter, postContent);
 
-    await commitFiles(
-      [{ path: item.path, content: fileContent }],
+    // Update via service layer
+    await updatePostFile(
+      item.path,
+      fileContent,
       `Publish post: ${frontmatter.title}`
     );
 
@@ -253,3 +262,4 @@ export async function publishPost(slug: string) {
     return { success: false, error: error.message };
   }
 }
+

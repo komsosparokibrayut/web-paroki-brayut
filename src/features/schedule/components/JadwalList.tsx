@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, ExternalLink, Maximize2 } from "lucide-react";
-import { ScheduleEvent } from "@/types/data";
+import { ScheduleEvent } from "../types";
 import { cn } from "@/lib/utils";
 import {
     Popover,

@@ -1,58 +1,65 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getFile, commitFiles } from "@/services/github/content";
+import {
+  getScheduleEvents,
+  updateScheduleEvents,
+  getJadwalMisa as getJadwalMisaService,
+  updateJadwalMisa as updateJadwalMisaService,
+} from "@/services/github/schedule";
 import { JadwalEvent, JadwalMisaData } from "../types";
 
-const JADWAL_FILE = "jadwal-kegiatan.json";
-const JADWAL_MISA_FILE = "jadwal-misa.json";
+/** Standard result type for schedule actions */
+type ActionResult = { success: true } | { success: false; error?: string };
 
-// Schedule Actions
+/**
+ * Fetches jadwal kegiatan (schedule events).
+ * Delegates to schedule service layer.
+ * @returns Promise resolving to array of JadwalEvent
+ */
 export async function getJadwalKegiatan(): Promise<JadwalEvent[]> {
-  const content = await getFile(JADWAL_FILE);
-  if (!content) return [];
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return [];
-  }
+  return getScheduleEvents();
 }
 
-export async function saveJadwalKegiatan(data: JadwalEvent[]) {
-  try {
-    await commitFiles(
-      [{ path: JADWAL_FILE, content: JSON.stringify(data, null, 2) }],
-      `Update jadwal kegiatan (${data.length} events)`
-    );
+/**
+ * Saves jadwal kegiatan (schedule events).
+ * Delegates to schedule service layer and revalidates paths.
+ * @param data - Array of JadwalEvent to persist
+ * @returns Promise resolving to ActionResult
+ */
+export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionResult> {
+  const result = await updateScheduleEvents(data);
+  if (result.success) {
     revalidatePath("/data/jadwal");
     revalidatePath("/admin/data/jadwal");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
   }
+  return { success: false, error: result.message };
 }
 
-// Jadwal Misa Actions
+/**
+ * Fetches jadwal misa (mass schedule) data.
+ * Delegates to schedule service layer.
+ * @returns Promise resolving to JadwalMisaData or null
+ */
 export async function getJadwalMisa(): Promise<JadwalMisaData | null> {
-  const content = await getFile(JADWAL_MISA_FILE);
-  if (!content) return null;
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return null;
-  }
+  return getJadwalMisaService();
 }
 
-export async function saveJadwalMisa(data: JadwalMisaData) {
-  try {
-    await commitFiles(
-      [{ path: JADWAL_MISA_FILE, content: JSON.stringify(data, null, 2) }],
-      `Update jadwal misa data`
-    );
+/**
+ * Saves jadwal misa (mass schedule) data.
+ * Delegates to schedule service layer and revalidates paths.
+ * @param data - JadwalMisaData to persist
+ * @returns Promise resolving to ActionResult
+ */
+export async function saveJadwalMisa(data: JadwalMisaData): Promise<ActionResult> {
+  const result = await updateJadwalMisaService(data);
+  if (result.success) {
     revalidatePath("/jadwal-misa");
     revalidatePath("/admin/data/jadwal-misa");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
   }
+  return { success: false, error: result.message };
 }
+
+

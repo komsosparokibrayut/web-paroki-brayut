@@ -1,5 +1,7 @@
-import { ChurchStatistics, ScheduleEvent, UMKM } from '@/types/data';
+import { ChurchStatistics, UMKM } from '@/types/data';
+import { ScheduleEvent } from '@/features/schedule/types';
 import { getFile } from '@/services/github/content';
+import { getScheduleEvents as getScheduleFromService } from '@/services/github/schedule';
 
 export async function getChurchStatistics(): Promise<ChurchStatistics | null> {
   try {
@@ -12,39 +14,13 @@ export async function getChurchStatistics(): Promise<ChurchStatistics | null> {
   }
 }
 
+/**
+ * Fetches schedule events using the service layer.
+ * Re-exports from @/services/github/schedule for backward compatibility.
+ */
 export async function getScheduleEvents(): Promise<ScheduleEvent[]> {
-  try {
-    const fileContent = await getFile('jadwal-kegiatan.json');
-    if (!fileContent) return [];
-    
-    const data = JSON.parse(fileContent);
-    // Ensure it's an array
-    if (Array.isArray(data)) {
-        // Sort by date/time if needed? Maybe nearest future first.
-        // For now just return as is or sort by date asc
-        const events = data.sort((a: any, b: any) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
-        
-        // Inject dummy event for testing CTA
-        events.push({
-            id: "dummy-event-1",
-            title: "Festival Kuliner Paroki (Dummy)",
-            date: new Date().toISOString().split('T')[0], // Today
-            time: "09:00",
-            location: "Halaman Gereja",
-            category: "Wilayah",
-            description: "Festival kuliner tahunan.",
-            fileUrl: "",
-            imageUrl: "",
-            linkUrl: "https://example.com/register-festival"
-        });
-
-        return events;
-    }
-    return [];
-  } catch (error) {
-    console.error('Error reading jadwal-kegiatan.json:', error);
-    return [];
-  }
+  // Delegate to service layer - ScheduleEvent is now an alias for JadwalEvent
+  return getScheduleFromService();
 }
 
 export async function getUMKM(): Promise<UMKM[]> {

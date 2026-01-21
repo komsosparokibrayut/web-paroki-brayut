@@ -1,3 +1,7 @@
+/**
+ * Schedule Event (Jadwal Kegiatan)
+ * Used for parish events and activities.
+ */
 export interface JadwalEvent {
   id: string;
   title: string;
@@ -5,10 +9,22 @@ export interface JadwalEvent {
   time: string;
   location: string;
   description: string;
-  category: "liturgi" | "kegiatan" | "rapat" | "lainnya";
+  /** Event category - validated at runtime, stored as string for flexibility */
+  category: string;
   imageUrl?: string; // Poster/Flyer
   linkUrl?: string; // Registration or details link
+  fileUrl?: string; // Downloadable file
 }
+
+/** Standard event categories */
+export const EVENT_CATEGORIES = ["liturgi", "kegiatan", "rapat", "lainnya"] as const;
+export type EventCategory = (typeof EVENT_CATEGORIES)[number];
+
+/**
+ * Alias for JadwalEvent for backward compatibility
+ * @deprecated Use JadwalEvent from @/features/schedule/types instead
+ */
+export type ScheduleEvent = JadwalEvent;
 
 export interface MassTimeSlot {
   day: string;
@@ -35,3 +51,5 @@ export interface JadwalMisaData {
   churches: ChurchUnit[];
   specialMasses: SpecialMassEvent[];
 }
+
+
