@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createPost, updatePost, deletePost } from "@/features/news/actions/posts";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { getAllCategories, addCategory } from "@/actions/categories";
 import QuillEditor from "./QuillEditor";
 import MediaPickerModal from "./MediaPickerModal";
@@ -38,6 +39,14 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { UserRole } from "@/lib/roles";
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PostFormProps {
     post?: Post;
@@ -226,6 +235,9 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
         form.setValue("categories", currentCategories.filter((c) => c !== cat));
     };
 
+    const { role } = useAdminRole();
+    const isReporter = role === "news_reporter";
+
     return (
         <Form {...form}>
             <form className="min-h-screen relative pb-16">
@@ -249,6 +261,11 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
                                 <h2 className="text-base font-semibold text-slate-900 hidden sm:block">
                                     {mode === "create" ? "Create New Post" : watchedTitle || "Untitled"}
                                 </h2>
+                                {isReporter && (
+                                    <Badge variant="outline" className="ml-2 text-amber-600 border-amber-200 bg-amber-50">
+                                        Reporter Mode
+                                    </Badge>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -266,20 +283,41 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
                             )}
 
                             <div className="flex items-center">
-                                <Button
-                                    type="button"
-                                    onClick={() => handleSaveAction(true)}
-                                    disabled={saving || (mode === "edit" && !isDirty)}
-                                    size="sm"
-                                    className="rounded-r-none bg-blue-600 hover:bg-blue-700"
-                                >
-                                    {saving ? (
-                                        <>
-                                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : (watchedPublished ? "Update" : "Publish")}
-                                </Button>
+                                {isReporter ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span tabIndex={0}>
+                                                <Button
+                                                    type="button"
+                                                    disabled
+                                                    size="sm"
+                                                    className="rounded-r-none bg-slate-100 text-slate-400 border border-slate-200"
+                                                >
+                                                    {watchedPublished ? "Update" : "Publish"}
+                                                </Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Reporters can only save drafts
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ) : (
+                                    <Button
+                                        type="button"
+                                        onClick={() => handleSaveAction(true)}
+                                        disabled={saving || (mode === "edit" && !isDirty)}
+                                        size="sm"
+                                        className="rounded-r-none bg-blue-600 hover:bg-blue-700"
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (watchedPublished ? "Update" : "Publish")}
+                                    </Button>
+                                )}
+
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button

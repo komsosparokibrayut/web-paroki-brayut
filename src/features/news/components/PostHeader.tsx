@@ -42,11 +42,14 @@ export default function PostHeader({ frontmatter, readingTime }: PostHeaderProps
           />
         )}
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-brand-dark/70 backdrop-blur-[1px]" />
+        <div
+          className="absolute inset-0 z-[1] backdrop-blur-[1px]"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full px-4 py-20 text-center">
+      <div className="relative z-10 w-full px-4 py-24 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

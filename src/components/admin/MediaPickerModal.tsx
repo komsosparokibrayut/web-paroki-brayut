@@ -98,7 +98,7 @@ export default function MediaPickerModal({
               <Button
                 disabled={uploading}
                 onClick={() => fileInputRef.current?.click()}
-                className="gap-2"
+                className="gap-2 mr-6"
                 size="sm"
               >
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}

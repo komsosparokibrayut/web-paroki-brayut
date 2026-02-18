@@ -1,5 +1,8 @@
 "use client";
 
+import { useAdminRole } from "@/components/admin/AdminRoleProvider"; // Import context
+import { UserRole } from "@/lib/roles"; // Import UserRole type
+
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -43,11 +46,19 @@ export function AdminSidebar() {
     const { user } = useUser();
     const pathname = usePathname();
     const { setOpenMobile, state } = useSidebar();
+    const { role } = useAdminRole(); // Use simulated role
 
     const isCollapsed = state === "collapsed";
 
     // Dashboard is standalone, not grouped
     const dashboardItem = { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard };
+
+    // Helper to check if user has access to a specific path/feature
+    const hasAccess = (requiredRole: UserRole[]) => {
+        if (!role) return false;
+        if (role === "super_admin") return true;
+        return requiredRole.includes(role);
+    };
 
     // Navigation groups
     const navGroups = [
@@ -57,7 +68,7 @@ export function AdminSidebar() {
                 { name: "Posts", href: "/admin/posts", icon: FileText },
                 { name: "Media", href: "/admin/media", icon: ImageIcon },
                 { name: "Gallery", href: "/admin/gallery", icon: ImageIcon },
-            ]
+            ].filter(() => hasAccess(["news_admin", "news_reporter"]))
         },
         {
             title: "Data Management",
@@ -67,17 +78,32 @@ export function AdminSidebar() {
                 { name: "Formulir", href: "/admin/data/formulir", icon: Database },
                 { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin },
                 { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon },
-            ]
+            ].filter(() => hasAccess(["data_admin"]))
         },
         {
             title: "Settings",
             items: [
-                { name: "Categories", href: "/admin/master/categories", icon: PenTool },
-                { name: "Statistik", href: "/admin/data/statistik", icon: BarChart3 },
-                { name: "Admins", href: "/admin/settings/admins", icon: UserIcon },
-            ]
+                {
+                    name: "Categories",
+                    href: "/admin/master/categories",
+                    icon: PenTool,
+                    visible: hasAccess(["news_admin", "data_admin"])
+                },
+                {
+                    name: "Statistik",
+                    href: "/admin/data/statistik",
+                    icon: BarChart3,
+                    visible: hasAccess(["data_admin"])
+                },
+                {
+                    name: "Admins",
+                    href: "/admin/settings/admins",
+                    icon: UserIcon,
+                    visible: hasAccess([]) // Only super_admin (handled by default in hasAccess)
+                },
+            ].filter(item => item.visible !== false)
         }
-    ];
+    ].filter(group => group.items.length > 0);
 
     const isDashboardActive = pathname === "/admin/dashboard";
 

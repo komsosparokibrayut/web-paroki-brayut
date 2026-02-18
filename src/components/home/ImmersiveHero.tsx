@@ -97,7 +97,7 @@ export default function ImmersiveHero() {
                 className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 text-white/50 flex flex-col items-center gap-2 cursor-pointer hover:text-white transition-colors"
                 onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             >
-                <span className="text-[10px] uppercase tracking-[0.2em]">Discover</span>
+                <span className="text-[10px] uppercase tracking-[0.2em]">Gulir Ke Bawah</span>
                 <div className="h-12 w-[1px] bg-gradient-to-b from-white to-transparent" />
             </motion.div>
         </section>

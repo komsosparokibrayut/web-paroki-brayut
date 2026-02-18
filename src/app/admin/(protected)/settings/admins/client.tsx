@@ -1,15 +1,32 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { inviteAdmin, revokeInvitation } from "@/features/admin/actions/users";
+import { inviteAdmin, revokeInvitation, updateUserRole, removeAdmin } from "@/features/admin/actions/users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Mail, Trash2, UserPlus, Users } from "lucide-react";
+import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, ShieldAlert } from "lucide-react";
 import Image from "next/image";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { UserRole, ROLE_LABELS, ROLES } from "@/lib/roles";
 
 interface Props {
     invitations: Array<{
@@ -17,6 +34,7 @@ interface Props {
         emailAddress: string;
         status: string;
         createdAt: number;
+        role?: string;
     }>;
     users: Array<{
         id: string;
@@ -24,21 +42,24 @@ interface Props {
         name: string;
         imageUrl: string;
         lastSignInAt: number | null;
+        role?: UserRole;
     }>;
 }
 
 export default function AdminsClient({ invitations, users }: Props) {
     const [email, setEmail] = useState("");
+    const [role, setRole] = useState<UserRole>("news_reporter");
     const [isPending, startTransition] = useTransition();
 
     const handleInvite = () => {
         if (!email) return;
 
         startTransition(async () => {
-            const result = await inviteAdmin(email);
+            const result = await inviteAdmin(email, role);
             if (result.success) {
                 toast.success("Invitation sent successfully");
                 setEmail("");
+                setRole("news_reporter");
             } else {
                 toast.error(result.error || "Failed to send invitation");
             }
@@ -86,6 +107,20 @@ export default function AdminsClient({ invitations, users }: Props) {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
+                        <div className="space-y-2">
+                            <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                        <SelectItem key={value} value={value}>
+                                            {label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <Button
                             className="w-full bg-blue-600 hover:bg-blue-700"
                             onClick={handleInvite}
@@ -113,6 +148,7 @@ export default function AdminsClient({ invitations, users }: Props) {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Email</TableHead>
+                                            <TableHead>Role</TableHead>
                                             <TableHead>Sent</TableHead>
                                             <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
@@ -121,6 +157,9 @@ export default function AdminsClient({ invitations, users }: Props) {
                                         {invitations.map((inv) => (
                                             <TableRow key={inv.id}>
                                                 <TableCell className="font-medium">{inv.emailAddress}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">{ROLE_LABELS[inv.role as UserRole] || inv.role}</Badge>
+                                                </TableCell>
                                                 <TableCell className="text-xs text-slate-500">
                                                     {new Date(inv.createdAt).toLocaleDateString()}
                                                 </TableCell>
@@ -155,29 +194,14 @@ export default function AdminsClient({ invitations, users }: Props) {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>User</TableHead>
+                                        <TableHead>Role</TableHead>
                                         <TableHead>Last Active</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {users.map((user) => (
-                                        <TableRow key={user.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative">
-                                                        {user.imageUrl && (
-                                                            <Image src={user.imageUrl} alt={user.name} fill className="object-cover" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium text-slate-900">{user.name}</div>
-                                                        <div className="text-xs text-slate-500">{user.email}</div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-xs text-slate-500">
-                                                {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString() : "Never"}
-                                            </TableCell>
-                                        </TableRow>
+                                        <UserRow key={user.id} user={user} />
                                     ))}
                                 </TableBody>
                             </Table>
@@ -186,5 +210,120 @@ export default function AdminsClient({ invitations, users }: Props) {
                 </div>
             </div>
         </div>
+    );
+}
+
+function UserRow({ user }: { user: Props['users'][0] }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [role, setRole] = useState<UserRole>(user.role || "news_reporter");
+    const [isPending, startTransition] = useTransition();
+
+    const handleSaveRole = () => {
+        startTransition(async () => {
+            const result = await updateUserRole(user.id, role);
+            if (result.success) {
+                toast.success("Role updated successfully");
+                setIsEditing(false);
+            } else {
+                toast.error(result.error || "Failed to update role");
+            }
+        });
+    };
+
+    const handleRemoveUser = () => {
+        startTransition(async () => {
+            const result = await removeAdmin(user.id);
+            if (result.success) {
+                toast.success("Admin removed successfully");
+            } else {
+                toast.error(result.error || "Failed to remove admin");
+            }
+        });
+    }
+
+    return (
+        <TableRow>
+            <TableCell>
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative">
+                        {user.imageUrl && (
+                            <Image src={user.imageUrl} alt={user.name} fill className="object-cover" />
+                        )}
+                    </div>
+                    <div>
+                        <div className="font-medium text-slate-900">{user.name}</div>
+                        <div className="text-xs text-slate-500">{user.email}</div>
+                    </div>
+                </div>
+            </TableCell>
+            <TableCell>
+                {isEditing ? (
+                    <div className="flex items-center gap-2">
+                        <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                            <SelectTrigger className="h-8 w-[140px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveRole} disabled={isPending}>
+                            <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400" onClick={() => setIsEditing(false)} disabled={isPending}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"}>
+                            {ROLE_LABELS[user.role || "news_reporter"]}
+                        </Badge>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-blue-600" onClick={() => setIsEditing(true)}>
+                            <Pencil className="h-3 w-3" />
+                        </Button>
+                    </div>
+                )}
+            </TableCell>
+            <TableCell className="text-xs text-slate-500">
+                {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString() : "Never"}
+            </TableCell>
+            <TableCell className="text-right">
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Remove Admin?</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to remove <strong>{user.name}</strong> from admins? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => { }}>Cancel</Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleRemoveUser}
+                                disabled={isPending}
+                            >
+                                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Remove Admin
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </TableCell>
+        </TableRow>
     );
 }

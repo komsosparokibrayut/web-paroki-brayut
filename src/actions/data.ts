@@ -14,6 +14,7 @@ export interface UMKMData {
   phone: string;
   type: string;
   description: string;
+  image?: string;
 }
 
 export interface StatistikData {

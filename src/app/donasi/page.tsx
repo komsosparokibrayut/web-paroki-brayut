@@ -21,7 +21,7 @@ export default function DonationPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
                 {/* Intro Text */}
                 <div className="text-center max-w-3xl mx-auto">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-gold/10 text-brand-gold rounded-full font-bold text-sm mb-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-full font-bold text-sm mb-6">
                         <Heart className="h-4 w-4 fill-current" />
                         Gerakan Kasih
                     </div>

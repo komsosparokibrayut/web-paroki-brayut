@@ -36,6 +36,7 @@ export const metadata: Metadata = {
 };
 
 import { GlobalLoader } from "@/components/ui/global-loader";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -54,6 +55,7 @@ export default function RootLayout({
           <GlobalLoader />
           <SmoothScroll>{children}</SmoothScroll>
           <SpeedInsights />
+          <Toaster position="bottom-center" />
         </ClerkProvider>
       </body>
     </html>

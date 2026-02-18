@@ -2,11 +2,12 @@
 
 import { useState, useTransition, useEffect, useCallback } from "react";
 import { UMKMData, saveUMKM } from "@/actions/data";
-import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Image as ImageIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import MediaPickerModal from "@/components/admin/MediaPickerModal";
 import {
     Dialog,
     DialogContent,
@@ -41,8 +42,10 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
         type: "",
         address: "",
         phone: "",
-        description: ""
+        description: "",
+        image: ""
     });
+    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
     const router = useRouter();
 
     const filteredData = data.filter(item =>
@@ -63,7 +66,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                 formValues.type !== (editingItem.type || "") ||
                 formValues.address !== (editingItem.address || "") ||
                 formValues.phone !== (editingItem.phone || "") ||
-                formValues.description !== (editingItem.description || "");
+                formValues.description !== (editingItem.description || "") ||
+                formValues.image !== (editingItem.image || "");
             setHasChanges(changed);
         }
     }, [formValues, editingItem]);
@@ -82,7 +86,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                     type: editingItem.type || "",
                     address: editingItem.address || "",
                     phone: editingItem.phone || "",
-                    description: editingItem.description || ""
+                    description: editingItem.description || "",
+                    image: editingItem.image || ""
                 });
             } else {
                 setFormValues({
@@ -91,7 +96,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                     type: categories[0] || "",
                     address: "",
                     phone: "",
-                    description: ""
+                    description: "",
+                    image: ""
                 });
             }
             setHasChanges(false);
@@ -133,7 +139,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
             type: formValues.type as any,
             address: formValues.address,
             phone: formValues.phone,
-            description: formValues.description
+            description: formValues.description,
+            image: formValues.image
         };
 
         // Show confirmation modal
@@ -333,6 +340,54 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                             />
                         </div>
 
+                        <div className="space-y-2">
+                            <Label>Gambar Profile (Opsional)</Label>
+                            {formValues.image ? (
+                                <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
+                                    <img
+                                        src={formValues.image}
+                                        alt="Preview"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg"
+                                        onClick={() => setFormValues({ ...formValues, image: "" })}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                    <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 text-white text-[10px] truncate">
+                                        {formValues.image}
+                                    </div>
+                                </div>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full h-32 border-dashed border-2 flex flex-col gap-2 hover:bg-slate-50 transition-colors"
+                                    onClick={() => setIsMediaModalOpen(true)}
+                                >
+                                    <div className="bg-slate-100 p-3 rounded-full">
+                                        <ImageIcon className="h-6 w-6 text-slate-500" />
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-600">Pilih atau Upload Gambar</span>
+                                </Button>
+                            )}
+                            {formValues.image && (
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    size="sm"
+                                    className="text-blue-600 p-0 h-auto"
+                                    onClick={() => setIsMediaModalOpen(true)}
+                                >
+                                    Ganti Gambar
+                                </Button>
+                            )}
+                        </div>
+
                         <div className="flex justify-end gap-3 pt-4">
                             <Button
                                 type="button"
@@ -386,6 +441,16 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                 }
                 confirmText="Simpan"
                 loading={isPending}
+            />
+            {/* Media Picker */}
+            <MediaPickerModal
+                isOpen={isMediaModalOpen}
+                onClose={() => setIsMediaModalOpen(false)}
+                onSelect={(path) => {
+                    setFormValues({ ...formValues, image: path });
+                    setIsMediaModalOpen(false);
+                }}
+                initialTab="inline"
             />
         </div>
     );

@@ -57,6 +57,9 @@ export async function getPostBySlug(slug: string) {
   return parseContent(content, item.path);
 }
 
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getUserRole } from "@/lib/roles";
+
 export async function createPost(formData: {
   title: string;
   slug?: string; // Optional custom slug
@@ -69,6 +72,17 @@ export async function createPost(formData: {
   publishedAt?: string;
 }) {
   try {
+    const { userId } = await auth();
+    if (userId) {
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        const role = getUserRole(user);
+        
+        if (role === "news_reporter" && formData.published) {
+            throw new Error("News Reporters can only save posts as drafts. Please uncheck 'Publish' or use 'Save as Draft'.");
+        }
+    }
+
     // Use custom slug if provided and not empty, otherwise generate from title
     const slug = formData.slug?.trim() 
       ? formData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -123,6 +137,17 @@ export async function updatePost(
   }
 ) {
   try {
+     const { userId } = await auth();
+    if (userId) {
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        const role = getUserRole(user);
+        
+        if (role === "news_reporter" && formData.published) {
+             throw new Error("News Reporters can only save posts as drafts. Please uncheck 'Publish' or use 'Save as Draft'.");
+        }
+    }
+
     // Find existing post
     const posts = await listPosts();
     const item = posts.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
@@ -147,7 +172,7 @@ export async function updatePost(
       ...existingFrontmatter,
       title: formData.title,
       slug: finalSlug, // Update slug in frontmatter
-      description: formData.description,
+      description: formData.description || existingFrontmatter.description,
       author: formData.author,
       categories: formData.categories,
       banner: formData.banner,

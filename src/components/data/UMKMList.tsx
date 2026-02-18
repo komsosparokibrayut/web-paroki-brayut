@@ -107,14 +107,31 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
                         >
                             {/* Card Header */}
                             <div className="h-24 bg-gradient-to-r from-brand-blue/5 to-brand-gold/5 border-b border-gray-100 relative">
-                                <div className="absolute top-4 right-4">
+                                {umkm.image && (
+                                    <div className="absolute inset-0">
+                                        <img
+                                            src={umkm.image}
+                                            alt={umkm.businessName}
+                                            className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-40 transition-all duration-500"
+                                        />
+                                    </div>
+                                )}
+                                <div className="absolute top-4 right-4 z-10">
                                     <span className="inline-block px-2 py-1 bg-white text-brand-blue text-xs rounded-lg font-bold shadow-sm border border-brand-blue/10">
                                         {umkm.type}
                                     </span>
                                 </div>
-                                <div className="absolute -bottom-6 left-6">
-                                    <div className="w-16 h-16 rounded-xl bg-white p-3 shadow-md border border-gray-100 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors duration-300">
-                                        <Store className="h-8 w-8" />
+                                <div className="absolute -bottom-6 left-6 z-10">
+                                    <div className="w-16 h-16 rounded-xl bg-white p-3 shadow-md border border-gray-100 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors duration-300 overflow-hidden">
+                                        {umkm.image ? (
+                                            <img
+                                                src={umkm.image}
+                                                alt={umkm.businessName}
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                        ) : (
+                                            <Store className="h-8 w-8" />
+                                        )}
                                     </div>
                                 </div>
                             </div>
