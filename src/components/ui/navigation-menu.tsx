@@ -96,5 +96,4 @@ export {
     NavigationMenuContent,
     NavigationMenuTrigger,
     NavigationMenuLink,
-    NavigationMenuPrimitive // Exported for usages that need primitives
 }

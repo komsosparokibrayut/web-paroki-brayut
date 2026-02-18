@@ -225,41 +225,4 @@ export async function deletePost(slug: string) {
   }
 }
 
-export async function publishPost(slug: string) {
-  try {
-    const files = await listPosts();
-    const item = files.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
-
-    if (!item) {
-      return { success: false, error: "Post not found" };
-    }
-
-    const content = await getPostFile(item.path);
-    if (!content) {
-      return { success: false, error: "Post content not found" };
-    }
-
-    const { frontmatter, content: postContent } = parseContent(content, item.path);
-    frontmatter.published = true;
-    frontmatter.updatedAt = new Date().toISOString();
-
-    const fileContent = stringifyContent(frontmatter, postContent);
-
-    // Update via service layer
-    await updatePostFile(
-      item.path,
-      fileContent,
-      `Publish post: ${frontmatter.title}`
-    );
-
-    // Revalidate paths
-    revalidatePath("/blog");
-    revalidatePath(`/posts/${slug}`);
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error publishing post:", error);
-    return { success: false, error: error.message };
-  }
-}
 

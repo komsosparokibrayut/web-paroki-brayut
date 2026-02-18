@@ -124,14 +124,16 @@ export default function Header() {
                 isScrolled ? "pt-12 lg:pt-4 pr-4" : "py-6"
             )}
         >
-            <nav
+            <motion.nav
+                layout
+                transition={{ type: "spring", stiffness: 100, damping: 20 }}
                 className={cn(
-                    "flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 ease-in-out relative z-50",
+                    "flex items-center justify-between px-4 sm:px-6 lg:px-8 relative z-50",
                     isOverFooter && !mobileMenuOpen
-                        ? "w-[95%] md:w-[90%] max-w-6xl bg-white/90 backdrop-blur-xl shadow-sm border border-white/20 rounded-full py-3"
+                        ? "w-[95%] md:w-[90%] max-w-6xl bg-white/90 backdrop-blur-xl shadow-md border border-white/20 rounded-full py-3"
                         : isScrolled && !mobileMenuOpen
-                            ? "w-[95%] md:w-[90%] max-w-6xl backdrop-blur-xl shadow-sm border border-white/20 rounded-full py-3"
-                            : "w-full max-w-7xl bg-transparent py-4"
+                            ? "w-[95%] md:w-[90%] max-w-6xl backdrop-blur-xl shadow-md border border-white/20 rounded-full py-3"
+                            : "w-full max-w-7xl bg-transparent py-4 rounded-none border border-transparent"
                 )}
             >
                 {/* Logo */}
@@ -261,7 +263,7 @@ export default function Header() {
                         />
                     </button>
                 </div>
-            </nav>
+            </motion.nav>
 
             {/* Mobile menu Overlay */}
             <AnimatePresence>

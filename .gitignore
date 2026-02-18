@@ -58,3 +58,5 @@ private/
 *.tmp
 *.temp
 .cache
+
+.agents

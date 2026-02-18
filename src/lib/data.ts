@@ -23,14 +23,3 @@ export async function getScheduleEvents(): Promise<ScheduleEvent[]> {
   return getScheduleFromService();
 }
 
-export async function getUMKM(): Promise<UMKM[]> {
-  try {
-    const fileContent = await getFile('umkm.json');
-    if (!fileContent) return [];
-    
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error('Error reading umkm.json:', error);
-    return [];
-  }
-}

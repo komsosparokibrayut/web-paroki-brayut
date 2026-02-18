@@ -161,37 +161,7 @@ export async function deleteFile(
   }
 }
 
-export async function getCollaborators(): Promise<string[]> {
-  const octokit = await getOctokit();
-  const { owner, repo } = getRepoConfig();
 
-  const { data } = await octokit.rest.repos.listCollaborators({
-    owner,
-    repo,
-  });
-
-  return data.map((collaborator) => collaborator.login);
-}
-
-export async function isCollaborator(username: string): Promise<boolean> {
-  try {
-    const octokit = await getOctokit();
-    const { owner, repo } = getRepoConfig();
-
-    await octokit.rest.repos.checkCollaborator({
-      owner,
-      repo,
-      username,
-    });
-
-    return true;
-  } catch (error: any) {
-    if (error.status === 404) {
-      return false;
-    }
-    throw error;
-  }
-}
 
 export async function getDownloadUrl(path: string): Promise<string | null> {
   try {
@@ -218,17 +188,3 @@ export async function getDownloadUrl(path: string): Promise<string | null> {
   }
 }
 
-export async function createIssue(options: {
-  title: string;
-  body: string;
-  labels?: string[];
-}): Promise<void> {
-  const octokit = await getOctokit();
-  const { owner, repo } = getRepoConfig();
-
-  await octokit.rest.issues.create({
-    owner,
-    repo,
-    ...options,
-  });
-}

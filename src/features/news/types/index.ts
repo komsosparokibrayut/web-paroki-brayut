@@ -39,4 +39,3 @@ export interface PostMetadata {
   readingTime?: number;
 }
 
-export type PostCategory = string;

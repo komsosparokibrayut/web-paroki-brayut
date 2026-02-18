@@ -46,20 +46,5 @@ export async function getJadwalMisa(): Promise<JadwalMisaData | null> {
   return getJadwalMisaService();
 }
 
-/**
- * Saves jadwal misa (mass schedule) data.
- * Delegates to schedule service layer and revalidates paths.
- * @param data - JadwalMisaData to persist
- * @returns Promise resolving to ActionResult
- */
-export async function saveJadwalMisa(data: JadwalMisaData): Promise<ActionResult> {
-  const result = await updateJadwalMisaService(data);
-  if (result.success) {
-    revalidatePath("/jadwal-misa");
-    revalidatePath("/admin/data/jadwal-misa");
-    return { success: true };
-  }
-  return { success: false, error: result.message };
-}
 
 

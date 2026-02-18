@@ -52,7 +52,7 @@ export async function getMasterCategories(): Promise<MasterCategoriesData> {
   return { post, umkm, jadwal, formulir };
 }
 
-export async function saveCategoryFile(type: CategoryType, categories: string[]): Promise<{ success: boolean; error?: string }> {
+async function saveCategoryFile(type: CategoryType, categories: string[]): Promise<{ success: boolean; error?: string }> {
     try {
         const data: SingleCategoryFile = { categories };
         await commitFiles(
@@ -66,19 +66,6 @@ export async function saveCategoryFile(type: CategoryType, categories: string[])
     }
 }
 
-export async function saveMasterCategories(data: MasterCategoriesData): Promise<{ success: boolean; error?: string }> {
-    try {
-        await Promise.all([
-            saveCategoryFile("post", data.post),
-            saveCategoryFile("umkm", data.umkm),
-            saveCategoryFile("jadwal", data.jadwal),
-            saveCategoryFile("formulir", data.formulir),
-        ]);
-        return { success: true };
-    } catch (error: any) {
-         return { success: false, error: error.message };
-    }
-}
 
 export async function addCategory(type: CategoryType, category: string): Promise<{ success: boolean; error?: string }> {
     try {

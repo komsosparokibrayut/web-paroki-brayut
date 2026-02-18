@@ -29,7 +29,7 @@ export default function PostHeader({ frontmatter, readingTime }: PostHeaderProps
   const randomGradient = gradients[frontmatter.slug.length % gradients.length];
 
   return (
-    <header className="relative w-full min-h-[85vh] flex items-center justify-center overflow-hidden">
+    <header className="relative w-full min-h-[50vh] flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className={cn("absolute inset-0 z-0", !frontmatter.banner && randomGradient)}>
         {frontmatter.banner && (
@@ -42,11 +42,11 @@ export default function PostHeader({ frontmatter, readingTime }: PostHeaderProps
           />
         )}
         {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-brand-dark/70 backdrop-blur-[1px]" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full px-4 pt-40 pb-20 text-center">
+      <div className="relative z-10 w-full px-4 py-20 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
