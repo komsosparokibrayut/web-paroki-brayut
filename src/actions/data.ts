@@ -15,6 +15,7 @@ export interface UMKMData {
   type: string;
   description: string;
   image?: string;
+  mapsLink?: string;
 }
 
 export interface StatistikData {

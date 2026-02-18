@@ -43,7 +43,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
         address: "",
         phone: "",
         description: "",
-        image: ""
+        image: "",
+        mapsLink: ""
     });
     const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
     const router = useRouter();
@@ -67,7 +68,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                 formValues.address !== (editingItem.address || "") ||
                 formValues.phone !== (editingItem.phone || "") ||
                 formValues.description !== (editingItem.description || "") ||
-                formValues.image !== (editingItem.image || "");
+                formValues.image !== (editingItem.image || "") ||
+                formValues.mapsLink !== (editingItem.mapsLink || "");
             setHasChanges(changed);
         }
     }, [formValues, editingItem]);
@@ -87,7 +89,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                     address: editingItem.address || "",
                     phone: editingItem.phone || "",
                     description: editingItem.description || "",
-                    image: editingItem.image || ""
+                    image: editingItem.image || "",
+                    mapsLink: editingItem.mapsLink || ""
                 });
             } else {
                 setFormValues({
@@ -97,7 +100,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                     address: "",
                     phone: "",
                     description: "",
-                    image: ""
+                    image: "",
+                    mapsLink: ""
                 });
             }
             setHasChanges(false);
@@ -140,7 +144,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
             address: formValues.address,
             phone: formValues.phone,
             description: formValues.description,
-            image: formValues.image
+            image: formValues.image,
+            mapsLink: formValues.mapsLink
         };
 
         // Show confirmation modal
@@ -337,6 +342,16 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                                 onChange={(e) => setFormValues({ ...formValues, description: e.target.value })}
                                 rows={3}
                                 placeholder="Deskripsi singkat produk/jasa..."
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="mapsLink">Link Google Maps (Opsional)</Label>
+                            <Input
+                                id="mapsLink"
+                                value={formValues.mapsLink}
+                                onChange={(e) => setFormValues({ ...formValues, mapsLink: e.target.value })}
+                                placeholder="https://maps.google.com/..."
                             />
                         </div>
 

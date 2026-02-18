@@ -157,24 +157,28 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
 
                                 {/* Actions */}
                                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 mt-auto">
-                                    <a
-                                        href={`https://wa.me/${formatPhone(umkm.phone)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 font-bold text-xs hover:bg-green-100 transition-colors"
-                                    >
-                                        <MessageCircle className="h-4 w-4" />
-                                        WhatsApp
-                                    </a>
-                                    <a
-                                        href={`https://maps.google.com/?q=${encodeURIComponent(umkm.businessName + " " + umkm.address)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors"
-                                    >
-                                        <MapPin className="h-4 w-4" />
-                                        Lihat Gmaps
-                                    </a>
+                                    {(umkm.phone && umkm.phone !== "-") && (
+                                        <a
+                                            href={`https://wa.me/${formatPhone(umkm.phone)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 font-bold text-xs hover:bg-green-100 transition-colors"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                            WhatsApp
+                                        </a>
+                                    )}
+                                    {umkm.mapsLink && (
+                                        <a
+                                            href={umkm.mapsLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors"
+                                        >
+                                            <MapPin className="h-4 w-4" />
+                                            Lihat Gmaps
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         </div>
