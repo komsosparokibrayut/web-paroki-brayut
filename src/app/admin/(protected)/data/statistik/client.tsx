@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 export default function StatistikClient({ initialData }: { initialData: StatistikData | null }) {
     const [data, setData] = useState<StatistikData>(initialData || {
         churches: 0,
+        wilayah: 0,
         wards: 0,
         families: 0,
         parishioners: 0
@@ -31,6 +32,7 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
         }
         const changed =
             data.churches !== initialData.churches ||
+            data.wilayah !== initialData.wilayah ||
             data.wards !== initialData.wards ||
             data.families !== initialData.families ||
             data.parishioners !== initialData.parishioners;
@@ -76,6 +78,20 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
                                 className="text-2xl font-bold h-14"
                             />
                             <p className="text-xs text-slate-500">Total gereja dan kapel</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-blue-600" />
+                                Jumlah Wilayah
+                            </Label>
+                            <Input
+                                type="number"
+                                value={data.wilayah}
+                                onChange={(e) => setData({ ...data, wilayah: parseInt(e.target.value) || 0 })}
+                                className="text-2xl font-bold h-14"
+                            />
+                            <p className="text-xs text-slate-500">Target wilayah di paroki</p>
                         </div>
 
                         <div className="space-y-2">

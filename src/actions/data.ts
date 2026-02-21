@@ -20,6 +20,7 @@ export interface UMKMData {
 
 export interface StatistikData {
   churches: number;
+  wilayah: number;
   wards: number;
   families: number;
   parishioners: number;

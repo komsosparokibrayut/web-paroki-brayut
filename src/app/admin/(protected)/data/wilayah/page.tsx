@@ -7,20 +7,20 @@ export default async function AdminWilayahPage() {
     const data = await getWilayahLingkungan();
 
     // Read stats from file
+    let targetWilayah = 0;
     let targetLingkungan = 0;
     try {
         const statsPath = path.join(process.cwd(), '../web-paroki-content/statistik.json');
         const statsContent = await fs.readFile(statsPath, "utf-8");
         const stats = JSON.parse(statsContent);
+        targetWilayah = stats.wilayah || 0;
         targetLingkungan = stats.wards || 0;
     } catch (error) {
         console.error("Failed to read statistik.json:", error);
-        // Fallback to calculation if file read fails, or keep 0
+        targetWilayah = data.length;
         targetLingkungan = data.reduce((acc, w) => acc + w.lingkungan.length, 0);
     }
 
-    // Target values
-    const targetWilayah = 5;
     const realLingkunganCount = data.reduce((acc, w) => acc + w.lingkungan.length, 0);
 
     return (
