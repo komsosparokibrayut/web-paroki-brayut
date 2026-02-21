@@ -6,8 +6,8 @@ import { getWilayahLingkungan } from "@/actions/data";
 import PageHeader from "@/components/layout/PageHeader";
 
 export const metadata: Metadata = {
-    title: "Lingkungan | Paroki Brayut",
-    description: "Daftar lingkungan dan wilayah Paroki Brayut Santo Yohanes Paulus II",
+    title: "Wilayah dan Lingkungan | Paroki Brayut",
+    description: "Daftar wilayah dan lingkungan Paroki Brayut Santo Yohanes Paulus II",
 };
 
 export default async function LingkunganPage() {
@@ -17,8 +17,8 @@ export default async function LingkunganPage() {
     return (
         <div className="pb-12">
             <PageHeader
-                title="Lingkungan"
-                subtitle="Komunitas Umat Paroki Brayut"
+                title="Wilayah dan Lingkungan"
+                subtitle="Umat Paroki Brayut"
                 image="https://images.unsplash.com/photo-1577439083093-566f654c8b48?q=80&w=2070&auto=format&fit=crop"
                 align="center"
             />
@@ -76,10 +76,12 @@ export default async function LingkunganPage() {
                                                     <Users className="h-4 w-4 text-brand-blue" />
                                                     <span className="font-medium text-brand-blue">Ketua Wilayah: {wilayah.coordinator}</span>
                                                 </div>
-                                                <div className="flex items-start gap-2">
-                                                    <MapPin className="h-4 w-4 mt-0.5 text-gray-400" />
-                                                    <span>{wilayah.address || "belum terdapat data"}</span>
-                                                </div>
+                                                {wilayah.address && (
+                                                    <div className="flex items-start gap-2">
+                                                        <MapPin className="h-4 w-4 mt-0.5 text-gray-400" />
+                                                        <span>{wilayah.address}</span>
+                                                    </div>
+                                                )}
                                                 <div className="flex flex-col sm:flex-row sm:gap-6 mt-1">
                                                     {wilayah.email && (
                                                         <div className="flex items-center gap-2">
@@ -97,7 +99,11 @@ export default async function LingkunganPage() {
                                             </div>
                                         </div>
                                     </div>
-
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Daftar Lingkungan</h4>
+                                        <div className="flex-1 h-px bg-gray-100" />
+                                        <span className="text-xs text-gray-400 font-medium">{wilayah.lingkungan.length} lingkungan</span>
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {wilayah.lingkungan.length > 0 ? (
                                             wilayah.lingkungan.map((lingkungan) => (
@@ -107,14 +113,18 @@ export default async function LingkunganPage() {
                                                         <span className="font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{lingkungan.name}</span>
                                                     </div>
                                                     <div className="space-y-2 text-sm text-gray-600">
-                                                        <div className="font-medium text-brand-blue">Ketua: {lingkungan.chief}</div>
-                                                        <div className="text-xs text-gray-500 line-clamp-1">{lingkungan.address || "belum terdapat data"}</div>
-                                                        <div className="flex items-center gap-2 pt-1">
-                                                            {lingkungan.phone ? (
+                                                        {lingkungan.chief && (
+                                                            <div className="font-medium text-brand-blue">Ketua Lingkungan:<br />{lingkungan.chief}</div>
+                                                        )}
+                                                        {lingkungan.address && (
+                                                            <div className="text-xs text-gray-500 line-clamp-1">{lingkungan.address}</div>
+                                                        )}
+                                                        {lingkungan.phone && (
+                                                            <div className="flex items-center gap-2 pt-1">
                                                                 <Phone className="h-3 w-3 text-gray-400" />
-                                                            ) : null}
-                                                            <span className="text-xs text-gray-400">{lingkungan.phone || "-"}</span>
-                                                        </div>
+                                                                <span className="text-xs text-gray-400">{lingkungan.phone}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))
