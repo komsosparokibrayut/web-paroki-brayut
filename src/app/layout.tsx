@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     apple: "/favicons/logo.png",
   },
   openGraph: {
-    images: ["/images/logo/Logo4x.png"],
+    images: ["/images/logo/logo.png"],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/images/logo/Logo4x.png"],
+    images: ["/images/logo/logo.png"],
   },
 };
 

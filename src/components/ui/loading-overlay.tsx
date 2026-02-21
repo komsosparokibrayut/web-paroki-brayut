@@ -25,7 +25,7 @@ export function LoadingOverlay() {
             <div className="relative flex flex-col items-center gap-4">
                 <div className="animate-pulse">
                     <Image
-                        src="/images/logo/Logo4x.png"
+                        src="/images/logo/logo.png"
                         alt="Loading..."
                         width={120}
                         height={120}
