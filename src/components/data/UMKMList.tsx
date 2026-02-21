@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Store, MapPin, Info, Search, MessageCircle, ExternalLink } from "lucide-react";
+import Image from "next/image";
 
 interface UMKMListProps {
     initialUMKM: any[];
@@ -109,10 +110,12 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
                             <div className="h-24 bg-gradient-to-r from-brand-blue/5 to-brand-gold/5 border-b border-gray-100 relative">
                                 {umkm.image && (
                                     <div className="absolute inset-0">
-                                        <img
+                                        <Image
                                             src={umkm.image}
                                             alt={umkm.businessName}
-                                            className="w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-40 transition-all duration-500"
+                                            fill
+                                            unoptimized
+                                            className="object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-40 transition-all duration-500"
                                         />
                                     </div>
                                 )}
@@ -122,12 +125,14 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
                                     </span>
                                 </div>
                                 <div className="absolute -bottom-6 left-6 z-10">
-                                    <div className="w-16 h-16 rounded-xl bg-white p-3 shadow-md border border-gray-100 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors duration-300 overflow-hidden">
+                                    <div className="w-16 h-16 rounded-xl bg-white p-3 shadow-md border border-gray-100 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors duration-300 overflow-hidden relative">
                                         {umkm.image ? (
-                                            <img
+                                            <Image
                                                 src={umkm.image}
                                                 alt={umkm.businessName}
-                                                className="w-full h-full object-cover rounded-lg"
+                                                fill
+                                                unoptimized
+                                                className="object-cover rounded-lg"
                                             />
                                         ) : (
                                             <Store className="h-8 w-8" />

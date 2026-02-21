@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect, useCallback } from "react";
 import { UMKMData, saveUMKM } from "@/actions/data";
 import { Plus, Pencil, Trash2, Search, Loader2, Image as ImageIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -359,10 +360,12 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                             <Label>Gambar Profile (Opsional)</Label>
                             {formValues.image ? (
                                 <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                                    <img
+                                    <Image
                                         src={formValues.image}
                                         alt="Preview"
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        unoptimized
+                                        className="object-cover"
                                     />
                                     <Button
                                         type="button"
