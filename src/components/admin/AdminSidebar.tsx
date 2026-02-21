@@ -20,6 +20,7 @@ import {
     UserIcon,
     Database,
     PenTool,
+    Church,
 } from "lucide-react";
 import {
     Sidebar,
@@ -74,7 +75,9 @@ export function AdminSidebar() {
             title: "Data Management",
             items: [
                 { name: "UMKM", href: "/admin/data/umkm", icon: Store },
-                { name: "Jadwal", href: "/admin/data/jadwal", icon: Calendar },
+                { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar },
+                { name: "Gereja", href: "/admin/data/gereja", icon: Church },
+                { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar },
                 { name: "Formulir", href: "/admin/data/formulir", icon: Database },
                 { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin },
                 { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon },
@@ -189,7 +192,7 @@ export function AdminSidebar() {
                         <div className="space-y-1">
                             {group.items.map((item) => {
                                 const isActive = pathname === item.href ||
-                                    (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+                                    (item.href !== "/admin/dashboard" && pathname.startsWith(item.href + "/"));
                                 return (
                                     <NavItem
                                         key={item.href}

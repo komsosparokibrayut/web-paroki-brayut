@@ -171,7 +171,7 @@ export default async function AdminDashboard() {
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-slate-400" /> Upcoming Events
               </h2>
-              <DashboardLink href="/admin/data/jadwal" className="text-blue-600 text-xs font-medium hover:underline flex items-center gap-1">
+              <DashboardLink href="/admin/data/jadwal-kegiatan" className="text-blue-600 text-xs font-medium hover:underline flex items-center gap-1">
                 Manage <ArrowUpRight className="w-3 h-3" />
               </DashboardLink>
             </div>

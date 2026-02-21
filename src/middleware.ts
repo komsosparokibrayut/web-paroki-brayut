@@ -32,7 +32,7 @@ export default clerkMiddleware(async (auth, request) => {
     "img-src 'self' data: https: https://img.clerk.com; " +
     "font-src 'self' data: https://fonts.gstatic.com; " +
     "connect-src 'self' https: https://cloud.umami.is https://vitals.vercel-insights.com https://*.clerk.accounts.dev https://clerk.com; " +
-    "frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev; " +
+    "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev; " +
     "frame-ancestors 'none';"
   );
 

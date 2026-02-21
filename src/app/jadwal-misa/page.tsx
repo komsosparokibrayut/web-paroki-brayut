@@ -1,96 +1,21 @@
 
 import { Metadata } from "next";
-import { Calendar, Clock, MapPin, Users, Info } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Tag } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { getJadwalMisa } from "@/features/schedule/actions";
 import { JadwalMisaData } from "@/features/schedule/types";
 import InformationCard from "@/components/ui/InformationCard";
+import Link from "next/link";
 
 export const metadata: Metadata = {
     title: "Jadwal Misa | Paroki Brayut",
-    description: "Jadwal misa lengkap untuk semua gereja dan kapel di Paroki Brayut Santo Yohanes Paulus II",
-};
-
-// Fallback data with updated chapel cards and details
-const fallbackData: JadwalMisaData = {
-    churches: [
-        {
-            id: "induk",
-            name: "Gereja Santo Yusuf Tambakrejo",
-            location: "Rejodani 1, Sariharjo, Ngaglik",
-            schedules: [
-                { day: "Minggu", times: ["06.00", "08.00", "17.00"], notes: "Misa Minggu" },
-                { day: "Senin - Sabtu", times: ["06.00"], notes: "Misa Harian" },
-            ]
-        },
-        {
-            id: "kapel-1",
-            name: "Kapel Wilayah 1",
-            location: "Wilayah 1",
-            schedules: [
-                { day: "Minggu", times: ["07.00"], notes: "Minggu, 12 Oktober 2025" },
-                { day: "Rabu", times: ["06.00"], notes: "Rabu, 8 Oktober 2025" },
-            ]
-        },
-        {
-            id: "kapel-2",
-            name: "Kapel Wilayah 2",
-            location: "Wilayah 2",
-            schedules: [
-                { day: "Minggu", times: ["08.00"], notes: "Minggu, 12 Oktober 2025" },
-                { day: "Kamis", times: ["06.00"], notes: "Kamis, 9 Oktober 2025" },
-            ]
-        },
-        {
-            id: "kapel-3",
-            name: "Kapel Wilayah 3",
-            location: "Wilayah 3",
-            schedules: [
-                { day: "Minggu", times: ["09.00"], notes: "Minggu, 12 Oktober 2025" },
-                { day: "Jumat", times: ["06.00"], notes: "Jumat, 10 Oktober 2025" },
-            ]
-        },
-        {
-            id: "kapel-4",
-            name: "Kapel Wilayah 4",
-            location: "Wilayah 4",
-            schedules: [
-                { day: "Minggu", times: ["16.00"], notes: "Minggu, 12 Oktober 2025" },
-                { day: "Sabtu", times: ["17.00"], notes: "Sabtu, 11 Oktober 2025" },
-            ]
-        },
-        {
-            id: "kapel-5",
-            name: "Kapel Wilayah 5",
-            location: "Wilayah 5",
-            schedules: [
-                { day: "Minggu", times: ["18.00"], notes: "Minggu, 12 Oktober 2025" },
-                { day: "Sabtu", times: ["18.00"], notes: "Sabtu, 11 Oktober 2025" },
-            ]
-        },
-    ],
-    specialMasses: [
-        {
-            id: "jumat-pertama",
-            name: "Jumat Pertama",
-            time: "18.30 WIB",
-            location: "Gereja Utama",
-            description: "Misa Jumat Pertama setiap bulan"
-        },
-        {
-            id: "omk",
-            name: "Misa OMK",
-            time: "19.00 WIB",
-            location: "Gereja Utama",
-            description: "Misa kaum muda, Minggu ke-3"
-        }
-    ]
+    description: "Jadwal misa lengkap untuk semua gereja di Paroki Brayut Santo Yohanes Paulus II",
 };
 
 export default async function JadwalMisaPage() {
-    const data = await getJadwalMisa() || fallbackData;
-    const mainChurch = data.churches[0];
-    const otherChurches = data.churches.slice(1);
+    const data: JadwalMisaData = await getJadwalMisa() || { churches: [], specialMasses: [] };
+    const mainChurch = data.churches && data.churches.length > 0 ? data.churches[0] : null;
+    const otherChurches = data.churches && data.churches.length > 1 ? data.churches.slice(1) : [];
 
     return (
         <div className="min-h-screen pb-12">
@@ -103,48 +28,59 @@ export default async function JadwalMisaPage() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
                 {/* Main Church Schedule */}
-                <section>
-                    <div className="text-center mb-10">
-                        <span className="bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-full text-sm font-semibold tracking-wide uppercase">
-                            Gereja Induk
-                        </span>
-                        <h2 className="text-3xl font-bold text-brand-dark mt-4 mb-2">{mainChurch.name}</h2>
-                        <div className="flex items-center justify-center gap-2 text-gray-600">
-                            <MapPin className="h-4 w-4" />
-                            <p>{mainChurch.location}</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        {mainChurch.schedules.map((schedule, index) => (
-                            <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-brand-warm flex items-center justify-center mb-6 text-brand-blue">
-                                        <Clock className="h-8 w-8" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-brand-dark mb-4">{schedule.day}</h3>
-                                    <div className="space-y-3">
-                                        {schedule.times.map((time, idx) => (
-                                            <div key={idx} className="text-2xl font-bold text-brand-blue">
-                                                {time} <span className="text-base font-normal text-gray-500">WIB</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {schedule.notes && (
-                                        <div className="mt-6 pt-6 border-t border-gray-100 w-full">
-                                            <p className="text-gray-500 italic">{schedule.notes}</p>
-                                        </div>
-                                    )}
-                                </div>
+                {mainChurch ? (
+                    <section>
+                        <div className="text-center mb-10">
+                            <span className="bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-full text-sm font-semibold tracking-wide uppercase">
+                                Gereja Induk / Paroki
+                            </span>
+                            <h2 className="text-3xl font-bold text-brand-dark mt-4 mb-2">{mainChurch.name}</h2>
+                            <div className="flex items-center justify-center gap-2 text-gray-600">
+                                <MapPin className="h-4 w-4" />
+                                <p>{mainChurch.location}</p>
                             </div>
-                        ))}
-                    </div>
-                </section>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                            {mainChurch.schedules.map((schedule, index) => (
+                                <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-shadow duration-300">
+                                    <div className="flex flex-col items-center text-center">
+                                        <div className="w-16 h-16 rounded-full bg-brand-warm flex items-center justify-center mb-6 text-brand-blue">
+                                            <Clock className="h-8 w-8" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-brand-dark mb-2">{schedule.day}</h3>
+                                        {schedule.kategori && (
+                                            <span className="inline-flex items-center gap-1 text-xs bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full mb-4">
+                                                <Tag className="h-3 w-3" />
+                                                {schedule.kategori}
+                                            </span>
+                                        )}
+                                        <div className="space-y-3">
+                                            {schedule.times.map((time, idx) => (
+                                                <div key={idx} className="text-2xl font-bold text-brand-blue">
+                                                    {time} <span className="text-base font-normal text-gray-500">WIB</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {schedule.notes && (
+                                            <div className="mt-6 pt-6 border-t border-gray-100 w-full">
+                                                <p className="text-gray-500 italic">{schedule.notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                ) : (
+                    <section className="text-center py-12 text-gray-500">
+                        <p>Data jadwal belum tersedia.</p>
+                    </section>
+                )}
 
                 {/* Special Masses */}
                 {data.specialMasses.length > 0 && (
                     <section className="bg-brand-dark text-white rounded-3xl p-8 md:p-12 overflow-hidden relative">
-                        {/* Background Decoration */}
                         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-blue/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                         <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-gold/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 
@@ -182,49 +118,62 @@ export default async function JadwalMisaPage() {
                     </section>
                 )}
 
-                {/* Chapels */}
+                {/* Gereja Wilayah */}
                 {otherChurches.length > 0 && (
                     <section>
                         <h2 className="text-2xl font-bold text-brand-dark mb-8 flex items-center gap-2">
                             <MapPin className="h-6 w-6 text-brand-blue" />
-                            Jadwal Kapel Wilayah
+                            Jadwal Gereja Wilayah
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {otherChurches.map((chapel) => (
-                                <div key={chapel.id} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+                            {otherChurches.map((church) => (
+                                <div key={church.id} className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
                                     <div className="bg-brand-dark p-6 border-b border-gray-100 text-white overflow-hidden relative">
                                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-blue/20 rounded-full blur-3xl" />
                                         <div className="absolute top-0 right-0 w-48 h-48 bg-brand-gold/10 rounded-full blur-3xl" />
 
-                                        <h3 className="text-lg font-bold mb-2">{chapel.name}</h3>
-                                        <div className="flex items-start gap-2 text-sm text-blue-100">
+                                        <h3 className="text-lg font-bold mb-2 relative z-10">{church.name}</h3>
+                                        <div className="flex items-start gap-2 text-sm text-blue-100 relative z-10">
                                             <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                            <span>{chapel.location}</span>
+                                            <span>{church.location}</span>
                                         </div>
                                     </div>
 
                                     <div className="p-6 space-y-4 flex-1">
-                                        {chapel.schedules.map((item, idx) => (
-                                            <div key={idx} className="flex flex-col p-4 bg-gray-50 rounded-lg group hover:bg-brand-blue/5 transition-colors border-l-4 border-brand-dark">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="font-bold text-gray-800">{item.day}</span>
-                                                    <div className="flex flex-col text-right">
-                                                        {item.times.map((t, tIdx) => (
-                                                            <span key={tIdx} className="text-brand-dark font-bold text-lg">
-                                                                {t} <span className="text-xs font-bold text-gray-500">WIB</span>
-                                                            </span>
-                                                        ))}
+                                        {church.schedules.length > 0 ? (
+                                            church.schedules.map((item, idx) => (
+                                                <div key={idx} className="flex flex-col p-4 bg-gray-50 rounded-lg group hover:bg-brand-blue/5 transition-colors border-l-4 border-brand-dark">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="font-bold text-gray-800">{item.day}</span>
+                                                        <div className="flex flex-col text-right">
+                                                            {item.times.map((t, tIdx) => (
+                                                                <span key={tIdx} className="text-brand-dark font-bold text-lg">
+                                                                    {t} <span className="text-xs font-bold text-gray-500">WIB</span>
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
+                                                    {item.kategori && (
+                                                        <span className="inline-flex items-center gap-1 text-xs bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded-full w-fit mt-1">
+                                                            <Tag className="h-3 w-3" />
+                                                            {item.kategori}
+                                                        </span>
+                                                    )}
+                                                    {item.notes && (
+                                                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-200/50">
+                                                            <Calendar className="h-3 w-3" />
+                                                            {item.notes}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                {item.notes && (
-                                                    <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-1 pt-2 border-t border-gray-200/50">
-                                                        <Calendar className="h-3 w-3" />
-                                                        {item.notes}
-                                                    </div>
-                                                )}
+                                            ))
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-8 text-gray-400 text-sm text-center">
+                                                <Clock className="h-8 w-8 mb-2 opacity-30" />
+                                                <p>Jadwal akan segera ditambahkan</p>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 </div>
                             ))}

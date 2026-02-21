@@ -36,11 +36,12 @@ const navItems: NavItem[] = [
     {
         title: "Gereja",
         items: [
-            { title: "Gereja 1", href: "/gereja/gereja-1" },
-            { title: "Gereja 2", href: "/gereja/gereja-2" },
-            { title: "Gereja 3", href: "/gereja/gereja-3" },
-            { title: "Gereja 4", href: "/gereja/gereja-4" },
-            { title: "Gereja 5", href: "/gereja/gereja-5" },
+            { title: "Gereja Paroki", href: "/gereja/gereja-paroki" },
+            { title: "Gereja Kayunan", href: "/gereja/gereja-kayunan" },
+            { title: "Gereja Ngelo", href: "/gereja/gereja-ngelo" },
+            { title: "Gereja Karanglo", href: "/gereja/gereja-karanglo" },
+            { title: "Gereja Karangkepuh", href: "/gereja/gereja-karangkepuh" },
+            { title: "Gereja Dukuh", href: "/gereja/gereja-dukuh" },
         ],
     },
     {

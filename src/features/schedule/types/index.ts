@@ -1,4 +1,19 @@
 /**
+ * Gereja (Church) Unit master data
+ */
+export interface GerejaUnit {
+  id: string;
+  name: string;
+  description: string;
+  alamat: string;
+  kategori: 'Gereja Paroki' | 'Gereja Wilayah';
+  koordinat: string; // Google Maps share link
+  gallery?: string[]; // image URLs
+}
+
+export const GEREJA_KATEGORI = ['Gereja Paroki', 'Gereja Wilayah'] as const;
+
+/**
  * Schedule Event (Jadwal Kegiatan)
  * Used for parish events and activities.
  */
@@ -30,6 +45,7 @@ export interface MassTimeSlot {
   day: string;
   times: string[];
   notes?: string;
+  kategori?: string; // e.g. "Misa Harian", "Misa Minggu", "Misa OMK"
 }
 
 export interface ChurchUnit {

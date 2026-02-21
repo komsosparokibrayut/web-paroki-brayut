@@ -13,6 +13,21 @@ import { JadwalEvent, JadwalMisaData } from "../types";
 type ActionResult = { success: true } | { success: false; error?: string };
 
 /**
+ * Saves jadwal misa (mass schedule) data.
+ * @param data - JadwalMisaData to persist
+ * @returns Promise resolving to ActionResult
+ */
+export async function saveJadwalMisa(data: JadwalMisaData): Promise<ActionResult> {
+  const result = await updateJadwalMisaService(data);
+  if (result.success) {
+    revalidatePath("/jadwal-misa");
+    revalidatePath("/admin/data/jadwal-misa");
+    return { success: true };
+  }
+  return { success: false, error: result.message };
+}
+
+/**
  * Fetches jadwal kegiatan (schedule events).
  * Delegates to schedule service layer.
  * @returns Promise resolving to array of JadwalEvent
@@ -31,7 +46,7 @@ export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionRes
   const result = await updateScheduleEvents(data);
   if (result.success) {
     revalidatePath("/data/jadwal");
-    revalidatePath("/admin/data/jadwal");
+    revalidatePath("/admin/data/jadwal-kegiatan");
     return { success: true };
   }
   return { success: false, error: result.message };
@@ -45,6 +60,3 @@ export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionRes
 export async function getJadwalMisa(): Promise<JadwalMisaData | null> {
   return getJadwalMisaService();
 }
-
-
-
