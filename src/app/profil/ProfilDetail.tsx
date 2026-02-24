@@ -165,8 +165,14 @@ export default function ProfilDetail() {
                     Paroki Brayut memiliki batas wilayah, baik batas pemerintahan maupun batas gerejawi. Berikut batas-batas wilayah Paroki Brayut:
                 </Paragraph>
 
-                <div className="grid md:grid-cols-2 gap-6 my-8">
-                    <motion.div {...fadeUp} className="bg-white rounded-xl border-t-4 border-brand-blue p-6 shadow-sm">
+                <motion.div {...fadeUp} className="grid md:grid-cols-2 gap-6 my-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="bg-white rounded-xl border-t-4 border-brand-blue p-6 shadow-sm hover:shadow-md transition-shadow"
+                    >
                         <h4 className="font-bold text-brand-dark mb-4 text-lg">Berdasarkan Teritori Pemerintahan</h4>
                         <ul className="space-y-3 list-none pl-0">
                             <BulletItem><strong>Utara:</strong> Kalurahan Purwobinangun, Kalurahan Donokerto</BulletItem>
@@ -176,7 +182,13 @@ export default function ProfilDetail() {
                         </ul>
                     </motion.div>
 
-                    <motion.div {...fadeUp} className="bg-white rounded-xl border-t-4 border-brand-gold p-6 shadow-sm">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="bg-white rounded-xl border-t-4 border-brand-gold p-6 shadow-sm hover:shadow-md transition-shadow"
+                    >
                         <h4 className="font-bold text-brand-dark mb-4 text-lg">Berdasarkan Teritori Gerejawi</h4>
                         <ul className="space-y-3 list-none pl-0">
                             <BulletItem><strong>Utara:</strong> Paroki St. Maria Asumpta Pakem, Paroki St. Yohanes Rasul Somohitan</BulletItem>
@@ -185,7 +197,7 @@ export default function ProfilDetail() {
                             <BulletItem><strong>Barat:</strong> Paroki St. Yosep Medari</BulletItem>
                         </ul>
                     </motion.div>
-                </div>
+                </motion.div>
 
                 <CalloutBox>
                     Realisasi programasi tahun 2024 menunjukkan dinamika yang beragam. Prosentase realisasi penerimaan tidak terikat program dan kegiatan rutin sebesar <strong>66,99%</strong>, total beban tidak terikat program sebesar <strong>71,94%</strong>. Harapannya di tahun 2025 ini program-program yang sudah disusun bisa dapat dilaksanakan dengan baik sesuai RAPB dan administrasi yang lebih tertib serta terciptanya kerjasama, sinergi yang baik antara Dewan Pastoral Paroki, Pengurus Wilayah, Pengurus Lingkungan dan seluruh umat.
@@ -208,7 +220,7 @@ export default function ProfilDetail() {
                     Sebagai bagian dari Keuskupan Agung Semarang, serta memperhatikan eklesial RIKAS dan Ardas serta spiritualitas Gereja Paroki St. Yohanes Paulus II, maka dirumuskan Misi dari Gereja Paroki St. Yohanes Paulus II Brayut yaitu:
                 </Paragraph>
 
-                <div className="grid sm:grid-cols-2 gap-4 md:gap-6 my-8">
+                <motion.div {...fadeUp} className="grid sm:grid-cols-2 gap-4 md:gap-6 my-8">
                     {[
                         "Mengembangkan iman umat yang mendalam dan tangguh sesuai dengan potensi paroki.",
                         "Mengembangkan keluarga, lingkungan, dan kelompok-kelompok umat.",
@@ -217,11 +229,11 @@ export default function ProfilDetail() {
                     ].map((misi, i) => (
                         <motion.div
                             key={i}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.4, delay: i * 0.1 }}
-                            className="flex items-start gap-4 p-5 rounded-xl border border-gray-100 bg-gray-50/50 transition-all"
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                            className="flex items-start gap-4 p-5 rounded-xl border border-gray-100 bg-gray-50/50 hover:shadow-md transition-shadow"
                         >
                             <span className="shrink-0 w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue font-bold text-sm flex items-center justify-center mt-1">
                                 {i + 1}
@@ -229,7 +241,7 @@ export default function ProfilDetail() {
                             <p className="text-gray-700 leading-relaxed font-medium">{misi}</p>
                         </motion.div>
                     ))}
-                </div>
+                </motion.div>
             </section>
 
             <SectionDivider />
@@ -313,8 +325,14 @@ export default function ProfilDetail() {
                     Tujuan Paroki St. Yohanes Paulus II Brayut dibagi dalam beberapa tahapan pencapaian secara berkala, yaitu jangka pendek, menengah, dan panjang.
                 </Paragraph>
 
-                <div className="grid lg:grid-cols-3 gap-6 my-8 items-stretch">
-                    <motion.div {...fadeUp} className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-all h-full group">
+                <motion.div {...fadeUp} className="grid lg:grid-cols-3 gap-6 my-8 items-stretch">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-shadow h-full group"
+                    >
                         <div className="text-brand-blue font-black text-xl mb-1">Jangka Pendek</div>
                         <div className="text-sm font-semibold text-gray-400 mb-6 tracking-wide uppercase">&lt; 1 Tahun</div>
                         <ul className="space-y-3 list-none pl-0 flex-1">
@@ -325,7 +343,13 @@ export default function ProfilDetail() {
                         </ul>
                     </motion.div>
 
-                    <motion.div {...fadeUp} className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-all h-full group relative overflow-hidden">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-shadow h-full group relative overflow-hidden"
+                    >
                         <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/5 rounded-bl-full -mr-4 -mt-4" />
                         <div className="text-brand-gold font-black text-xl mb-1 relative z-10">Jangka Menengah</div>
                         <div className="text-sm font-semibold text-gray-400 mb-6 tracking-wide uppercase relative z-10">1 - 3 Tahun</div>
@@ -336,7 +360,13 @@ export default function ProfilDetail() {
                         </ul>
                     </motion.div>
 
-                    <motion.div {...fadeUp} className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-all h-full group">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col hover:shadow-lg transition-shadow h-full group"
+                    >
                         <div className="text-brand-blue font-black text-xl mb-1">Jangka Panjang</div>
                         <div className="text-sm font-semibold text-gray-400 mb-6 tracking-wide uppercase">3 - 5 Tahun</div>
                         <ul className="space-y-3 list-none pl-0 flex-1">
@@ -344,7 +374,7 @@ export default function ProfilDetail() {
                             <BulletItem>Mewujudkan sentralisasi pelayanan paroki yang berbasis/terpusat di paroki dan rasa memiliki sebagai satu paroki.</BulletItem>
                         </ul>
                     </motion.div>
-                </div>
+                </motion.div>
             </section>
         </div>
     );
