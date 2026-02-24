@@ -116,10 +116,15 @@ function EraSection({ era, isLast }: { era: any; isLast?: boolean }) {
                     <motion.div
                         key={eventIndex}
                         initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-100px" }}
-                        transition={{ duration: 0.6, delay: eventIndex * 0.1 }}
-                        className="relative bg-white border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-lg hover:border-brand-blue/20 transition-all group hover:-translate-y-1"
+                        whileInView={{ opacity: 1, y: 0.1 }} // y: 0.1 prevents Framer from removing the transform matrix entirely
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{
+                            duration: 0.6,
+                            delay: eventIndex * 0.1,
+                            ease: [0.21, 0.47, 0.32, 0.98]
+                        }}
+                        style={{ translateZ: 0 }} // Forces a permanent separate layer in framer-motion internals
+                        className="relative bg-white border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-lg hover:border-brand-blue/20 transition-shadow transition-[border-color] duration-300 group hover:-translate-y-1"
                     >
                         {/* Timeline Dot (Mobile) - Left offset is 60px padding minus 20px line position = 40px */}
                         <div className="absolute md:hidden -left-[40px] top-10 w-4 h-4 bg-white border-[3px] border-gray-300 rounded-full z-[15] group-hover:border-brand-blue group-hover:bg-brand-blue/10 transition-colors -translate-x-1/2" />
