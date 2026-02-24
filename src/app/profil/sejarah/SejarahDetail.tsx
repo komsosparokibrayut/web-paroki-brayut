@@ -1,176 +1,434 @@
 "use client";
 
-export default function SejarahDetail() {
+import { motion } from "framer-motion";
+import { Church, Users, MapPin, Landmark, BookOpen, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+
+const fadeUp = {
+    initial: { opacity: 0, y: 32 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: "-60px" },
+    transition: { duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] as const },
+};
+
+function SectionHeader({
+    title,
+    subtitle,
+}: {
+    title: string;
+    subtitle?: string;
+}) {
     return (
-        <div className="prose prose-lg max-w-none prose-headings:text-brand-blue prose-a:text-brand-blue hover:prose-a:text-brand-dark prose-headings:font-bold">
-            <h1 className="text-3xl text-center border-b pb-4 border-gray-100">Sejarah Paroki St. Yohanes Paulus II Brayut</h1>
-
-            <h2 className="text-2xl mt-8 mb-4">Tahap Pertumbuhan</h2>
-            <p>
-                Tahap Pertumbuhan dalam sejarah Paroki St Yohanes Paulus II Brayut ditandai sejak 15 Juli 2012, saat Romo Petrus Tri Margana, Pr dan Romo Yulius Sukardi, Pr mulai berkarya sebagai gembala Paroki St Aloysius Gonzaga Mlati, sampai masa pembentukan Pusat Pastoral Wilayah.
-            </p>
-            <p>
-                Kegiatan pertama yang dilaksanakan dewan paroki bersama ketua-ketua wilayah adalah proaktif menyapa umat di lingkungan-lingkungan yang diakhiri dengan misa kudus. Sapaan konkret setelah Misa Kudus juga dilakukan untuk semakin mendekatkan gembala dengan umat. Sejalan dengan Arah Dasar KAS 2011-2015, terutama pada <i>pilar iman mendalam dan tangguh</i>, melalui kunjungan yang disampaikan pada waktu homili, romo mengajak dan mendorong umat agar proaktif sehingga dapat terus mengimani ajaran gereja, melalui pendalaman Kitab Suci.
-            </p>
-            <p>
-                Berdasarkan hasil kunjungan kepada umat di lingkungan, Romo, Dewan Paroki, dan ketua-ketua wilayah menemukan berbagai potensi dan permasalahan. Memperhatikan Perkembangan jumlah umat Paroki St. Aloysius Gonzaga Mlati yang tercatat pada akhir tahun 2014 sejumlah 6.657 jiwa, agar peran umat untuk lebih terlibat dalam berpastoral serta mempertimbangkan kondisi geografis terkait aksesibilitas Gedung gereja Mlati, maka:
-            </p>
-            <ol className="list-decimal pl-6 space-y-2 mt-4">
-                <li>
-                    Paroki St. Aloysius Gonzaga Mlati terdiri dari 16 wilayah dan 68 lingkungan, maka sejak bulan Juni 2013 mulai berproses untuk mengambil kebijakan pengelompokan wilayah pastoral. Paroki St. Aloysius Gonzaga Mlati dikelompokan menjadi 3 (tiga) Pusat Pastoral Wilayah (PPW) sbb:
-                    <ul className="list-disc pl-6 space-y-2 mt-2 text-gray-700">
-                        <li>
-                            <b>Pusat Pastoral Wilayah St. Petrus</b> dengan jumlah umat 2.262 jiwa mencakup wilayah-wilayah St. Petrus Tarsisius Warak; St. Antonius Plasa Panca; St. Paulus Bolawen; St. Agustinus Getas dan St. Yosep Cebongan. Secara geografi PPW St. Petrus merupakan bagian dari teritori Paroki Mlati yang berada di sebelah barat Sungai Bedog. PPW St. Petrus berpusat di Wilayah Warak.
-                        </li>
-                        <li>
-                            <b>Pusat Pastoral St. Yohanes Paulus II</b> dengan jumlah umat 2.172 jiwa, mencakup wilayah-wilayah: St. Petrus Donoharjo Utara; St. Yosep Donoharjo Selatan; St. Yakobus Tambakrejo; St. Venantius Dukuh dan St. Yohanes Brekisan. Secara geografi PPW St. Yohanes Paulus II merupakan bagian dari teritori Paroki Mlati yang dibatasi dari Jl. Magelang dari arah utara sampai dengan Jalan Gito-Gati ke arah Kamdanen. PPW St. Yohanes Paulus II berpusat di Wilayah Tambakrejo.
-                        </li>
-                        <li>
-                            <b>Pusat Pastoral Induk</b> dengan jumlah umat 2.223 jiwa mencakup Wilayah-wilayah St. Markus Mlati; Sta. Maria Ratu Rosari; St. Ignatius Tridadi; St. Thomas Duwet; St. Aloysius Kronggahan dan St. Alfonsus Karangmloko.
-                        </li>
-                    </ul>
-                </li>
-                <li>Kebijakan pengelompokan tersebut secara efektif dimulai pada tanggal 25 November 2013.</li>
-                <li>Untuk mengefektifkan pelayanan pada ke 3 PPW tersebut telah dibentuk kepengurusan dengan susunan sama seperti kepengurusan Dewan Paroki Mlati. Tata kerja kepengurusan tersebut berada pada koordinasi dan supervisi dari Dewan Paroki Mlati, Sejak tahun 2014, ke 3 PPW tersebut telah membuat dan melaksanakan RAPB, serta melaporkan penggunaan keuangan dengan memanfaatkan aplikasi yang disyaratkan oleh Keuskupan Agung Semarang.</li>
-                <li>Pada tahun 2014 Paroki Mlati dilayani oleh 3 Romo, sehingga pada ke 3 PPW tersebut telah terjadwal secara rutin misa harian. Hal ini mendapat tanggapan yang positif dari umat sehingga pembagian petugas misa harian dibagi per lingkungan.</li>
-            </ol>
-
-            <h2 className="text-2xl mt-12 mb-4">Tahap Perkembangan</h2>
-            <p>
-                Tahap Perkembangan adalah masa pertumbuhan umat dari pelayanan Pusat Pastoral Wilayah sampai menjadi Paroki.Tahap demi tahap Pusat Pastoral Wilayah Utara diberikan tanggung jawab yang lebih besar dalam rangka menciptakan kemandirian umat. Misa wilayah yang sebelumnya diselenggarakan hanya satu kali sebulan di setiap gereja, kemudian ditingkatkan dua kali sebulan di setiap gereja, sehingga umat tidak harus lagi mengikuti misa di paroki induk. Penyelenggaraan misa perayaan Natal dan Paskah dipusatkan di Gereja Santo Yusup Tambakrejo dengan panitia meliputi umat lima wilayah. Demikian pula petugas prodiakon, lektor, putra altar dan koor, merupakan gabungan 5 (lima) wilayah.
-            </p>
-            <p>
-                Memasuki awal tahun 2014, umat katolik Pusat Pastoral Wilayah Utara diminta menetapkan santo pelindung wilayahnya. Dengan pertimbangan spiritualitas Yohanes Paulus II akhirnya pengurus bersama-sama ketua wilayah dan ketua lingkungan menetapkan Pusat Pastoral Wilayah Utara dengan Pelindung Yohanes Paulus II. Romo Paroki tidak henti-hentinya mendorong dan memotivasi umatnya untuk terus berkembang serta mencetuskan gagasan baru.
-            </p>
-            <p>
-                Lokasi lima gereja yang tersebar di 5 (lima) tempat, akhirnya memunculkan konsep Gereja Diaspora.
-            </p>
-            <p>
-                Perkembangan begitu cepat, sebagai tindak lanjut ide tersebut, dibentuk panitia pengadaan tanah untuk Pastoran, sekaligus kantor sekretariat paroki. Panitia bekerja dan mendapatkan tanah seluas 2.056 m2 di Dusun Brayut Desa Pandowoharjo, Kapanewon Sleman, Kabupaten Sleman. Lokasinya sangat strategis terletak di Desa wisata budaya Brayut yang sudah terkenal dan jadi tujuan bagi turis lokal maupun mancanegara, persis di tengah-tengah lima gereja yang ada, dari lokasi hanya sekitar 5-10 menit menuju gereja, dengan fasilitas jalan aspal. Menanggapi rencana tersebut, Gereja Santo Petrus Donoharjo Utara mulai memperluas bangungan gereja, Gereja Santo Yosef Donoharjo Selatan membeli tanah untuk halaman dan tempat parkir, Gereja Santo Yusup Tambakrejo membeli tanah untuk halaman dan lahan parkir dan Gereja Santo Yohanes Brekisan renovasi fisik ke belakang.
-            </p>
-            <p>
-                Dalam masa transisi dari Pusat Pastoral Wilayah (PPW) menjadi paroki, dilakukan berbagai langkah antara lain menata kembali organisasi, pengurus dan sistem administrasi sumber daya untuk mendukung laporan akuntabilitas. Mulai April 2014 umat tidak lagi ke paroki induk Santo Aloysius Gonzaga Mlati, untuk perayaan ekaristi dan kegiatan kegiatan umat lainnya diadakan di PPW Santo Yohanes Paulus II, demikian pula seluruh laporan pertanggungjawaban sudah langsung kepada Keuskupan Agung Semarang. Sambil menunggu pembangunan pastoran, sekretariat paroki sementara menempati Gereja Santo Yusup Tambakrejo
-            </p>
-            <p>
-                Mulai dipersiapkan sarana dan prasarana dan dimulai pembangunan pastoran di dusun Brayut. Setelah gambar rencana gedung pastoran mendapatkan persetujuan dari Uskup Keuskupan Agung Semarang yang dalam hal ini Administrator Diosesan, Pengurus dan Panitia bergerak cepat dengan mengurus perizinan dan segala kelengkapan sehingga keluarlah Izin Mendirikan Bangunan (IMB) dari Pemda Sleman Nomor 503/009026.54.16/2423/IMB/2016 tanggal 7 November 2016. Pembangunan pastoran tersebut menempati tanah pekarangan milik PGPM pada sertifikat HM Nomor HM 4372 luas 2.056m2 terletak di Dusun Brayut Pandowoharjo Sleman Yogyakarta. Bangunan tersebut berupa Gedung Pastoran, Bangunan Joglo dan bangunan Limasan,sebagai pusat kegiatan dan pertemuan umat serta berkesenian untuk mendukung identitas Desa Wisata Brayut dan Desa Budaya Pandowoharjo. Anggaran untuk Pembangunan sebesar Rp. 2.415.563.234,- Bangunan pastoran ini sudah diberkati oleh Bapa Uskup Mgr. Robertus Rubiyatmoko pada tanggal 20 Juli 2017.
-            </p>
-            <p>
-                Berdasarkan Surat Keputusan Pendirian Paroki Nomor 1376/B/I/b-140/18 tertanggal 30 November 2018, mulai tanggal 25 Desember 2018 Paroki St. Yohanes Paulus II Brayut resmi berdiri menjadi Paroki Mandiri yang berkedudukan di Brayut, Pandowoharjo, Sleman dengan 5 wilayah dan 23 lingkungan. Sebagai penanda peresmian pada tanggal 31 Desember 2018 diadakan <i>Misa Kepyakan</i> yang dipimpin oleh Bapa Uskup, Mgr. Robertus Rubiyatmoko di Pastoran Brayut.
-            </p>
-
-            <h2 className="text-2xl mt-12 mb-4">Pemekaran Teritori</h2>
-            <h3 className="text-xl mt-6 mb-2 text-brand-dark">Pemekaran Wilayah</h3>
-            <p>
-                Pada bulan April 2019 ketika Romo Petrus Tri Margana, Pr mengikuti suatu pertemuan di Baturaden, di sela-sela acara, pada sekitar Pukul 21.15 WIB; Romo Petrus Tri Margana, Pr datang menemui Bp. Subardjo di rumah anaknya, yang letaknya tidak jauh dari tempat pertemuan. Romo Petrus Tri Margana mengutarakan bagaimana seandainya rumah Trah Harjosumarto di Dukuh (semula dikira rumah itu milik Bp. Subardjo) dipakai sebagai rumah Ibadah, untuk misa rutin. Bapak Subardjo mengatakan &quot;tidak bisa menentukan sendiri karena rumah itu adalah rumah milik trah, masalah yang dikehendaki oleh Romo Petrus Tri Margana akan saya sampaikan kepada saudara-saudaraku&quot;.
-            </p>
-            <p>
-                Bp. Subardjo menyampaikan permohonan Romo Petrus Tri Margana, Pr kepada saudara-saudara kandungnya melalui Whatsapp Group (WAG) Trah Harjosumarto, dan disepakati akan diadakan pertemuan Trah Harjosumarto pada liburan Idhul Fitri yang dihadiri oleh anak-anak Bapak Ibu Harjosumarto, syukur ada anak atau istri / suami mereka yang bersedia hadir.
-            </p>
-            <p>
-                Pada tanggal 6 Juni 2019 terjadilah pertemuan keluarga Trah Harjosumarto yang dihadiri oleh semua anak Bapak Ibu Harjosumarto yang masih hidup (4 orang) beserta suami/istri dan beberapa anak mereka. Beberapa pokok pembicaraan adalah:
-            </p>
-            <ul className="list-disc pl-6 space-y-2 mt-4 text-gray-700">
-                <li>Romo Synesius Suyitna, SJ mengingatkan kembali sejarah rumah trah, berkaitan dengan pembagian warisan dari alm. Bapak Ibu Harjosumarto.</li>
-                <li>Bp. Subardjo menjelaskan maksud dan keinginan pihak Paroki Brayut mengembangkan Wilayah Dukuh, dan keinginannya agar rumah Trah Harjosumarto boleh dipakai untuk tempat menyelenggarakan misa secara rutin (untuk &quot;gereja&quot;)</li>
-                <li>Menilik sejarah berkaitan dengan upaya alm. Fransiskus Xaverius Harjosumarto yang dengan gigih merasul menanamkan Iman Katolik dan menumbuhkan umat beriman, hal itu terjadi atau berlangsung di rumah Trah Harjosumarto ini.</li>
-                <li>Saat Romo B. Sudjarwo, Pr masih hidup beliau sudah punya rencana agak jelas bagaimana rumah Trah ini di masa depan bisa digunakan untuk kepentingan banyak orang, misal untuk kegiatan pembinaan rohani, retret atau pertemuan umat. Beliau pernah membuat sketsa ruangan untuk menggambarkan angan-angannya tersebut.</li>
-                <li>Kalau misalnya tanah trah ini suatu saat digunakan untuk gereja, sebetulnya alur ROH-nya jelas sekali, ada sejarah iman yang sudah lama berlangsung dari tanah dan rumah ini.</li>
-                <li>Atas pertimbangan kesejarahan tersebut, dalam pertemuan Trah kali ini semua anggota trah (anak-anak Bapak-Ibu Harjosumarto) menyatakan tidak keberatan bahwa kedepannya tanah dan rumah ini dipakai untuk kepentingan Gereja (untuk gereja atau yang lain).</li>
-                <li>Masih harus diperjelas dalam pembicaraan dengan pihak Paroki Brayut, bagaimana selanjutnya berkaitan dengan: pengelolaan rumah yang ada misal kebersihan, listrik, PBB dan status tanah serta rumah selanjutnya, dipinjamkan, diserahkan/dihibahkan atau bagaimana? Bp. Subardjo dimohon untuk berkomunikasi dengan pihak Paroki Brayut.</li>
-            </ul>
-            <p className="mt-4">
-                Pada hari Senin, 22 Juli 2019 di Pendopo rumah Trah berlangsung pertemuan antara Tim dari Paroki Brayut dan Perwakilan dari anak-anak Alm. Bapak-Ibu Harjosumarto, yang dihadiri juga satu orang dari Forum Komunikasi Umat Beragama (FKUB) Kabupaten Sleman. Mengingat sejarah seperti diuraikan di atas dan mengingat kebutuhan gereja akan adanya Rumah Ibadah, maka terjadilah kesepakatan, keluarga Trah Harjosumarto, diwakili oleh Romo Synesius Suyitna SJ, akan menyerahkan atau menghibahkan tanah dan rumah trah kepada pihak gereja (KAS), dan pihak gereja (KAS) yang diwakili oleh Romo Petrus Tri Margana, Pr akan menerima hibah tersebut. Serah terima hibah secara resmi (tertulis) akan diadakan pada hari Sabtu, 3 Agustus 2019, pada misa suci di rumah trah ini.
-            </p>
-            <p>
-                Setelah pertemuan tanggal 22 Juli 2019, sudah ada kejelasan tentang adanya hibah, maka pada Minggu, 28 Juli 2019 diadakan kerja bakti masal di rumah Trah Harjosumarto, untuk membuat rumah layak dipakai untuk &quot;misa mingguan&quot;. Tidak hanya rumah yang dibenahi, tetapi juga pengadaan peralatan misa. Misa berlangsung secara rutin setiap Sabtu pada Minggu pertama dan ketiga. Pada tanggal 3 Agustus 2019 diadakan misa serah terima hibah rumah dan tanah oleh Romo Synesius Suyitna, SJ kepada KAS, dan diterima oleh Romo Petrus Tri Margana, Pr sebagai wakil dari pihak KAS dan dihadiri oleh 277 umat.
-            </p>
-            <p>
-                Pada perayaan peringatan Gereja Venantius Dukuh yang berlokasi di dusun Ngelo diumumkan oleh Romo Petrus Tri Margana, Pr bahwa Wilayah Santo Venantius Dukuh dimekarkan menjadi dua, yaitu Wilayah Santo Venantius Ngelo dan Wilayah Santo Fransiskus Xaverius Dukuh.
-            </p>
-            <p>
-                Wilayah Dukuh telah berdiri dengan gereja yang masih perlu banyak pembenahan, memberi tantangan yang menggembirakan dan mengguyubkan umat. Pengurus dan umat masih banyak belajar untuk mengelola Rumah Ibadah agar menjadi tempat yang sungguh menjadi sarana perjumpaan umat dengan Tuhan. Setelah terjadi pemekaran Wilayah Santo Venantius Dukuh menjadi Wilayah Santo Venantius Ngelo dan Wilayah Santo Fransiskus Xaverius Dukuh, jumlah wilayah dalam cakupan Paroki Brayut menjadi 6 (enam). Penamaan 6 (enam) wilayah disesuaikan dengan nama dusun tempat gereja berada yaitu Wilayah Santo Petrus Kayunan, Wilayah Santo Paulus Karanglo, Wilayah Santo Yakobus Rasul Tambakrejo, Wilayah Santo Yohanes Karangkepuh, Wilayah Santo Venantius Ngelo, dan Wilayah Santo Fransiskus Xaverius Dukuh.
-            </p>
-
-            <h2 className="text-2xl mt-12 mb-4">Pemekaran Lingkungan</h2>
-            <p>
-                Menindaklanjuti pemekaran Wilayah Dukuh, pada pertemuan tanggal 24 Juli 2019, Lingkungan Santo Fransiskus Xaverius Dukuh dimekarkan menjadi dua lingkungan, yaitu Lingkungan Andreas Dukuh dan Lingkungan Vinsensius Dukuh yang dihadiri oleh 61 orang.
-            </p>
-            <p>
-                Dengan demikian Wilayah Fransiskus Xaverius Dukuh terdiri dari tiga lingkungan, yaitu Lingkungan Andreas Dukuh, Lingkungan Vinsensius Dukuh dan Lingkungan Kristophorus Saron. Pada tanggal 6 Agustus 2019 dalam misa kudus di gereja Fransiskus Xaverius Dukuh dilantik Pengurus Wilayah Fransiskus Xaverius Dukuh, beserta Pengurus Lingkungan di Wilayah Fransiskus Xaverius Dukuh.
-            </p>
-            <p>
-                Pada saat rapat Dewan Pastoral Paroki Brayut pada hari Minggu, 8 September 2019, Romo Petrus Tri Margana, Pr. menyampaikan sebuah gagasan bahwa lingkungan-lingkungan yang memiliki jumlah warga besar agar berproses untuk melakukan pemekaran demi keterlibatan yang lebih banyak umat di lingkungan.
-            </p>
-            <p>
-                Salah satu lingkungan dengan warga yang cukup besar lainnya adalah Lingkungan Maria di Wilayah Tambakrejo yang terdiri dari 50 KK. Lingkungan Maria memberanikan diri untuk dimekarkan pada tanggal 1 Desember 2019 sekaligus diberkati dalam Misa Syukur yang dipimpin oleh Romo Tri Margana, Pr.
-            </p>
-            <p>
-                Pada hari tersebut lahirlah sebuah lingkungan baru dengan pelindung St. Maria Goretti. Lingkungan Maria dan Lingkungan Maria Goretti dihubungkan oleh sebuah jalan menuju Gereja St. Yosef Karanglo. Lingkungan Maria berada di sisi selatan jalan, sedangkan Lingkungan Maria Goretti berada di sebelah utara jalan tersebut. Lingkungan Maria meliputi RT 04 dan RT 06 sedang lingkungan Maria Goretti meliputi RT 05 di dusun Tambakrejo, Sariharjo, Ngaglik, Sleman. Setelah pemekaran Lingkungan Maria terdiri dari 34 KK sedangkan Lingkungan Maria Goretti terdiri dari 16 KK.
-            </p>
-            <p>
-                Lingkungan St. Yohanes De Britto yang ada di Wilayah Santo Yohanes Karangkepuh juga mengalami pemekaran lingkungan. Pada tanggal 31 Desember 2019, lingkungan tersebut dimekarkan menjadi 2 (dua) yaitu Lingkungan St. Yohanes De Britto dan Lingkungan St. Yohanes Maria Vianney. Pemekaran lingkungan tersebut ditetapkan dengan Surat Keputusan Pastor Paroki Nomor: 01/YP.II/XII/2019.
-            </p>
-
-            <h2 className="text-2xl mt-12 mb-4">Perkembangan Umat dan Fisik Gereja</h2>
-
-            <h3 className="text-xl mt-6 mb-2 text-brand-dark">Perkembangan Umat</h3>
-            <p>
-                Berdasarkan data litbang Paroki, sejak berdiri pada 25 Desember 2018; jumlah umat Paroki St. Yohanes Paulus II Brayut adalah 2186 umat. Dalam perkembangannya, terdapat beberapa pembaharuan metode dan ketentuan pendataan umat. Paroki mengikuti anjuran KAS untuk menggunakan perangkat lunak yang dibuat sesuai standar Keuskupan Agung Semarang pada tahun 2021.
-            </p>
-            <p>Berikut data perkembangan jumlah umat Paroki Brayut dari tahun 2018-2022 berdasarkan data litbang:</p>
-
-            <div className="overflow-x-auto my-6">
-                <table className="w-full text-left border-collapse border border-gray-200 shadow-sm rounded-lg">
-                    <thead className="bg-brand-blue/5 text-brand-dark">
-                        <tr>
-                            <th className="border border-gray-200 px-4 py-2 font-semibold">No</th>
-                            <th className="border border-gray-200 px-4 py-2 font-semibold">Tahun</th>
-                            <th className="border border-gray-200 px-4 py-2 font-semibold">Jumlah Umat</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-gray-700">
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">1</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2018</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.186</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">2</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2019</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.183</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">3</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2020</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.247</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">4</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2021</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.067</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">5</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2022</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.060</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50">
-                            <td className="border border-gray-200 px-4 py-2">6</td>
-                            <td className="border border-gray-200 px-4 py-2 text-center">2023</td>
-                            <td className="border border-gray-200 px-4 py-2 text-right">2.023</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <motion.div {...fadeUp} className="flex items-center justify-center text-center gap-4 my-8">
+            <div>
+                <h2 className="text-2xl md:text-3xl font-extrabold text-brand-dark tracking-tight leading-tight">
+                    {title}
+                </h2>
+                {subtitle && (
+                    <p className="text-brand-blue/70 text-sm font-medium mt-0.5">{subtitle}</p>
+                )}
             </div>
+        </motion.div>
+    );
+}
 
-            <h3 className="text-xl mt-6 mb-2 text-brand-dark">Perkembangan Fisik Gereja</h3>
-            <p className="mb-8">
-                Paroki St. Yohanes Paulus II Brayut memiliki 5 gereja yang berada di 5 wilayah. Pada perkembangannya terjadi pemekaran Wilayah St. Venantius Dukuh menjadi 2 yaitu Wilayah Ngelo dan Wilayah Dukuh. Dalam teritori wilayah Ngelo terdapat gereja St. Venantius Ngelo yang sudah berdiri dan digunakan sebelumnya, sedangkan di wilayah Dukuh mendapat hibah berupa tanah dan bangunan dari Trah Harjosumarto, yang digunakan sebagai gereja wilayah St. Fransiskus Xaverius Dukuh. Dengan demikian Paroki St. Yohanes Paulus II Brayut ada 6 gereja.
-            </p>
-            <p>
-                Kemudian pada tanggal 7 Maret 2023, berdasarkan SK Uskup Agung Semarang Nomor 0257/B/I/b-140/2023, menetapkan gereja St. Yusup Tambakrejo sebagai pusat Paroki St. Yohanes Paulus II Brayut, selanjutnya nama gereja St. Yusup diubah menjadi Gereja Paroki Santo Yohanes Paulus II Brayut, sehingga kini Paroki Brayut memiliki 1 gereja paroki dan 5 gereja wilayah.
-            </p>
+function SubSectionHeader({ title }: { title: string }) {
+    return (
+        <motion.h3
+            {...fadeUp}
+            className="text-xl md:text-2xl font-bold text-brand-dark mt-10 mb-4 flex items-center gap-3"
+        >
+            <span className="w-1 h-6 bg-brand-gold rounded-full inline-block" />
+            {title}
+        </motion.h3>
+    );
+}
+
+function Paragraph({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+    return (
+        <motion.p
+            {...fadeUp}
+            className={`text-gray-700 leading-[1.85] text-base md:text-[17px] mb-5 ${className}`}
+        >
+            {children}
+        </motion.p>
+    );
+}
+
+function CalloutBox({ children }: { children: React.ReactNode }) {
+    return (
+        <motion.div
+            {...fadeUp}
+            className="relative bg-brand-warm border-l-4 border-brand-gold rounded-r-xl px-6 py-5 my-8"
+        >
+            <div className="absolute -left-[2px] top-4 w-2 h-2 bg-brand-gold rounded-full -translate-x-1/2" />
+            <div className="text-gray-700 leading-[1.85] text-base md:text-[17px]">{children}</div>
+        </motion.div>
+    );
+}
+
+const umatData = [
+    { year: "2018", count: "2.186", label: "Berdiri" },
+    { year: "2019", count: "2.183", label: "" },
+    { year: "2020", count: "2.247", label: "Puncak" },
+    { year: "2021", count: "2.067", label: "" },
+    { year: "2022", count: "2.060", label: "" },
+    { year: "2023", count: "2.023", label: "" },
+];
+
+function StatGrid() {
+    return (
+        <motion.div {...fadeUp} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 my-8 w-full">
+            {umatData.map((item, i) => {
+                return (
+                    <motion.div
+                        key={item.year}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: i * 0.07 }}
+                        className="relative rounded-xl p-4 text-center border transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-brand-gold/10 border-brand-gold/30 flex flex-col justify-center"
+                    >
+                        <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-400">
+                            {item.year}
+                        </div>
+                        <div className="text-xl md:text-2xl font-extrabold tracking-tight text-brand-dark">
+                            {item.count}
+                        </div>
+                        {item.label && (
+                            <div className="text-[10px] font-semibold mt-1 uppercase tracking-widest text-brand-gold">
+                                {item.label}
+                            </div>
+                        )}
+                    </motion.div>
+                );
+            })}
+
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: umatData.length * 0.07 }}
+                className="col-span-1"
+            >
+                <Link href="/profil/wilayah" className="group flex flex-col items-center gap-2 p-4 rounded-xl border border-brand-gold/30 h-full w-full justify-center hover:bg-brand-dark hover:text-white transition-all select-none bg-white">
+                    <span className="font-serif text-sm font-bold italic text-center leading-tight">Data<br />Terkini</span>
+                    <ArrowUpRight className="h-6 w-6 group-hover:rotate-45 transition-transform duration-500" />
+                </Link>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+function NumberedItem({ num, children }: { num: number; children: React.ReactNode }) {
+    return (
+        <motion.li {...fadeUp} className="flex gap-4 items-start">
+            <span className="shrink-0 w-8 h-8 rounded-lg bg-brand-blue/10 text-brand-blue font-bold text-sm flex items-center justify-center mt-0.5">
+                {num}
+            </span>
+            <div className="text-gray-700 leading-[1.85] text-base md:text-[17px]">{children}</div>
+        </motion.li>
+    );
+}
+
+function BulletItem({ children }: { children: React.ReactNode }) {
+    return (
+        <motion.li {...fadeUp} className="flex gap-3 items-start">
+            <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-brand-gold mt-[10px]" />
+            <div className="text-gray-700 leading-[1.85] text-base md:text-[17px]">{children}</div>
+        </motion.li>
+    );
+}
+
+function SectionDivider() {
+    return (
+        <div className="flex items-center gap-4 my-12 md:my-16">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+            <div className="w-2 h-2 rounded-full bg-brand-gold/40" />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         </div>
     );
 }
 
+export default function SejarahDetail() {
+    return (
+        <div className="space-y-2">
+            {/* ─── Page Title ─── */}
+            <motion.div {...fadeUp} className="text-center mb-12">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-brand-dark tracking-tight">
+                    Sejarah Paroki St. Yohanes Paulus II Brayut
+                </h1>
+                <div className="mx-auto mt-4 w-16 h-1 bg-brand-gold rounded-full" />
+            </motion.div>
+
+            {/* ═══════════════════════════════════════ */}
+            {/* SECTION 1 — Tahap Pertumbuhan          */}
+            {/* ═══════════════════════════════════════ */}
+            <section>
+                <SectionHeader
+                    title="Tahap Pertumbuhan"
+                    subtitle="2012 – 2013"
+                />
+
+                <Paragraph>
+                    Tahap Pertumbuhan dalam sejarah Paroki St Yohanes Paulus II Brayut ditandai sejak 15 Juli 2012, saat Romo Petrus Tri Margana, Pr dan Romo Yulius Sukardi, Pr mulai berkarya sebagai gembala Paroki St Aloysius Gonzaga Mlati, sampai masa pembentukan Pusat Pastoral Wilayah.
+                </Paragraph>
+                <Paragraph>
+                    Kegiatan pertama yang dilaksanakan dewan paroki bersama ketua-ketua wilayah adalah proaktif menyapa umat di lingkungan-lingkungan yang diakhiri dengan misa kudus. Sapaan konkret setelah Misa Kudus juga dilakukan untuk semakin mendekatkan gembala dengan umat. Sejalan dengan Arah Dasar KAS 2011-2015, terutama pada <i>pilar iman mendalam dan tangguh</i>, melalui kunjungan yang disampaikan pada waktu homili, romo mengajak dan mendorong umat agar proaktif sehingga dapat terus mengimani ajaran gereja, melalui pendalaman Kitab Suci.
+                </Paragraph>
+                <Paragraph>
+                    Berdasarkan hasil kunjungan kepada umat di lingkungan, Romo, Dewan Paroki, dan ketua-ketua wilayah menemukan berbagai potensi dan permasalahan. Memperhatikan Perkembangan jumlah umat Paroki St. Aloysius Gonzaga Mlati yang tercatat pada akhir tahun 2014 sejumlah 6.657 jiwa, agar peran umat untuk lebih terlibat dalam berpastoral serta mempertimbangkan kondisi geografis terkait aksesibilitas Gedung gereja Mlati, maka:
+                </Paragraph>
+
+                <ol className="space-y-4 my-6 list-none pl-0">
+                    <NumberedItem num={1}>
+                        <div>
+                            Paroki St. Aloysius Gonzaga Mlati terdiri dari 16 wilayah dan 68 lingkungan, maka sejak bulan Juni 2013 mulai berproses untuk mengambil kebijakan pengelompokan wilayah pastoral. Paroki St. Aloysius Gonzaga Mlati dikelompokan menjadi 3 (tiga) Pusat Pastoral Wilayah (PPW):
+                        </div>
+                    </NumberedItem>
+                </ol>
+
+                {/* PPW Cards */}
+                <motion.div {...fadeUp} className="grid md:grid-cols-3 gap-4 my-6 pl-0 md:pl-12">
+                    {[
+                        {
+                            name: "PPW St. Petrus",
+                            umat: "2.262",
+                            wilayah: "Warak, Plasa Panca, Bolawen, Getas, Cebongan",
+                            accent: "border-brand-blue",
+                        },
+                        {
+                            name: "PPW St. Yohanes Paulus II",
+                            umat: "2.172",
+                            wilayah: "Donoharjo Utara, Donoharjo Selatan, Tambakrejo, Dukuh, Brekisan",
+                            accent: "border-brand-gold",
+                        },
+                        {
+                            name: "PPW Pusat Pastoral Induk",
+                            umat: "2.223",
+                            wilayah: "Mlati, Ratu Rosari, Tridadi, Duwet, Kronggahan, Karangmloko",
+                            accent: "border-brand-blue",
+                        },
+                    ].map((ppw, i) => (
+                        <motion.div
+                            key={ppw.name}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                            className={`bg-white rounded-xl border-t-4 ${ppw.accent} p-5 shadow-sm hover:shadow-md transition-shadow`}
+                        >
+                            <h4 className="text-sm font-bold text-brand-dark mb-1">{ppw.name}</h4>
+                            <div className="text-2xl font-extrabold text-brand-blue mb-2">
+                                {ppw.umat} <span className="text-sm font-medium text-gray-400">jiwa</span>
+                            </div>
+                            <p className="text-xs text-gray-500 leading-relaxed">{ppw.wilayah}</p>
+                        </motion.div>
+                    ))}
+                </motion.div>
+
+                <ol className="space-y-4 my-6 list-none pl-0" start={2}>
+                    <NumberedItem num={2}>
+                        Kebijakan pengelompokan tersebut secara efektif dimulai pada tanggal 25 November 2013.
+                    </NumberedItem>
+                    <NumberedItem num={3}>
+                        Untuk mengefektifkan pelayanan pada ke 3 PPW tersebut telah dibentuk kepengurusan dengan susunan sama seperti kepengurusan Dewan Paroki Mlati. Tata kerja kepengurusan tersebut berada pada koordinasi dan supervisi dari Dewan Paroki Mlati, Sejak tahun 2014, ke 3 PPW tersebut telah membuat dan melaksanakan RAPB, serta melaporkan penggunaan keuangan dengan memanfaatkan aplikasi yang disyaratkan oleh Keuskupan Agung Semarang.
+                    </NumberedItem>
+                    <NumberedItem num={4}>
+                        Pada tahun 2014 Paroki Mlati dilayani oleh 3 Romo, sehingga pada ke 3 PPW tersebut telah terjadwal secara rutin misa harian. Hal ini mendapat tanggapan yang positif dari umat sehingga pembagian petugas misa harian dibagi per lingkungan.
+                    </NumberedItem>
+                </ol>
+            </section>
+
+            <SectionDivider />
+
+            {/* ═══════════════════════════════════════ */}
+            {/* SECTION 2 — Tahap Perkembangan         */}
+            {/* ═══════════════════════════════════════ */}
+            <section>
+                <SectionHeader
+                    title="Tahap Perkembangan"
+                    subtitle="2014 – 2018"
+                />
+
+                <Paragraph>
+                    Tahap Perkembangan adalah masa pertumbuhan umat dari pelayanan Pusat Pastoral Wilayah sampai menjadi Paroki. Tahap demi tahap Pusat Pastoral Wilayah Utara diberikan tanggung jawab yang lebih besar dalam rangka menciptakan kemandirian umat. Misa wilayah yang sebelumnya diselenggarakan hanya satu kali sebulan di setiap gereja, kemudian ditingkatkan dua kali sebulan di setiap gereja, sehingga umat tidak harus lagi mengikuti misa di paroki induk. Penyelenggaraan misa perayaan Natal dan Paskah dipusatkan di Gereja Santo Yusup Tambakrejo dengan panitia meliputi umat lima wilayah.
+                </Paragraph>
+                <Paragraph>
+                    Memasuki awal tahun 2014, umat katolik Pusat Pastoral Wilayah Utara diminta menetapkan santo pelindung wilayahnya. Dengan pertimbangan spiritualitas Yohanes Paulus II akhirnya pengurus, ketua wilayah dan ketua lingkungan menetapkan Pusat Pastoral Wilayah Utara dengan Pelindung Yohanes Paulus II.
+                </Paragraph>
+
+                <CalloutBox>
+                    Lokasi lima gereja yang tersebar di 5 tempat, memunculkan konsep <strong>Gereja Diaspora</strong> — sebuah semangat pastoral yang merangkul keterbatasan geografis sebagai kekuatan persatuan.
+                </CalloutBox>
+
+                <Paragraph>
+                    Perkembangan begitu cepat, sebagai tindak lanjut ide tersebut, dibentuk panitia pengadaan tanah untuk Pastoran, sekaligus kantor sekretariat paroki. Panitia bekerja dan mendapatkan tanah seluas 2.056 m² di Dusun Brayut Desa Pandowoharjo, Kapanewon Sleman. Lokasinya sangat strategis terletak di Desa wisata budaya Brayut yang sudah terkenal dan jadi tujuan bagi turis lokal maupun mancanegara, persis di tengah-tengah lima gereja yang ada, dari lokasi hanya sekitar 5-10 menit menuju gereja, dengan fasilitas jalan aspal. Menanggapi rencana tersebut, seluruh gereja wilayah pun mulai membenahi dan memperluas fasilitas masing-masing.
+                </Paragraph>
+                <Paragraph>
+                    Dalam masa transisi dari Pusat Pastoral Wilayah (PPW) menjadi paroki, dilakukan berbagai langkah antara lain menata kembali organisasi, pengurus dan sistem administrasi sumber daya untuk mendukung laporan akuntabilitas. Mulai April 2014 umat tidak lagi ke paroki induk Santo Aloysius Gonzaga Mlati. Sambil menunggu pembangunan pastoran, sekretariat paroki sementara menempati Gereja Santo Yusup Tambakrejo.
+                </Paragraph>
+
+                {/* Milestone strip */}
+                <motion.div {...fadeUp} className="bg-brand-warm rounded-2xl p-6 md:p-8 my-8">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="flex gap-4 items-start">
+                            <span className="shrink-0 w-10 h-10 rounded-lg bg-brand-blue text-white flex items-center justify-center text-lg font-bold">🏗️</span>
+                            <div>
+                                <h4 className="font-bold text-brand-dark text-sm mb-1">Pembangunan Pastoran</h4>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    IMB terbit 7 November 2016. Gedung Pastoran, Joglo, dan Limasan dibangun dengan anggaran Rp 2,4 Milyar, selaras dengan identitas Desa Wisata dan Budaya.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 items-start">
+                            <span className="shrink-0 w-10 h-10 rounded-lg bg-brand-gold text-white flex items-center justify-center text-lg font-bold">⛪</span>
+                            <div>
+                                <h4 className="font-bold text-brand-dark text-sm mb-1">Pemberkatan 20 Juli 2017</h4>
+                                <p className="text-gray-600 text-sm leading-relaxed">
+                                    Bangunan pastoran diberkati oleh Bapa Uskup Mgr. Robertus Rubiyatmoko.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+
+                <CalloutBox>
+                    Berdasarkan SK Pendirian Paroki Nomor 1376/B/I/b-140/18 tertanggal 30 November 2018, mulai tanggal <strong>25 Desember 2018</strong> Paroki St. Yohanes Paulus II Brayut resmi berdiri menjadi <strong>Paroki Mandiri</strong> dengan 5 wilayah dan 23 lingkungan. Misa Kepyakan sebagai penanda peresmian dipimpin langsung oleh Bapa Uskup pada 31 Desember 2018.
+                </CalloutBox>
+            </section>
+
+            <SectionDivider />
+
+            {/* ═══════════════════════════════════════ */}
+            {/* SECTION 3 — Pemekaran Teritori          */}
+            {/* ═══════════════════════════════════════ */}
+            <section>
+                <SectionHeader
+                    title="Pemekaran Teritori"
+                    subtitle="2019"
+                />
+
+                <SubSectionHeader title="Pemekaran Wilayah" />
+
+                <Paragraph>
+                    Pada bulan April 2019 ketika Romo Petrus Tri Margana, Pr mengikuti suatu pertemuan di Baturaden, di sela-sela acara, sekitar Pukul 21.15 WIB beliau datang menemui Bp. Subardjo dan mengutarakan gagasan menggunakan rumah Trah Harjosumarto di Dukuh sebagai rumah ibadah untuk misa rutin. Bp. Subardjo menyampaikan bahwa keputusan tidak dapat diambil secara sepihak karena rumah tersebut adalah milik trah.
+                </Paragraph>
+                <Paragraph>
+                    Bp. Subardjo menyampaikan permohonan Romo Petrus kepada saudara-saudara melalui WAG Trah Harjosumarto, dan disepakati akan diadakan pertemuan Trah pada liburan Idhul Fitri.
+                </Paragraph>
+                <Paragraph>
+                    Pada tanggal 6 Juni 2019 terjadi pertemuan keluarga Trah Harjosumarto yang dihadiri oleh semua anak Bapak Ibu Harjosumarto yang masih hidup (4 orang) beserta keluarga. Beberapa pokok pembicaraan:
+                </Paragraph>
+
+                <ul className="space-y-3 my-6 list-none pl-0">
+                    <BulletItem>
+                        Romo Synesius Suyitna, SJ mengingatkan kembali sejarah rumah trah, berkaitan dengan pembagian warisan dari alm. Bapak Ibu Harjosumarto.
+                    </BulletItem>
+                    <BulletItem>
+                        Bp. Subardjo menjelaskan maksud dan keinginan pihak Paroki Brayut mengembangkan Wilayah Dukuh, serta keinginannya agar rumah Trah Harjosumarto boleh dipakai untuk menyelenggarakan misa secara rutin.
+                    </BulletItem>
+                    <BulletItem>
+                        Sejarah berkaitan dengan upaya alm. Fransiskus Xaverius Harjosumarto yang dengan gigih merasul menanamkan Iman Katolik, yang bermula dari rumah Trah ini.
+                    </BulletItem>
+                    <BulletItem>
+                        Romo B. Sudjarwo, Pr semasa hidup sudah punya rencana agar rumah Trah di masa depan bisa digunakan untuk kepentingan banyak orang — kegiatan pembinaan rohani, retret atau pertemuan umat.
+                    </BulletItem>
+                    <BulletItem>
+                        Semua anggota trah menyatakan tidak keberatan bahwa kedepannya tanah dan rumah ini dipakai untuk kepentingan Gereja.
+                    </BulletItem>
+                    <BulletItem>
+                        Masih perlu diperjelas mengenai pengelolaan, status tanah, dan rumah selanjutnya. Bp. Subardjo dimohon untuk berkomunikasi dengan pihak Paroki Brayut.
+                    </BulletItem>
+                </ul>
+
+                <Paragraph>
+                    Pada hari Senin, 22 Juli 2019 di Pendopo rumah Trah berlangsung pertemuan antara Tim Paroki Brayut dan Perwakilan keluarga Harjosumarto, dihadiri juga perwakilan FKUB Kabupaten Sleman. Tercapai kesepakatan hibah yang akan disahkan pada 3 Agustus 2019.
+                </Paragraph>
+                <Paragraph>
+                    Setelah kejelasan hibah, pada Minggu 28 Juli 2019 diadakan kerja bakti masal untuk mempersiapkan rumah sebagai tempat ibadah. Misa berlangsung rutin setiap Sabtu pada Minggu pertama dan ketiga. Pada tanggal 3 Agustus 2019 misa serah terima hibah dihadiri oleh 277 umat.
+                </Paragraph>
+                <Paragraph>
+                    Pada perayaan peringatan Gereja Venantius Dukuh, diumumkan bahwa Wilayah Santo Venantius Dukuh dimekarkan menjadi dua, yaitu <strong>Wilayah Santo Venantius Ngelo</strong> dan <strong>Wilayah Santo Fransiskus Xaverius Dukuh</strong>.
+                </Paragraph>
+                <Paragraph>
+                    Setelah pemekaran, jumlah wilayah menjadi 6 (enam) dengan penamaan disesuaikan nama dusun: Wilayah Santo Petrus Kayunan, Wilayah Santo Paulus Karanglo, Wilayah Santo Yakobus Rasul Tambakrejo, Wilayah Santo Yohanes Karangkepuh, Wilayah Santo Venantius Ngelo, dan Wilayah Santo Fransiskus Xaverius Dukuh.
+                </Paragraph>
+            </section>
+
+            <SectionDivider />
+
+            {/* ═══════════════════════════════════════ */}
+            {/* SECTION 4 — Pemekaran Lingkungan        */}
+            {/* ═══════════════════════════════════════ */}
+            <section>
+                <SectionHeader
+                    title="Pemekaran Lingkungan"
+                    subtitle="2019"
+                />
+
+                <Paragraph>
+                    Menindaklanjuti pemekaran Wilayah Dukuh, pada pertemuan tanggal 24 Juli 2019, Lingkungan Santo Fransiskus Xaverius Dukuh dimekarkan menjadi dua lingkungan, yaitu Lingkungan Andreas Dukuh dan Lingkungan Vinsensius Dukuh, dihadiri oleh 61 orang.
+                </Paragraph>
+                <Paragraph>
+                    Dengan demikian Wilayah Fransiskus Xaverius Dukuh terdiri dari tiga lingkungan: Lingkungan Andreas Dukuh, Lingkungan Vinsensius Dukuh dan Lingkungan Kristophorus Saron. Pada tanggal 6 Agustus 2019, dilantik Pengurus Wilayah serta Pengurus Lingkungan.
+                </Paragraph>
+                <Paragraph>
+                    Dalam rapat DPP Brayut pada 8 September 2019, Romo Petrus Tri Margana, Pr. menyampaikan gagasan agar lingkungan-lingkungan dengan jumlah warga besar melakukan pemekaran demi keterlibatan umat yang lebih luas.
+                </Paragraph>
+
+                {/* Pemekaran detail cards */}
+                <motion.div {...fadeUp} className="grid md:grid-cols-2 gap-4 my-8">
+                    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                        <div className="text-brand-gold font-bold text-xs uppercase tracking-wider mb-2">1 Desember 2019</div>
+                        <h4 className="font-bold text-brand-dark mb-2">Lingkungan Maria Goretti</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                            Lingkungan Maria (50 KK) dimekarkan. Setelah pemekaran — Lingkungan Maria: 34 KK, Lingkungan Maria Goretti: 16 KK. Kedua lingkungan dihubungkan oleh jalan menuju Gereja St. Yosef Karanglo.
+                        </p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                        <div className="text-brand-gold font-bold text-xs uppercase tracking-wider mb-2">31 Desember 2019</div>
+                        <h4 className="font-bold text-brand-dark mb-2">Lingkungan Yohanes Maria Vianney</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                            Lingkungan St. Yohanes De Britto dimekarkan menjadi Lingkungan St. Yohanes De Britto dan Lingkungan St. Yohanes Maria Vianney. (SK Pastor Paroki No. 01/YP.II/XII/2019)
+                        </p>
+                    </div>
+                </motion.div>
+            </section>
+
+            <SectionDivider />
+
+            {/* ═══════════════════════════════════════ */}
+            {/* SECTION 5 — Perkembangan Umat & Fisik  */}
+            {/* ═══════════════════════════════════════ */}
+            <section>
+                <SectionHeader
+                    title="Perkembangan Umat dan Fisik Gereja"
+                    subtitle="2018 – Terkini"
+                />
+
+                <SubSectionHeader title="Perkembangan Umat" />
+
+                <Paragraph>
+                    Berdasarkan data litbang Paroki, sejak berdiri pada 25 Desember 2018, jumlah umat Paroki St. Yohanes Paulus II Brayut adalah 2.186 umat. Pada tahun 2021 paroki mengikuti anjuran KAS untuk menggunakan sistem pendataan elektronik standar Keuskupan Agung Semarang.
+                </Paragraph>
+
+                <Paragraph className="text-sm font-medium text-gray-500">
+                    Berikut data perkembangan jumlah umat Paroki Brayut dari tahun 2018-2023:
+                </Paragraph>
+
+                <StatGrid />
+
+                <SubSectionHeader title="Perkembangan Fisik Gereja" />
+
+                <Paragraph>
+                    Paroki St. Yohanes Paulus II Brayut memiliki 5 gereja yang berada di 5 wilayah. Pada perkembangannya terjadi pemekaran Wilayah St. Venantius Dukuh menjadi 2 — Wilayah Ngelo dan Wilayah Dukuh — sehingga kini Paroki memiliki 6 gereja.
+                </Paragraph>
+
+                <CalloutBox>
+                    Pada tanggal <strong>7 Maret 2023</strong>, berdasarkan SK Uskup Agung Semarang Nomor 0257/B/I/b-140/2023, Gereja St. Yusup Tambakrejo ditetapkan sebagai pusat Paroki dan diubah namanya menjadi <strong>Gereja Paroki Santo Yohanes Paulus II Brayut</strong>. Kini Paroki Brayut membina <strong>1 gereja paroki</strong> dan <strong>5 gereja wilayah</strong>.
+                </CalloutBox>
+            </section>
+        </div>
+    );
+}

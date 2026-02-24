@@ -27,8 +27,8 @@ const navItems: NavItem[] = [
     {
         title: "Profil Gereja",
         items: [
-            { title: "Profil & Selayang Pandang", href: "/profil" },
-            { title: "Sejarah", href: "/profil/sejarah" },
+            { title: "Profil Paroki", href: "/profil" },
+            { title: "Sejarah Paroki", href: "/profil/sejarah" },
             { title: "Pastor Paroki dan Tim Kerja", href: "/profil/pastor-tim" },
             { title: "Wilayah & Lingkungan", href: "/profil/wilayah" },
         ],

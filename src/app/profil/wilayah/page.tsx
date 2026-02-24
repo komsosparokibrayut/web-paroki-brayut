@@ -24,47 +24,60 @@ export default async function LingkunganPage() {
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-                {/* Wilayah Overview */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/10 p-6 text-center hover:shadow-lg transition-all duration-300">
-                        <div className="rounded-full bg-brand-blue/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                            <MapPin className="h-8 w-8 text-brand-blue" />
-                        </div>
-                        <div className="text-4xl font-bold text-brand-dark mb-1">
-                            {stats?.churches.toLocaleString('id-ID') || "5"}
-                        </div>
-                        <div className="text-gray-600 font-medium">Wilayah</div>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
+                    <div className="text-center space-y-2">
+                        <h3 className="text-brand-dark font-bold text-2xl">Data Statistik Paroki</h3>
+                        {stats?.lastUpdated && (
+                            <p className="text-sm text-gray-500 italic">
+                                Pembaruan terakhir: {new Date(stats.lastUpdated).toLocaleDateString("id-ID", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                })}
+                            </p>
+                        )}
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/10 p-6 text-center hover:shadow-lg transition-all duration-300">
-                        <div className="rounded-full bg-brand-blue/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                            <Users className="h-8 w-8 text-brand-blue" />
+                    {/* Wilayah Overview */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                            <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Wilayah</div>
+                            <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
+                                {stats?.churches?.toLocaleString('id-ID') || "6"}
+                            </div>
                         </div>
-                        <div className="text-4xl font-bold text-brand-dark mb-1">
-                            {stats?.wards.toLocaleString('id-ID') || "--"}
-                        </div>
-                        <div className="text-gray-600 font-medium">Lingkungan</div>
-                    </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-brand-blue/10 p-6 text-center hover:shadow-lg transition-all duration-300">
-                        <div className="rounded-full bg-brand-blue/10 p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                            <Home className="h-8 w-8 text-brand-blue" />
+                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                            <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Lingkungan</div>
+                            <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
+                                {stats?.wards?.toLocaleString('id-ID') || "26"}
+                            </div>
                         </div>
-                        <div className="text-4xl font-bold text-brand-dark mb-1">
-                            {stats?.families.toLocaleString('id-ID') || "--"}
-                        </div>
-                        <div className="text-gray-600 font-medium">Keluarga (KK)</div>
-                    </div>
-                </section>
 
-                {/* Wilayah List */}
+                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                            <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Keluarga</div>
+                            <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
+                                {stats?.families?.toLocaleString('id-ID') || "-"}
+                            </div>
+                        </div>
+
+                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                            <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Total Umat</div>
+                            <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
+                                {stats?.parishioners?.toLocaleString('id-ID') || "-"}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <section>
-                    <h2 className="text-2xl font-bold text-brand-dark mb-6">Daftar Wilayah & Lingkungan</h2>
-
                     <div className="space-y-6">
+                        {/* Wilayah List */}
                         {wilayahData.length > 0 ? (
                             wilayahData.map((wilayah) => (
-                                <div key={wilayah.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 hover:border-brand-blue/30 transition-all duration-300">
+                                <div key={wilayah.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 transition-all duration-300">
                                     <div className="flex items-start gap-6 mb-8 border-b border-gray-100 pb-6">
                                         <div className="rounded-2xl bg-brand-blue/5 p-4 flex-shrink-0">
                                             <MapPin className="h-8 w-8 text-brand-blue" />
@@ -151,6 +164,6 @@ export default async function LingkunganPage() {
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
