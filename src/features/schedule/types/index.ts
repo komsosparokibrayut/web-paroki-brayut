@@ -41,6 +41,9 @@ export type EventCategory = (typeof EVENT_CATEGORIES)[number];
  */
 export type ScheduleEvent = JadwalEvent;
 
+/**
+ * @deprecated Use WeeklySchedule instead
+ */
 export interface MassTimeSlot {
   day: string;
   times: string[];
@@ -48,11 +51,24 @@ export interface MassTimeSlot {
   kategori?: string; // e.g. "Misa Harian", "Misa Minggu", "Misa OMK"
 }
 
+export type WeekNumber = 1 | 2 | 3 | 4 | 5;
+
+export interface WeeklySchedule {
+  week: WeekNumber;
+  day: string;       // e.g. "Sabtu", "Minggu"
+  time: string;      // e.g. "16.00"
+  bahasa: string;    // e.g. "Indonesia", "Jawa"
+  notes?: string;    // Keterangan tambahan
+  date?: string;     // Optional exact date (YYYY-MM-DD) for advance scheduling
+}
+
 export interface ChurchUnit {
   id: string;
   name: string;
   location: string;
-  schedules: MassTimeSlot[];
+  isSuspended?: boolean;
+  suspendedReason?: string;
+  weeklySchedules: WeeklySchedule[];
 }
 
 export interface SpecialMassEvent {

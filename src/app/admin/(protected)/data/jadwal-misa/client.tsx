@@ -2,10 +2,10 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { saveJadwalMisa } from "@/features/schedule/actions";
-import { JadwalMisaData, ChurchUnit, MassTimeSlot, SpecialMassEvent } from "@/features/schedule/types";
+import { JadwalMisaData, ChurchUnit, WeeklySchedule, WeekNumber, SpecialMassEvent } from "@/features/schedule/types";
 import {
     Plus, Pencil, Trash2, Loader2, MapPin,
-    Church, Tag, ChevronDown, ChevronUp
+    Church, ChevronDown, ChevronUp, AlertTriangle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -20,14 +20,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-
+const WEEK_LABELS = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4", "Minggu 5"] as const;
+const WEEK_NUMBERS: WeekNumber[] = [1, 2, 3, 4, 5];
+const DAY_OPTIONS = ["Sabtu", "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+const BAHASA_OPTIONS = ["Indonesia", "Jawa"];
 
 interface ScheduleForm {
+    week: WeekNumber;
     day: string;
-    times: string; // comma-separated
-    kategori: string;
+    time: string;
+    bahasa: string;
     notes: string;
+    date: string;
 }
 
 interface SpecialMassForm {
@@ -45,10 +54,10 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
     const [data, setData] = useState<JadwalMisaData>(initialData || defaultData);
     const [expandedChurch, setExpandedChurch] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
-    const [scheduleModal, setScheduleModal] = useState<{ open: boolean; churchId: string; editing: MassTimeSlot | null }>({ open: false, churchId: "", editing: null });
+    const [scheduleModal, setScheduleModal] = useState<{ open: boolean; churchId: string; editingIndex: number | null }>({ open: false, churchId: "", editingIndex: null });
     const [specialModal, setSpecialModal] = useState<{ open: boolean; editing: SpecialMassEvent | null }>({ open: false, editing: null });
-    const [deleteTarget, setDeleteTarget] = useState<{ type: "schedule"; churchId: string; scheduleId: string } | { type: "special"; id: string } | null>(null);
-    const [scheduleForm, setScheduleForm] = useState<ScheduleForm>({ day: "", times: "", kategori: "", notes: "" });
+    const [deleteTarget, setDeleteTarget] = useState<{ type: "schedule"; churchId: string; index: number } | { type: "special"; id: string } | null>(null);
+    const [scheduleForm, setScheduleForm] = useState<ScheduleForm>({ week: 1, day: "Sabtu", time: "", bahasa: "BahasaIndonesia", notes: "", date: "" });
     const [specialForm, setSpecialForm] = useState<SpecialMassForm>({ name: "", time: "", location: "", description: "" });
     const router = useRouter();
 
@@ -66,52 +75,93 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
         });
     }, [data, router]);
 
+    // Helper: get schedules for a church grouped by week
+    const getScheduleForWeek = (church: ChurchUnit, week: WeekNumber): WeeklySchedule[] => {
+        return (church.weeklySchedules || []).filter(s => s.week === week);
+    };
+
     // Schedule handlers
-    const openScheduleModal = (churchId: string, editing: MassTimeSlot | null = null) => {
-        setScheduleModal({ open: true, churchId, editing });
-        if (editing) {
-            setScheduleForm({ day: editing.day, times: editing.times.join(", "), kategori: editing.kategori || "", notes: editing.notes || "" });
+    const openScheduleModal = (churchId: string, editingIndex: number | null = null) => {
+        setScheduleModal({ open: true, churchId, editingIndex });
+        if (editingIndex !== null) {
+            const church = data.churches.find(c => c.id === churchId);
+            if (church && church.weeklySchedules[editingIndex]) {
+                const s = church.weeklySchedules[editingIndex];
+                setScheduleForm({ week: s.week, day: s.day, time: s.time, bahasa: s.bahasa, notes: s.notes || "", date: s.date || "" });
+            }
         } else {
-            setScheduleForm({ day: "", times: "", kategori: "", notes: "" });
+            setScheduleForm({ week: 1, day: "Sabtu", time: "", bahasa: "BahasaIndonesia", notes: "", date: "" });
         }
     };
 
     const handleScheduleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const times = scheduleForm.times.split(",").map(t => t.trim()).filter(Boolean);
-        const slot: MassTimeSlot = {
+        const slot: WeeklySchedule = {
+            week: scheduleForm.week,
             day: scheduleForm.day,
-            times,
-            kategori: scheduleForm.kategori || undefined,
+            time: scheduleForm.time,
+            bahasa: scheduleForm.bahasa,
             notes: scheduleForm.notes || undefined,
+            date: scheduleForm.date || undefined,
         };
         const newData: JadwalMisaData = {
             ...data,
             churches: data.churches.map(c => {
                 if (c.id !== scheduleModal.churchId) return c;
-                const schedules = scheduleModal.editing
-                    ? c.schedules.map((s, i) => s.day === scheduleModal.editing!.day && i === c.schedules.indexOf(scheduleModal.editing!) ? slot : s)
-                    : [...c.schedules, slot];
-                return { ...c, schedules };
+                let schedules: WeeklySchedule[];
+                if (scheduleModal.editingIndex !== null) {
+                    schedules = c.weeklySchedules.map((s, i) => i === scheduleModal.editingIndex ? slot : s);
+                } else {
+                    schedules = [...c.weeklySchedules, slot];
+                }
+                // Sort by week then day
+                schedules.sort((a, b) => a.week - b.week || DAY_OPTIONS.indexOf(a.day) - DAY_OPTIONS.indexOf(b.day));
+                return { ...c, weeklySchedules: schedules };
             })
         };
-        setScheduleModal({ open: false, churchId: "", editing: null });
+        setScheduleModal({ open: false, churchId: "", editingIndex: null });
         persistData(newData);
     };
 
     const handleDeleteSchedule = () => {
         if (!deleteTarget || deleteTarget.type !== "schedule") return;
-        const { churchId, scheduleId } = deleteTarget;
+        const { churchId, index } = deleteTarget;
         const newData: JadwalMisaData = {
             ...data,
             churches: data.churches.map(c => {
                 if (c.id !== churchId) return c;
-                const idx = parseInt(scheduleId);
-                return { ...c, schedules: c.schedules.filter((_, i) => i !== idx) };
+                return { ...c, weeklySchedules: c.weeklySchedules.filter((_, i) => i !== index) };
             })
         };
         setDeleteTarget(null);
         persistData(newData);
+    };
+
+    // Suspended toggle handler
+    const toggleSuspended = (churchId: string, isSuspended: boolean) => {
+        const newData: JadwalMisaData = {
+            ...data,
+            churches: data.churches.map(c =>
+                c.id === churchId
+                    ? { ...c, isSuspended, suspendedReason: isSuspended ? (c.suspendedReason || "") : undefined }
+                    : c
+            )
+        };
+        persistData(newData);
+    };
+
+    const updateSuspendedReason = (churchId: string, reason: string) => {
+        setData(prev => ({
+            ...prev,
+            churches: prev.churches.map(c =>
+                c.id === churchId ? { ...c, suspendedReason: reason } : c
+            )
+        }));
+    };
+
+    const saveSuspendedReason = (churchId: string) => {
+        const church = data.churches.find(c => c.id === churchId);
+        if (church) persistData(data);
     };
 
     // Special mass handlers
@@ -166,65 +216,121 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                     <div className="flex items-center gap-3">
                                         <Church className="h-5 w-5 text-slate-400" />
                                         <div>
-                                            <div className="font-semibold text-slate-900">{church.name}</div>
+                                            <div className="font-semibold text-slate-900 flex items-center gap-2">
+                                                {church.name}
+                                                {church.isSuspended && (
+                                                    <Badge variant="destructive" className="text-xs">Ditiadakan</Badge>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-1 text-sm text-slate-500">
                                                 <MapPin className="h-3 w-3" />{church.location}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <Badge variant="secondary">{church.schedules.length} jadwal</Badge>
+                                        <Badge variant="secondary">{church.weeklySchedules.length} jadwal</Badge>
                                         {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
                                     </div>
                                 </button>
 
                                 {isExpanded && (
-                                    <div className="border-t border-slate-200 p-5">
-                                        <table className="w-full text-sm mb-4">
-                                            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                                                <tr>
-                                                    <th className="px-4 py-2 text-left">Hari</th>
-                                                    <th className="px-4 py-2 text-left">Jam</th>
-                                                    <th className="px-4 py-2 text-left">Kategori</th>
-                                                    <th className="px-4 py-2 text-left">Keterangan</th>
-                                                    <th className="px-4 py-2 text-right">Aksi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {church.schedules.length > 0 ? church.schedules.map((s, idx) => (
-                                                    <tr key={idx} className="hover:bg-slate-50">
-                                                        <td className="px-4 py-3 font-medium">{s.day}</td>
-                                                        <td className="px-4 py-3 text-brand-blue font-semibold">{s.times.join(", ")} WIB</td>
-                                                        <td className="px-4 py-3">
-                                                            {s.kategori ? (
-                                                                <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                                                                    <Tag className="h-3 w-3" />{s.kategori}
-                                                                </span>
-                                                            ) : "—"}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-slate-500">{s.notes || "—"}</td>
-                                                        <td className="px-4 py-3 text-right">
-                                                            <div className="flex items-center justify-end gap-1">
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:text-blue-600"
-                                                                    onClick={() => openScheduleModal(church.id, s)}>
-                                                                    <Pencil className="h-3.5 w-3.5" />
-                                                                </Button>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:text-red-600"
-                                                                    onClick={() => setDeleteTarget({ type: "schedule", churchId: church.id, scheduleId: idx.toString() })}>
-                                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                                </Button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )) : (
-                                                    <tr>
-                                                        <td colSpan={5} className="px-4 py-8 text-center text-slate-400 text-sm">
-                                                            Belum ada jadwal. Klik tombol di bawah untuk menambahkan.
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                    <div className="border-t border-slate-200 p-5 space-y-6">
+                                        {/* Suspended Toggle */}
+                                        <div className="flex flex-col gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                                    <Label htmlFor={`suspended-${church.id}`} className="font-medium text-slate-700">
+                                                        Misa Ditiadakan
+                                                    </Label>
+                                                </div>
+                                                <Switch
+                                                    id={`suspended-${church.id}`}
+                                                    checked={!!church.isSuspended}
+                                                    onCheckedChange={(checked) => toggleSuspended(church.id, checked)}
+                                                />
+                                            </div>
+                                            {church.isSuspended && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`reason-${church.id}`} className="text-sm text-slate-500">Alasan</Label>
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            id={`reason-${church.id}`}
+                                                            value={church.suspendedReason || ""}
+                                                            onChange={(e) => updateSuspendedReason(church.id, e.target.value)}
+                                                            placeholder="Contoh: Pembangunan gereja"
+                                                            className="flex-1"
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => saveSuspendedReason(church.id)}
+                                                        >
+                                                            Simpan
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* 5-Week Grid */}
+                                        <div>
+                                            <h4 className="font-semibold text-slate-700 mb-3">Jadwal per Minggu</h4>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-slate-50">
+                                                            {WEEK_LABELS.map((label, i) => (
+                                                                <th key={i} className="px-3 py-2 text-left text-xs uppercase text-slate-500 font-semibold border border-slate-200 min-w-[140px]">
+                                                                    {label}
+                                                                </th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            {WEEK_NUMBERS.map((week) => {
+                                                                const slots = getScheduleForWeek(church, week);
+                                                                return (
+                                                                    <td key={week} className="px-3 py-3 border border-slate-200 align-top">
+                                                                        {slots.length > 0 ? (
+                                                                            <div className="space-y-2">
+                                                                                {slots.map((slot, sIdx) => {
+                                                                                    const globalIdx = church.weeklySchedules.indexOf(slot);
+                                                                                    return (
+                                                                                        <div key={sIdx} className="group relative bg-blue-50 rounded-lg p-2 border border-blue-100">
+                                                                                            <div className="font-medium text-slate-800">{slot.day}</div>
+                                                                                            <div className="text-brand-blue font-bold">{slot.time} WIB</div>
+                                                                                            <Badge variant="outline" className="text-xs mt-1">{slot.bahasa}</Badge>
+                                                                                            {slot.notes && (
+                                                                                                <p className="text-xs text-slate-500 mt-1 italic">{slot.notes}</p>
+                                                                                            )}
+                                                                                            <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                                                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-blue-600"
+                                                                                                    onClick={() => openScheduleModal(church.id, globalIdx)}>
+                                                                                                    <Pencil className="h-3 w-3" />
+                                                                                                </Button>
+                                                                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-600"
+                                                                                                    onClick={() => setDeleteTarget({ type: "schedule", churchId: church.id, index: globalIdx })}>
+                                                                                                    <Trash2 className="h-3 w-3" />
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-slate-300 text-xs">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
                                         <Button onClick={() => openScheduleModal(church.id)} size="sm" variant="outline" className="gap-2">
                                             <Plus className="h-4 w-4" />Tambah Jadwal
                                         </Button>
@@ -286,30 +392,70 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
             </Tabs>
 
             {/* Schedule Add/Edit Dialog */}
-            <Dialog open={scheduleModal.open} onOpenChange={(open) => !open && setScheduleModal({ open: false, churchId: "", editing: null })}>
+            <Dialog open={scheduleModal.open} onOpenChange={(open) => !open && setScheduleModal({ open: false, churchId: "", editingIndex: null })}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>{scheduleModal.editing ? "Edit Jadwal Misa" : "Tambah Jadwal Misa"}</DialogTitle>
+                        <DialogTitle>{scheduleModal.editingIndex !== null ? "Edit Jadwal Misa" : "Tambah Jadwal Misa"}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleScheduleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="day">Hari / Periode</Label>
-                            <Input id="day" value={scheduleForm.day} required
-                                onChange={(e) => setScheduleForm({ ...scheduleForm, day: e.target.value })}
-                                placeholder="Contoh: Minggu, Senin – Sabtu" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Minggu ke-</Label>
+                                <Select
+                                    value={scheduleForm.week.toString()}
+                                    onValueChange={(v) => setScheduleForm({ ...scheduleForm, week: parseInt(v) as WeekNumber })}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {WEEK_NUMBERS.map(w => (
+                                            <SelectItem key={w} value={w.toString()}>Minggu {w}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Hari</Label>
+                                <Select
+                                    value={scheduleForm.day}
+                                    onValueChange={(v) => setScheduleForm({ ...scheduleForm, day: v })}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {DAY_OPTIONS.map(d => (
+                                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="time">Jam Misa</Label>
+                                <Input id="time" value={scheduleForm.time} required
+                                    onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                                    placeholder="Contoh: 16.00" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Bahasa</Label>
+                                <Select
+                                    value={scheduleForm.bahasa}
+                                    onValueChange={(v) => setScheduleForm({ ...scheduleForm, bahasa: v })}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {BAHASA_OPTIONS.map(b => (
+                                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="times">Jam Misa</Label>
-                            <Input id="times" value={scheduleForm.times} required
-                                onChange={(e) => setScheduleForm({ ...scheduleForm, times: e.target.value })}
-                                placeholder="06.00, 08.00, 17.00 (pisahkan dengan koma)" />
-                            <p className="text-xs text-slate-400">Gunakan tanda koma untuk memisahkan beberapa jam</p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="kategori">Kategori / Label</Label>
-                            <Input id="kategori" value={scheduleForm.kategori}
-                                onChange={(e) => setScheduleForm({ ...scheduleForm, kategori: e.target.value })}
-                                placeholder="Contoh: Misa Minggu, Misa Harian" />
+                            <Label htmlFor="schedule-date">Tanggal Spesifik <span className="text-xs text-slate-400 font-normal">(opsional)</span></Label>
+                            <Input id="schedule-date" type="date" value={scheduleForm.date}
+                                onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })}
+                            />
+                            <p className="text-xs text-slate-400">Kosongkan jika jadwal berlaku rutin setiap bulan</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="notes">Keterangan Tambahan</Label>
@@ -318,7 +464,7 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                 placeholder="Keterangan opsional..." />
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="outline" onClick={() => setScheduleModal({ open: false, churchId: "", editing: null })}>Batal</Button>
+                            <Button type="button" variant="outline" onClick={() => setScheduleModal({ open: false, churchId: "", editingIndex: null })}>Batal</Button>
                             <Button type="submit" disabled={isPending} className="bg-blue-600 hover:bg-blue-700">
                                 {isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Menyimpan...</> : "Simpan"}
                             </Button>
