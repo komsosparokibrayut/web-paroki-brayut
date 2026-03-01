@@ -119,19 +119,31 @@ export interface Pastor {
   phone?: string;
 }
 
-export interface TimKerja {
+export interface AnggotaTimKerja {
   id: string;
   name: string;
-  role: string;
-  division: string; // e.g. "Sekretariat", "Keuangan"
-  quote?: string;
-  email?: string;
+  role?: string;     // e.g. "Ketua Bidang", "Koordinator"
   phone?: string;
+  quote?: string;
+}
+
+// A group (e.g. "Tim Pelayanan Prodiakon") within a section
+export interface TimPelayanan {
+  id: string;
+  name: string;
+  members: AnggotaTimKerja[];
+}
+
+// A top-level section (e.g. "DEWAN HARIAN", "BIDANG 1. LITURGI", "Adhok")
+export interface SeksiOrganisasi {
+  id: string;
+  name: string;
+  groups: TimPelayanan[];
 }
 
 export interface PastorTimKerjaData {
   pastor: Pastor[];
-  timKerja: TimKerja[];
+  seksi: SeksiOrganisasi[];
 }
 
 export interface Formulir {
@@ -170,11 +182,11 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
 // Pastor & Tim Kerja Actions
 export async function getPastorTimKerja(): Promise<PastorTimKerjaData> {
   const content = await getFile(PASTOR_FILE);
-  if (!content) return { pastor: [], timKerja: [] };
+  if (!content) return { pastor: [], seksi: [] };
   try {
     return JSON.parse(content);
   } catch (e) {
-    return { pastor: [], timKerja: [] };
+    return { pastor: [], seksi: [] };
   }
 }
 
