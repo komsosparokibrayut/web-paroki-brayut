@@ -128,16 +128,20 @@ export default function Footer() {
                                 <Church className="h-5 w-5 text-brand-gold mb-2" />Gereja Utama
                             </h4>
                             <address className="not-italic text-gray-300 space-y-2 leading-relaxed">
-                                <p>Gereja Santo Yusuf Tambakrejo</p>
-                                <p>Rejodani 1, Sariharjo, Ngaglik</p>
-                                <p>Kabupaten Sleman, DIY 55581</p>
+                                <Link href="https://maps.google.com/?q=Gereja+Santo+Yusuf+Tambakrejo,+Rejodani+1,+Sariharjo,+Ngaglik,+Sleman" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors block">
+                                    <p>Gereja Santo Yusuf Tambakrejo</p>
+                                    <p>Rejodani 1, Sariharjo, Ngaglik</p>
+                                    <p>Kabupaten Sleman, DIY 55581</p>
+                                </Link>
                             </address>
                         </div>
                         <div>
                             <h4 className="flex gap-2 items-center font-bold text-lg mb-4 uppercase tracking-wider text-white">
                                 <House className="h-5 w-5 text-brand-gold mb-2" />Sekretariat</h4>
                             <address className="not-italic text-gray-300 space-y-2 leading-relaxed">
-                                <p>Jogopaten, Pandowoharjo</p>
+                                <Link href="https://maps.google.com/?q=Gereja+Katholik+St.+Yohanes+Paulus+II+Brayut,+Jogopaten,+Pandowoharjo" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors block">
+                                    <p>Jogopaten, Pandowoharjo</p>
+                                </Link>
                                 <p className="text-sm text-gray-300 mt-2">Senin - Jumat: 08.00 - 15.00</p>
                                 <p className="text-sm text-gray-300">Sabtu: 08.00 - 14.00</p>
                             </address>
