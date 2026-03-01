@@ -67,9 +67,9 @@ export default function Footer() {
                     >
                         <div className="text-left md:text-right">
                             <h3 className="font-serif text-3xl mb-4">Butuh Bantuan?</h3>
-                            <a href="https://wa.me/628123456789" className="text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-2">
+                            <Link href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-2">
                                 (0274) 860-9221
-                            </a>
+                            </Link>
                             <p className="text-gray-500">Sekretariat Paroki (Senin - Sabtu)</p>
                         </div>
                     </motion.div>
@@ -92,12 +92,12 @@ export default function Footer() {
                             <p className="text-sm text-gray-400">Santo Yohanes Paulus II</p>
                         </div>
                         <div className="flex gap-4">
-                            <a href="https://www.instagram.com/parokibrayut/" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
+                            <Link href="https://www.instagram.com/parokibrayut/" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
                                 <SiInstagram className="h-5 w-5" />
-                            </a>
-                            <a href="https://www.youtube.com/@parokibrayut4974" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
+                            </Link>
+                            <Link href="https://www.youtube.com/@parokibrayut4974" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
                                 <SiYoutube className="h-5 w-5" />
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
