@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Clock, ArrowRight, Facebook, Instagram, Youtube, House, Church } from "lucide-react";
+import { ArrowRight, House, Church } from "lucide-react";
+import { SiInstagram, SiYoutube } from "@icons-pack/react-simple-icons";
 import { motion } from "framer-motion";
 
 import Image from "next/image";
@@ -91,14 +92,11 @@ export default function Footer() {
                             <p className="text-sm text-gray-400">Santo Yohanes Paulus II</p>
                         </div>
                         <div className="flex gap-4">
-                            <a href="#" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
-                                <Instagram className="h-5 w-5" />
+                            <a href="https://www.instagram.com/parokibrayut/" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
+                                <SiInstagram className="h-5 w-5" />
                             </a>
-                            <a href="#" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
-                                <Facebook className="h-5 w-5" />
-                            </a>
-                            <a href="#" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
-                                <Youtube className="h-5 w-5" />
+                            <a href="https://www.youtube.com/@parokibrayut4974" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-brand-blue hover:text-white transition-all">
+                                <SiYoutube className="h-5 w-5" />
                             </a>
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 
 import { Metadata } from "next";
-import { Mail, MapPin, Phone, Clock, Instagram, Facebook, Youtube } from "lucide-react";
+import { Mail, MapPin, Phone, Clock } from "lucide-react";
+import { SiFacebook, SiInstagram, SiYoutube } from "@icons-pack/react-simple-icons";
 import PageHeader from "@/components/layout/PageHeader";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -82,13 +83,13 @@ export default function ContactPage() {
                                 <h3 className="font-bold text-gray-900 mb-4">Media Sosial</h3>
                                 <div className="flex gap-4">
                                     <a href="#" className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-500 hover:text-white transition-all">
-                                        <Instagram className="h-5 w-5" />
+                                        <SiInstagram className="h-5 w-5" />
                                     </a>
                                     <a href="#" className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all">
-                                        <Facebook className="h-5 w-5" />
+                                        <SiFacebook className="h-5 w-5" />
                                     </a>
                                     <a href="#" className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-red-600 hover:text-white transition-all">
-                                        <Youtube className="h-5 w-5" />
+                                        <SiYoutube className="h-5 w-5" />
                                     </a>
                                 </div>
                             </div>
