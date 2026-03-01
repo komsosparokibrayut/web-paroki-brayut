@@ -151,7 +151,7 @@ export default function Footer() {
                 <div className="border-t border-white/10 pt-12">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                         <p className="text-gray-500 text-sm">
-                            &copy; {new Date().getFullYear()} Paroki Brayut. All rights reserved.
+                            &copy; {new Date().getFullYear()} KOMSOS Paroki Santo Yohanes Paulus II Brayut. All rights reserved.
                         </p>
                     </div>
 
