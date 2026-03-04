@@ -9,7 +9,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -17,12 +16,11 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 export default function JadwalList({ initialEvents, categories }: { initialEvents: ScheduleEvent[], categories: string[] }) {
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     const months = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -88,65 +86,7 @@ export default function JadwalList({ initialEvents, categories }: { initialEvent
             <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
 
                 {/* Month Year Picker */}
-                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className="rounded-full px-8 py-6 border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white transition-colors group gap-4"
-                        >
-                            <div className="flex items-center">
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                <span className="font-bold">
-                                    {months[selectedDate.getMonth()]} {selectedDate.getFullYear()}
-                                </span>
-                            </div>
-                            <ChevronRight className={cn(
-                                "h-4 w-4 transition-transform duration-200",
-                                isPopoverOpen ? "rotate-[270deg]" : "rotate-90"
-                            )} />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0" align="start">
-                        <div className="p-4 space-y-4">
-                            <div className="flex items-center justify-between px-2">
-                                <button
-                                    onClick={() => setPickerYear(prev => prev - 1)}
-                                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </button>
-                                <div className="font-bold text-lg">{pickerYear}</div>
-                                <button
-                                    onClick={() => setPickerYear(prev => prev + 1)}
-                                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {months.map((month, index) => (
-                                    <button
-                                        key={month}
-                                        onClick={() => {
-                                            const newDate = new Date(selectedDate);
-                                            newDate.setFullYear(pickerYear);
-                                            newDate.setMonth(index);
-                                            setSelectedDate(newDate);
-                                        }}
-                                        className={cn(
-                                            "text-sm py-2 rounded-md transition-colors",
-                                            selectedDate.getMonth() === index && selectedDate.getFullYear() === pickerYear
-                                                ? "bg-brand-blue text-white font-bold"
-                                                : "hover:bg-gray-100 text-gray-700"
-                                        )}
-                                    >
-                                        {month.substring(0, 3)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                <MonthPicker value={selectedDate} onChange={setSelectedDate} />
 
                 {/* Category Filter */}
                 <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide gap-2">

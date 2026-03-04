@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Clock, MapPin, Users, AlertTriangle, Calendar } from "lucide-react";
 import { JadwalMisaData, WeekNumber, WeeklySchedule } from "@/features/schedule/types";
 import InformationCard from "@/components/ui/InformationCard";
+import { MonthPicker } from "@/components/ui/month-picker";
 
 const WEEK_LABELS = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4", "Minggu 5"];
 const WEEK_NUMBERS: WeekNumber[] = [1, 2, 3, 4, 5];
@@ -24,14 +25,12 @@ const YEAR_RANGE = 3; // show ±3 years from current
 
 export default function JadwalMisaContent({ data }: { data: JadwalMisaData }) {
     const today = new Date();
-    const [selectedMonthIdx, setSelectedMonthIdx] = useState(today.getMonth()); // 0-based
-    const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+    const [selectedDate, setSelectedDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+    const selectedMonthIdx = selectedDate.getMonth();
+    const year = selectedDate.getFullYear();
     const monthName = MONTH_NAMES[selectedMonthIdx];
-    const year = selectedYear;
     const currentWeek = getWeekOfMonth(today);
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() === selectedMonthIdx;
-
-    const yearOptions = Array.from({ length: YEAR_RANGE * 2 + 1 }, (_, i) => today.getFullYear() - YEAR_RANGE + i);
 
     const suspendedChurches = data.churches.filter(c => c.isSuspended);
     const activeChurches = data.churches.filter(c => !c.isSuspended);
@@ -53,31 +52,6 @@ export default function JadwalMisaContent({ data }: { data: JadwalMisaData }) {
                         Saat ini <span className="font-semibold text-brand-blue">Minggu ke-{currentWeek}</span> bulan {monthName}
                     </p>
                 )}
-                <div className="inline-flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2.5 shadow-sm">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                    <select
-                        aria-label="Pilih bulan"
-                        value={selectedMonthIdx}
-                        onChange={(e) => setSelectedMonthIdx(Number(e.target.value))}
-                        className="bg-transparent text-brand-dark font-medium focus:outline-none cursor-pointer border-0 pr-1 appearance-none"
-                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0 center", paddingRight: "16px" }}
-                    >
-                        {MONTH_NAMES.map((name, i) => (
-                            <option key={i} value={i}>{name}</option>
-                        ))}
-                    </select>
-                    <select
-                        aria-label="Pilih tahun"
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="bg-transparent text-brand-dark font-medium focus:outline-none cursor-pointer border-0 pr-1 appearance-none"
-                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 0 center", paddingRight: "16px" }}
-                    >
-                        {yearOptions.map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                </div>
             </div>
 
             {/* Suspended Churches */}
@@ -95,10 +69,16 @@ export default function JadwalMisaContent({ data }: { data: JadwalMisaData }) {
             {/* Active Churches - Weekly Rotation Table */}
             {activeChurches.length > 0 && (
                 <section>
-                    <h2 className="text-2xl font-bold text-brand-dark mb-8 flex items-center gap-2">
-                        <MapPin className="h-6 w-6 text-brand-blue" />
-                        Jadwal Misa Gereja
-                    </h2>
+                    <div className="flex flex-col md:flex-row items-center justify-between">
+                        <h2 className="text-2xl font-bold text-brand-dark mb-8 flex items-center gap-2">
+                            <MapPin className="h-6 w-6 text-brand-blue" />
+                            Jadwal Misa Gereja
+                        </h2>
+
+                        <div className="inline-flex items-center justify-center mb-4">
+                            <MonthPicker value={selectedDate} onChange={setSelectedDate} />
+                        </div>
+                    </div>
 
                     {/* Desktop Table View */}
                     <div className="hidden md:block overflow-x-auto">
