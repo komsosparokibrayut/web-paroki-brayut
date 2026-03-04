@@ -4,6 +4,7 @@ import { User, Phone } from "lucide-react";
 import { getPastorTimKerja } from "@/actions/data";
 import PageHeader from "@/components/layout/PageHeader";
 import { SeksiOrganisasi, TimPelayanan, AnggotaTimKerja, Pastor } from "@/actions/data";
+import { toGoogleDriveImageUrl } from "@/lib/googleDrive";
 
 export const metadata: Metadata = {
     title: "Pastor & Tim Kerja | Paroki Brayut",
@@ -41,20 +42,9 @@ function OrgNode({
     );
 }
 
-/* ───── Convert Google Drive share link to direct image URL ───── */
-function toDirectImageUrl(url: string): string {
-    if (!url) return "";
-    // Match patterns: /file/d/FILE_ID/ or id=FILE_ID
-    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}`;
-    }
-    return url; // Return as-is if not a Drive link
-}
-
 /* ───── Big Pastor Card (side-by-side layout) ───── */
 function PastorCard({ pastor }: { pastor: Pastor }) {
-    const imgSrc = toDirectImageUrl(pastor.imageUrl || "");
+    const imgSrc = toGoogleDriveImageUrl(pastor.imageUrl || "");
     return (
         <div className="flex-1 max-w-lg bg-white rounded-2xl shadow-lg border border-brand-blue/10 p-8 hover:shadow-xl transition-all duration-300">
             <div className="flex flex-col items-center text-center">

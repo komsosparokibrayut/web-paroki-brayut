@@ -26,6 +26,7 @@ export function ImageCard({ image, albumId, isCover }: ImageCardProps) {
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                unoptimized={image.src.startsWith("http")}
             />
             {isCover && (
                 <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 text-xs rounded shadow z-10">

@@ -100,8 +100,6 @@ export async function setCoverImageAction(albumId: string, imagePath: string) {
 
 export async function deleteImageAction(albumId: string, imagePath: string) {
     try {
-        const repoPath = `public${imagePath}`;
-        
         const album = await getAlbum(albumId);
         if (!album) return { success: false, error: "Album not found" };
         
@@ -111,7 +109,12 @@ export async function deleteImageAction(albumId: string, imagePath: string) {
             coverImage = undefined;
         }
         
-        await deleteFile(repoPath, `Delete image ${imagePath}`);
+        // Only try to delete from repo if it's a local file (not an external URL)
+        if (!imagePath.startsWith("http")) {
+            const repoPath = `public${imagePath}`;
+            await deleteFile(repoPath, `Delete image ${imagePath}`);
+        }
+
         await updateAlbum(albumId, { images: updatedImages, coverImage });
         
         revalidatePath(`/admin/gallery/${albumId}`);
@@ -121,3 +124,41 @@ export async function deleteImageAction(albumId: string, imagePath: string) {
         return { success: false, error: "Failed to delete image" };
     }
 }
+
+export async function addExternalImageAction(albumId: string, imageUrl: string) {
+    try {
+        const album = await getAlbum(albumId);
+        if (!album) return { success: false, error: "Album not found" };
+
+        // Fetch the image to determine dimensions
+        let width = 800;
+        let height = 600;
+        try {
+            const response = await fetch(imageUrl);
+            if (response.ok) {
+                const buffer = Buffer.from(await response.arrayBuffer());
+                const metadata = await sharp(buffer).metadata();
+                width = metadata.width || 800;
+                height = metadata.height || 600;
+            }
+        } catch {
+            // Use default dimensions if fetch fails
+        }
+
+        const newImage: AlbumImage = {
+            src: imageUrl,
+            width,
+            height,
+        };
+
+        const updatedImages = [...album.images, newImage];
+        await updateAlbum(albumId, { images: updatedImages });
+
+        revalidatePath(`/admin/gallery/${albumId}`);
+        return { success: true };
+    } catch (e) {
+        console.error("Add external image error", e);
+        return { success: false, error: "Failed to add external image" };
+    }
+}
+
