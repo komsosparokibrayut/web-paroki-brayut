@@ -4,6 +4,9 @@ import { MapPin, Clock, Calendar } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import InformationCard from "@/components/ui/InformationCard";
 import { GerejaGallery } from "@/features/gereja/components/GerejaGallery";
+import { ChurchSchedule } from "@/components/ui/ChurchSchedule";
+import { getJadwalMisa } from "@/features/schedule/actions";
+import { WeekNumber, JadwalMisaData } from "@/features/schedule/types";
 
 export const metadata: Metadata = {
     title: "Gereja St. Petrus Kayunan | Paroki Brayut",
@@ -14,7 +17,27 @@ const KOORDINAT = "-7.689756720002525, 110.38640990847922";
 const MAP_SRC = `https://maps.google.com/maps?q=${KOORDINAT}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 const MAPS_LINK = `https://www.google.com/maps?q=${KOORDINAT}`;
 
-export default function Gereja2Page() {
+const MONTH_NAMES = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+function getWeekOfMonth(date: Date): WeekNumber {
+    const dayOfMonth = date.getDate();
+    const week = Math.ceil(dayOfMonth / 7);
+    return Math.min(week, 5) as WeekNumber;
+}
+
+export default async function Gereja2Page() {
+    const data = await getJadwalMisa();
+    const churchData = data?.churches.find(c => c.id === "gereja-kayunan");
+
+    const today = new Date();
+    const currentWeek = getWeekOfMonth(today);
+    const selectedMonthIdx = today.getMonth();
+    const monthName = MONTH_NAMES[selectedMonthIdx];
+    const year = today.getFullYear();
+    const isCurrentMonth = true;
     return (
         <div className="min-h-screen pb-12">
             <PageHeader
@@ -81,38 +104,23 @@ export default function Gereja2Page() {
                 </section>
 
                 {/* Mass Schedule */}
-                <section className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                    <h2 className="text-2xl font-bold text-brand-dark mb-8 flex items-center gap-2">
-                        <Calendar className="h-6 w-6 text-brand-blue" />
-                        Jadwal Misa
-                    </h2>
-                    <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-full bg-brand-warm flex items-center justify-center mb-3 text-brand-blue">
-                            <Clock className="h-6 w-6" />
-                        </div>
-                        <p className="text-gray-500 text-sm">Jadwal misa tersedia di halaman jadwal paroki</p>
-                    </div>
-                    <div className="mt-8 bg-blue-50 border-l-4 border-brand-blue rounded-lg p-5">
-                        <p className="text-gray-700 text-sm">
-                            <strong className="text-brand-dark">Informasi</strong>
-                            {" "}Untuk jadwal lengkap, lihat halaman{" "}
-                            <Link href="/jadwal-misa" className="text-brand-blue hover:underline font-semibold">
-                                Jadwal Misa
-                            </Link>.
-                        </p>
-                    </div>
+                <section className="mt-8">
+                    {churchData ? (
+                        <ChurchSchedule church={churchData} currentWeek={currentWeek} isCurrentMonth={isCurrentMonth} monthName={monthName} year={year} />
+                    ) : (
+                        <p>Data jadwal tidak ditemukan.</p>
+                    )}
                 </section>
+                <InformationCard
+                    title="Informasi Perubahan Jadwal"
+                    description="Jadwal misa dapat berubah sewaktu-waktu. Untuk informasi terkini, pantau pengumuman mingguan atau hubungi sekretariat paroki."
+                />
 
                 {/* Gallery */}
                 <section>
                     <h2 className="text-2xl font-bold text-brand-dark mb-6">Galeri Foto</h2>
                     <GerejaGallery photos={[]} churchName="Gereja St. Petrus Kayunan" />
                 </section>
-
-                <InformationCard
-                    title="Informasi Perubahan Jadwal"
-                    description="Jadwal misa dapat berubah sewaktu-waktu. Untuk informasi terkini, pantau pengumuman mingguan atau hubungi sekretariat paroki."
-                />
             </div>
         </div>
     );

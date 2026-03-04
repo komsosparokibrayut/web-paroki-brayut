@@ -4,6 +4,9 @@ import { MapPin, Clock, Calendar } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import InformationCard from "@/components/ui/InformationCard";
 import { GerejaGallery } from "@/features/gereja/components/GerejaGallery";
+import { ChurchSchedule } from "@/components/ui/ChurchSchedule";
+import { getJadwalMisa } from "@/features/schedule/actions";
+import { WeekNumber, JadwalMisaData } from "@/features/schedule/types";
 
 export const metadata: Metadata = {
     title: "Gereja St. Yusup Tambakrejo (Paroki) | Paroki Brayut",
@@ -13,7 +16,27 @@ export const metadata: Metadata = {
 const MAP_SRC = "https://maps.google.com/maps?q=Gereja+St.+Yusup+Tambakrejo&t=&z=16&ie=UTF8&iwloc=&output=embed";
 const MAPS_LINK = "https://maps.app.goo.gl/a4PYVvPPrMChWLhc9";
 
-export default function Gereja1Page() {
+const MONTH_NAMES = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+function getWeekOfMonth(date: Date): WeekNumber {
+    const dayOfMonth = date.getDate();
+    const week = Math.ceil(dayOfMonth / 7);
+    return Math.min(week, 5) as WeekNumber;
+}
+
+export default async function Gereja1Page() {
+    const data = await getJadwalMisa();
+    const churchData = data?.churches.find(c => c.id === "gereja-paroki");
+
+    const today = new Date();
+    const currentWeek = getWeekOfMonth(today);
+    const selectedMonthIdx = today.getMonth();
+    const monthName = MONTH_NAMES[selectedMonthIdx];
+    const year = today.getFullYear();
+    const isCurrentMonth = true;
     return (
         <div className="min-h-screen pb-12">
             <PageHeader
@@ -80,58 +103,23 @@ export default function Gereja1Page() {
                 </section>
 
                 {/* Mass Schedule */}
-                <section className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
-                    <h2 className="text-2xl font-bold text-brand-dark mb-8 flex items-center gap-2">
-                        <Calendar className="h-6 w-6 text-brand-blue" />
-                        Jadwal Misa
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-8 md:gap-y-0">
-                        <div className="px-4 text-center">
-                            <div className="flex flex-col items-center justify-center mb-4">
-                                <div className="w-12 h-12 rounded-full bg-brand-warm flex items-center justify-center mb-3 text-brand-blue">
-                                    <Clock className="h-6 w-6" />
-                                </div>
-                                <h3 className="font-bold text-lg text-brand-dark">Minggu</h3>
-                            </div>
-                            <div className="space-y-2 text-gray-700">
-                                <div className="font-semibold text-xl">06.00 WIB, 08.00 WIB</div>
-                                <div className="font-semibold text-xl">17.00 WIB</div>
-                            </div>
-                        </div>
-                        <div className="px-4 text-center">
-                            <div className="flex flex-col items-center justify-center mb-4">
-                                <div className="w-12 h-12 rounded-full bg-brand-warm flex items-center justify-center mb-3 text-brand-blue">
-                                    <Clock className="h-6 w-6" />
-                                </div>
-                                <h3 className="font-bold text-lg text-brand-dark">Senin – Sabtu</h3>
-                            </div>
-                            <div className="space-y-2 text-gray-700">
-                                <div className="font-semibold text-xl">06.00 WIB</div>
-                                <div className="text-sm text-gray-500">Misa Harian</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="mt-10 bg-blue-50 border-l-4 border-brand-blue rounded-lg p-5">
-                        <p className="text-gray-700 text-sm">
-                            <strong className="text-brand-dark">Informasi</strong>
-                            {" "}Untuk jadwal lengkap dan misa khusus, lihat halaman{" "}
-                            <Link href="/jadwal-misa" className="text-brand-blue hover:underline font-semibold">
-                                Jadwal Misa
-                            </Link>.
-                        </p>
-                    </div>
+                <section className="mt-8">
+                    {churchData ? (
+                        <ChurchSchedule church={churchData} currentWeek={currentWeek} isCurrentMonth={isCurrentMonth} monthName={monthName} year={year} />
+                    ) : (
+                        <p>Data jadwal tidak ditemukan.</p>
+                    )}
                 </section>
+                <InformationCard
+                    title="Informasi Perubahan Jadwal"
+                    description="Jadwal misa dapat berubah sewaktu-waktu. Untuk informasi terkini, pantau pengumuman mingguan atau hubungi sekretariat paroki."
+                />
 
                 {/* Gallery */}
                 <section>
                     <h2 className="text-2xl font-bold text-brand-dark mb-6">Galeri Foto</h2>
                     <GerejaGallery photos={[]} churchName="Gereja St. Yusup Tambakrejo" />
                 </section>
-
-                <InformationCard
-                    title="Informasi Perubahan Jadwal"
-                    description="Jadwal misa dapat berubah sewaktu-waktu. Untuk informasi terkini, pantau pengumuman mingguan atau hubungi sekretariat paroki."
-                />
             </div>
         </div>
     );
