@@ -33,19 +33,22 @@ export default function JadwalList({ initialEvents, categories }: { initialEvent
     currentDate.setHours(0, 0, 0, 0);
 
 
-    // Calculate Category Counts (Global)
+    // Calculate Category Counts based on selected month
     const categoryCounts = useMemo(() => {
         const counts: Record<string, number> = { "all": 0 };
         categories.forEach(cat => counts[cat] = 0);
 
         initialEvents.forEach(event => {
-            counts["all"]++;
-            if (counts[event.category] !== undefined) {
-                counts[event.category]++;
+            const eventDate = new Date(event.date);
+            if (eventDate.getMonth() === selectedDate.getMonth() && eventDate.getFullYear() === selectedDate.getFullYear()) {
+                counts["all"]++;
+                if (counts[event.category] !== undefined) {
+                    counts[event.category]++;
+                }
             }
         });
         return counts;
-    }, [initialEvents, categories]);
+    }, [initialEvents, categories, selectedDate]);
 
     // Filter Logic
     const filteredEvents = useMemo(() => {
