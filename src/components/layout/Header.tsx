@@ -53,10 +53,6 @@ const navItems: NavItem[] = [
             { title: "Data UMKM", href: "/data/umkm" },
         ],
     },
-    {
-        title: "Galeri",
-        href: "/galeri",
-    },
 ];
 
 const ListItem = React.forwardRef<
