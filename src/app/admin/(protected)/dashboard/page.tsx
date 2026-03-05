@@ -22,16 +22,21 @@ export default async function AdminDashboard() {
     getStatistik()
   ]);
 
+  // Safely ensure data are arrays
+  const safePosts = Array.isArray(posts) ? posts : [];
+  const safeUmkms = Array.isArray(umkms) ? umkms : [];
+  const safeEvents = Array.isArray(events) ? events : [];
+
   // Process data
-  const publishedPosts = posts.filter((p) => p.published);
-  const totalPosts = posts.length;
-  const totalUMKM = umkms.length;
+  const publishedPosts = safePosts.filter((p) => p.published);
+  const totalPosts = safePosts.length;
+  const totalUMKM = safeUmkms.length;
 
   // Filter upcoming events
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingEvents = events
+  const upcomingEvents = safeEvents
     .filter(e => new Date(e.date) >= today)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -39,12 +44,12 @@ export default async function AdminDashboard() {
   const totalUmat = statistik?.parishioners || 0;
 
   // Process data for charts/breakdowns
-  const umkmByType = umkms.reduce((acc, curr) => {
+  const umkmByType = safeUmkms.reduce((acc, curr) => {
     acc[curr.type] = (acc[curr.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const eventsByCategory = events.reduce((acc, curr) => {
+  const eventsByCategory = safeEvents.reduce((acc, curr) => {
     acc[curr.category] = (acc[curr.category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -126,7 +131,7 @@ export default async function AdminDashboard() {
             Kategori Kegiatan
           </h3>
           <div className="space-y-2">
-            {Object.entries(eventsByCategory).sort((a, b) => b[1] - a[1]).map(([category, count]) => (
+            {eventsByCategory && Object.entries(eventsByCategory).sort((a, b) => b[1] - a[1]).map(([category, count]) => (
               <div key={category} className="flex items-center justify-between text-sm">
                 <span className="text-slate-600 capitalize">{category}</span>
                 <div className="flex items-center gap-2">
@@ -136,14 +141,14 @@ export default async function AdminDashboard() {
                         category === 'kegiatan' ? 'bg-blue-500' :
                           category === 'rapat' ? 'bg-amber-500' : 'bg-slate-500'
                         }`}
-                      style={{ width: `${(count / events.length) * 100}%` }}
+                      style={{ width: `${(count / safeEvents.length) * 100}%` }}
                     ></div>
                   </div>
                   <span className="font-semibold text-slate-900 w-6 text-right">{count}</span>
                 </div>
               </div>
             ))}
-            {events.length === 0 && <p className="text-sm text-slate-400 italic">Belum ada data kegiatan</p>}
+            {safeEvents.length === 0 && <p className="text-sm text-slate-400 italic">Belum ada data kegiatan</p>}
           </div>
         </div>
       </div>

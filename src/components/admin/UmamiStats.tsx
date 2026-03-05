@@ -133,16 +133,19 @@ export default async function UmamiStats({ latestPosts = [] }: UmamiStatsProps) 
     const bounceRate = stats.visits > 0 ? (stats.bounces / stats.visits) * 100 : 0;
 
     // Process Top Blog Posts (filtering for /artikel/)
-    const topBlogPosts = topPages?.filter((p: UmamiMetric) => p.x.startsWith("/artikel/")) || [];
+    const topBlogPosts = Array.isArray(topPages)
+        ? topPages.filter((p: UmamiMetric) => p.x?.startsWith("/artikel/"))
+        : [];
 
     // Process Latest Posts Performance
-    const latestPostsPerformance = latestPosts.map(post => {
+    const safeLatestPosts = Array.isArray(latestPosts) ? latestPosts : [];
+    const latestPostsPerformance = safeLatestPosts.map(post => {
         const categories = post.categories || [];
         const category = categories[0] || "uncategorized";
         const url = `/artikel/${category.toLowerCase().replace(/\s+/g, '-')}/${post.slug}`;
 
         // Find matching metric
-        const metric = topPages?.find((p: UmamiMetric) => p.x === url);
+        const metric = Array.isArray(topPages) ? topPages.find((p: UmamiMetric) => p.x === url) : undefined;
 
         return {
             ...post,
