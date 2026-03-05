@@ -112,8 +112,7 @@ export async function createPost(formData: {
     await createPostFile(filename, fileContent, `Add post: ${formData.title}`);
 
     // Revalidate paths
-    revalidatePath("/blog");
-    revalidatePath(`/posts/${slug}`);
+    revalidatePath("/artikel", "layout");
 
     return { success: true, slug };
   } catch (error: any) {
@@ -215,11 +214,7 @@ export async function updatePost(
     }
 
     // Revalidate paths
-    revalidatePath("/blog");
-    revalidatePath(`/posts/${slug}`);
-    if (slugChanged) {
-      revalidatePath(`/posts/${finalSlug}`);
-    }
+    revalidatePath("/artikel", "layout");
 
     return { success: true, slug: finalSlug };
   } catch (error: any) {
@@ -241,7 +236,7 @@ export async function deletePost(slug: string) {
     await deletePostFile(item.path, `Delete post: ${slug}`);
 
     // Revalidate paths
-    revalidatePath("/blog");
+    revalidatePath("/artikel", "layout");
 
     return { success: true };
   } catch (error: any) {

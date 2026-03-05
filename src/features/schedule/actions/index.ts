@@ -45,7 +45,7 @@ export async function getJadwalKegiatan(): Promise<JadwalEvent[]> {
 export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionResult> {
   const result = await updateScheduleEvents(data);
   if (result.success) {
-    revalidatePath("/data/jadwal");
+    revalidatePath("/event");
     revalidatePath("/admin/data/jadwal-kegiatan");
     return { success: true };
   }

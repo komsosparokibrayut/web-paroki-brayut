@@ -75,7 +75,8 @@ export async function saveStatistik(data: StatistikData) {
       "Update statistik data"
     );
     revalidatePath("/data/statistik");
-    revalidatePath("/profil"); // Statistics are shown in profile page too
+    revalidatePath("/profil"); // Statistics are shown in profile page
+    revalidatePath("/profil/wilayah"); 
     revalidatePath("/admin/data/statistik");
     return { success: true };
   } catch (error: any) {
@@ -171,7 +172,7 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
       [{ path: WILAYAH_FILE, content: JSON.stringify(data, null, 2) }],
       `Update wilayah & lingkungan data`
     );
-    revalidatePath("/profil/lingkungan");
+    revalidatePath("/profil/wilayah");
     revalidatePath("/admin/data/wilayah");
     return { success: true };
   } catch (error: any) {
@@ -196,7 +197,7 @@ export async function savePastorTimKerja(data: PastorTimKerjaData) {
       [{ path: PASTOR_FILE, content: JSON.stringify(data, null, 2) }],
       `Update pastor & tim kerja data`
     );
-    revalidatePath("/profil/pastor"); // Assumption, will verify
+    revalidatePath("/profil/pastor-tim"); 
     revalidatePath("/admin/data/pastor-tim");
     return { success: true };
   } catch (error: any) {
@@ -221,7 +222,7 @@ export async function saveFormulir(data: Formulir[]) {
       [{ path: FORMULIR_FILE, content: JSON.stringify(data, null, 2) }],
       `Update formulir data`
     );
-    revalidatePath("/layanan/formulir"); // Assumption, will verify
+    revalidatePath("/data/formulir"); 
     revalidatePath("/admin/data/formulir");
     return { success: true };
   } catch (error: any) {
