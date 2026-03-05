@@ -49,7 +49,7 @@ export default function RootLayout({
         <ClerkProvider>
           <Script
             src="https://cloud.umami.is/script.js"
-            data-website-id="c438390e-addf-46b3-8f5e-47f26dcaf8c3"
+            data-website-id="4fd6cd8f-898d-4ad9-b98a-4795fda4cea3"
             strategy="afterInteractive"
           />
           <GlobalLoader />
