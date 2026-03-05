@@ -27,12 +27,13 @@ export default clerkMiddleware(async (auth, request) => {
   response.headers.set(
     "Content-Security-Policy",
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com; " +
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://clerk.parokibrayut.org; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data: https: https://img.clerk.com; " +
     "font-src 'self' data: https://fonts.gstatic.com; " +
-    "connect-src 'self' https: https://cloud.umami.is https://vitals.vercel-insights.com https://*.clerk.accounts.dev https://clerk.com; " +
-    "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev; " +
+    "worker-src 'self' blob:; " +
+    "connect-src 'self' https: wss: https://cloud.umami.is https://vitals.vercel-insights.com https://*.clerk.accounts.dev https://clerk.com https://clerk.parokibrayut.org; " +
+    "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev https://clerk.parokibrayut.org; " +
     "frame-ancestors 'none';"
   );
 
