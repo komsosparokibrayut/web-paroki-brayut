@@ -37,29 +37,39 @@ export async function getOctokit(): Promise<Octokit> {
   const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
 
   if (!appId || !privateKey || !installationId) {
+    console.error("[GitHub App] Missing required credentials. Check matching env vars: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_APP_INSTALLATION_ID.");
+    console.error(`[GitHub App] Found: appId=${!!appId}, privateKey=${!!privateKey}, installationId=${!!installationId}`);
     throw new Error(
       "Missing GitHub App credentials. Please set GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_INSTALLATION_ID"
     );
   }
 
-  // Create new Octokit instance with GitHub App authentication
-  octokitInstance = new Octokit({
-    authStrategy: createAppAuth,
-    auth: {
-      appId,
-      privateKey: privateKey.replace(/\\n/g, "\n"),
-      installationId,
-    },
-    log: {
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {}, // Suppress error logging including 404s
-    },
-  });
+  try {
+    // Create new Octokit instance with GitHub App authentication
+    octokitInstance = new Octokit({
+      authStrategy: createAppAuth,
+      auth: {
+        appId,
+        privateKey: privateKey.replace(/\\n/g, "\n"),
+        installationId,
+      },
+      log: {
+        debug: () => {},
+        info: () => {},
+        warn: (msg) => console.warn(`[GitHub App Warn] ${msg}`),
+        error: (msg) => console.error(`[GitHub App Error] ${msg}`),
+      },
+    });
 
-  // Installation tokens expire after 1 hour
-  tokenExpiry = now + 60 * 60 * 1000;
+    // Test authentication quietly to make sure it works
+    await octokitInstance.rest.apps.getAuthenticated();
+    
+    // Installation tokens expire after 1 hour
+    tokenExpiry = now + 60 * 60 * 1000;
+  } catch (error) {
+    console.error("[GitHub App] Failed to initialize Octokit with provided app credentials:", error);
+    throw error;
+  }
 
   return octokitInstance;
 }
@@ -69,6 +79,7 @@ export function getRepoConfig() {
   const repo = process.env.CONTENT_REPO_NAME;
 
   if (!owner || !repo) {
+    console.error(`[GitHub Repo] Missing repository config. owner=${owner}, repo=${repo}`);
     throw new Error(
       "Missing repository configuration. Please set CONTENT_REPO_OWNER and CONTENT_REPO_NAME"
     );
