@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/select";
 
 export default function UMKMClient({ initialData, categories }: { initialData: UMKMData[], categories: string[] }) {
-    const [data, setData] = useState<UMKMData[]>(initialData);
+    const defaultData = Array.isArray(initialData) ? initialData : [];
+    const [data, setData] = useState<UMKMData[]>(defaultData);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingItem, setEditingItem] = useState<UMKMData | null>(null);

@@ -65,9 +65,10 @@ export default function PostTable({ posts, hidePagination = false, showCreateBut
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Get unique categories for filter dropdown
-  const categories = Array.from(new Set(posts.flatMap(p => p.categories || []))).filter(Boolean).sort();
+  const safePosts = Array.isArray(posts) ? posts : [];
+  const categories = Array.from(new Set(safePosts.flatMap(p => p.categories || []))).filter(Boolean).sort();
 
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = safePosts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === "all" || (post.categories?.includes(categoryFilter));
 

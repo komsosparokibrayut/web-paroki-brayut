@@ -77,7 +77,8 @@ async function getTopPages(): Promise<UmamiMetric[] | null> {
     return getUmamiData(`/metrics?type=url&startAt=${startAt}&endAt=${endAt}&limit=20`);
 }
 
-function formatNumber(num: number): string {
+function formatNumber(num: number | undefined | null): string {
+    if (num === undefined || num === null || isNaN(num as number)) return "0";
     if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
     if (num >= 1000) return (num / 1000).toFixed(1) + "K";
     return num.toLocaleString("id-ID");
@@ -114,7 +115,7 @@ export default async function UmamiStats({ latestPosts = [] }: UmamiStatsProps) 
         getTopPages()
     ]);
 
-    if (!stats) {
+    if (!stats || typeof stats.pageviews === 'undefined') {
         return (
             <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">

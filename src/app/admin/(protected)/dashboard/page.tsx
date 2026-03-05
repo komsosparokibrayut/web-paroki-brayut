@@ -41,7 +41,8 @@ export default async function AdminDashboard() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const totalUpcomingEvents = upcomingEvents.length;
-  const totalUmat = statistik?.parishioners || 0;
+  // Fallback to 0 if parishioners doesn't exist or is not a number
+  const totalUmat = Number(statistik?.parishioners) || 0;
 
   // Process data for charts/breakdowns
   const umkmByType = safeUmkms.reduce((acc, curr) => {
@@ -89,7 +90,7 @@ export default async function AdminDashboard() {
         />
         <StatsCard
           title="Total Umat"
-          value={totalUmat.toLocaleString('id-ID')}
+          value={(totalUmat || 0).toLocaleString('id-ID')}
           icon={Users}
           iconClassName="text-pink-600"
           iconContainerClassName="bg-pink-50"

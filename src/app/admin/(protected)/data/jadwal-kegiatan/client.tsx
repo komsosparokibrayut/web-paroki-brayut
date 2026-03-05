@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/select";
 
 export default function JadwalClient({ initialData, categories }: { initialData: JadwalEvent[], categories: string[] }) {
-    const [data, setData] = useState<JadwalEvent[]>(initialData);
+    const defaultData = Array.isArray(initialData) ? initialData : [];
+    const [data, setData] = useState<JadwalEvent[]>(defaultData);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingItem, setEditingItem] = useState<JadwalEvent | null>(null);
