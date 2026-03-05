@@ -1,25 +1,15 @@
-import { getWilayahLingkungan } from "@/actions/data";
+import { getWilayahLingkungan, getStatistik } from "@/actions/data";
 import WilayahClient from "./client";
-import fs from "fs/promises";
-import path from "path";
 
 export default async function AdminWilayahPage() {
-    const data = await getWilayahLingkungan();
+    const [data, statistik] = await Promise.all([
+        getWilayahLingkungan(),
+        getStatistik()
+    ]);
 
-    // Read stats from file
-    let targetWilayah = 0;
-    let targetLingkungan = 0;
-    try {
-        const statsPath = path.join(process.cwd(), '../web-paroki-content/statistik.json');
-        const statsContent = await fs.readFile(statsPath, "utf-8");
-        const stats = JSON.parse(statsContent);
-        targetWilayah = stats.wilayah || 0;
-        targetLingkungan = stats.wards || 0;
-    } catch (error) {
-        console.error("Failed to read statistik.json:", error);
-        targetWilayah = data.length;
-        targetLingkungan = data.reduce((acc, w) => acc + w.lingkungan.length, 0);
-    }
+    // Read stats from GitHub repo via getStatistik()
+    const targetWilayah = statistik?.wilayah || data.length;
+    const targetLingkungan = statistik?.wards || data.reduce((acc, w) => acc + w.lingkungan.length, 0);
 
     const realLingkunganCount = data.reduce((acc, w) => acc + w.lingkungan.length, 0);
 
