@@ -1,5 +1,6 @@
-
 import { Metadata } from "next";
+
+export const revalidate = 3600; // Re-fetch from GitHub every 1 hour
 import { getUMKM } from "@/actions/data";
 import { getMasterCategories } from "@/actions/master-categories";
 import UMKMList from "@/components/data/UMKMList";

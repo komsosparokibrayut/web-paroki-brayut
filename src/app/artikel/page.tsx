@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+
+export const revalidate = 1800; // Re-fetch from GitHub every 30 min
 import { getAllPosts } from "@/features/news/actions/posts";
 import PostList from "@/features/news/components/PostList";
 import { getMasterCategories } from "@/actions/master-categories";

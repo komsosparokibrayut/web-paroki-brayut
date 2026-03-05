@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+
+export const revalidate = 3600;
 import Link from "next/link";
 import { MapPin, Clock, Calendar } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";

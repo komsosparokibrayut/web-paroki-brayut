@@ -5,6 +5,8 @@ import { calculateReadingTime } from "@/lib/utils";
 import PostHeader from "@/features/news/components/PostHeader";
 import PostContent from "@/features/news/components/PostContent";
 
+export const revalidate = 1800; // Re-fetch from GitHub every 30 min
+
 type Props = {
     params: Promise<{
         category: string;

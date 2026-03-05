@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+
+export const revalidate = 3600; // Re-fetch from GitHub every 1 hour
 import { getFormulir } from "@/actions/data";
 import { getMasterCategories } from "@/actions/master-categories";
 import FormulirList from "@/components/data/FormulirList";

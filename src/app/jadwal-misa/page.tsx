@@ -1,5 +1,6 @@
-
 import { Metadata } from "next";
+
+export const revalidate = 3600; // Re-fetch from GitHub every 1 hour
 import PageHeader from "@/components/layout/PageHeader";
 import { getJadwalMisa } from "@/features/schedule/actions";
 import { JadwalMisaData } from "@/features/schedule/types";

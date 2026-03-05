@@ -4,12 +4,12 @@ import PostList from "@/features/news/components/PostList";
 import { getMasterCategories } from "@/actions/master-categories";
 import PageHeader from "@/components/layout/PageHeader";
 
+export const revalidate = 1800; // Re-fetch every 30 min
+
 export async function generateStaticParams() {
     const categories = await getMasterCategories();
-    // Assuming category routes are lowercase/kebab-case of the names
     return categories.post.map((category) => ({ category }));
 }
-
 export async function generateMetadata({
     params,
 }: {
