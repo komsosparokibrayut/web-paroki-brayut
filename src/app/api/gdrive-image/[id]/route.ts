@@ -10,6 +10,23 @@ import { NextRequest, NextResponse } from "next/server";
  *
  * Usage: /api/gdrive-image/FILE_ID
  */
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
+const RATE_LIMIT_MAX = 60; // Max requests
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+// Allowed MIME types
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+]);
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,6 +35,27 @@ export async function GET(
 
   if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
     return new NextResponse("Invalid file ID", { status: 400 });
+  }
+
+  // Very basic IP extraction for rate limiting
+  // Note: Vercel specific headers (x-real-ip) or standard forwarded-for
+  const ip = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for") || "unknown";
+  
+  if (ip !== "unknown") {
+    const now = Date.now();
+    const clientData = rateLimitMap.get(ip);
+    
+    if (clientData && now < clientData.expiresAt) {
+      if (clientData.count >= RATE_LIMIT_MAX) {
+        return new NextResponse("Too Many Requests", { status: 429 });
+      }
+      clientData.count++;
+    } else {
+      rateLimitMap.set(ip, {
+        count: 1,
+        expiresAt: now + RATE_LIMIT_WINDOW_MS
+      });
+    }
   }
 
   try {
@@ -41,9 +79,15 @@ export async function GET(
         return new NextResponse("Image not found", { status: 404 });
       }
 
-      const fallbackBuffer = await fallbackResponse.arrayBuffer();
       const fallbackType =
-        fallbackResponse.headers.get("content-type") || "image/jpeg";
+        fallbackResponse.headers.get("content-type")?.split(';')[0].trim() || "image/jpeg";
+
+      if (!ALLOWED_MIME_TYPES.has(fallbackType)) {
+        console.warn(`Blocked attempt for MIME type: ${fallbackType}`);
+        return new NextResponse("Unsupported file type", { status: 400 });
+      }
+
+      const fallbackBuffer = await fallbackResponse.arrayBuffer();
 
       return new NextResponse(fallbackBuffer, {
         status: 200,
@@ -55,8 +99,14 @@ export async function GET(
       });
     }
 
+    const contentType = response.headers.get("content-type")?.split(';')[0].trim() || "image/jpeg";
+    
+    if (!ALLOWED_MIME_TYPES.has(contentType)) {
+      console.warn(`Blocked attempt for MIME type: ${contentType}`);
+      return new NextResponse("Unsupported file type", { status: 400 });
+    }
+
     const buffer = await response.arrayBuffer();
-    const contentType = response.headers.get("content-type") || "image/jpeg";
 
     return new NextResponse(buffer, {
       status: 200,
