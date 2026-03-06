@@ -8,8 +8,28 @@ export default clerkMiddleware(async (auth, request) => {
     await auth.protect();
   }
 
-  // Security headers
-  const response = NextResponse.next();
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://clerk.parokibrayut.org ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval'"};
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' data: https: https://img.clerk.com;
+    font-src 'self' data: https://fonts.gstatic.com;
+    worker-src 'self' blob:;
+    connect-src 'self' https: wss: https://cloud.umami.is https://vitals.vercel-insights.com https://*.clerk.accounts.dev https://clerk.com https://clerk.parokibrayut.org;
+    frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev https://clerk.parokibrayut.org;
+    frame-ancestors 'none';
+  `.replace(/\s{2,}/g, " ").trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", cspHeader);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   // Prevent clickjacking
   response.headers.set("X-Frame-Options", "DENY");
@@ -23,19 +43,8 @@ export default clerkMiddleware(async (auth, request) => {
   // Referrer Policy
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   
-  // Content Security Policy - Updated for Clerk and Umami
-  response.headers.set(
-    "Content-Security-Policy",
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://clerk.parokibrayut.org; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "img-src 'self' data: https: https://img.clerk.com; " +
-    "font-src 'self' data: https://fonts.gstatic.com; " +
-    "worker-src 'self' blob:; " +
-    "connect-src 'self' https: wss: https://cloud.umami.is https://vitals.vercel-insights.com https://*.clerk.accounts.dev https://clerk.com https://clerk.parokibrayut.org; " +
-    "frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.clerk.accounts.dev https://clerk.parokibrayut.org; " +
-    "frame-ancestors 'none';"
-  );
+  // Content Security Policy - Updated for strict nonces
+  response.headers.set("Content-Security-Policy", cspHeader);
 
   // Permissions Policy
   response.headers.set(
