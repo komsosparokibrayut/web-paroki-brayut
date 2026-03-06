@@ -5,6 +5,9 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { headers } from "next/headers";
+import { GlobalLoader } from "@/components/ui/global-loader";
+import MainToaster from "@/components/providers/MainToaster";
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -35,22 +38,24 @@ export const metadata: Metadata = {
   },
 };
 
-import { GlobalLoader } from "@/components/ui/global-loader";
-import MainToaster from "@/components/providers/MainToaster";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const nonce = headersList.get("x-nonce") || undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${rubik.variable} ${libre.variable} font-rubik bg-brand-warm text-brand-dark antialiased`} suppressHydrationWarning>
-        <ClerkProvider>
+        <ClerkProvider nonce={nonce}>
           <Script
             src="https://cloud.umami.is/script.js"
             data-website-id="4fd6cd8f-898d-4ad9-b98a-4795fda4cea3"
             strategy="afterInteractive"
+            nonce={nonce}
           />
           <GlobalLoader />
           <SmoothScroll>{children}</SmoothScroll>

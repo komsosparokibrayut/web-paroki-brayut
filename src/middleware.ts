@@ -20,7 +20,7 @@ export default clerkMiddleware(async (auth, request) => {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://clerk.parokibrayut.org ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval'"};
+    script-src 'self' 'nonce-${nonce}' https://cloud.umami.is https://va.vercel-scripts.com https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://clerk.parokibrayut.org ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval'"};
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: https: https://img.clerk.com;
     font-src 'self' data: https://fonts.gstatic.com;
@@ -32,8 +32,13 @@ export default clerkMiddleware(async (auth, request) => {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  
+  // Also set these to ensure Next.js specifically picks them up for the rendering engine
+  // This is required in Next 13+ to ensure the nonce is applied to native Next.js scripts
   requestHeaders.set("Content-Security-Policy", cspHeader);
+  requestHeaders.set("x-middleware-request-x-nonce", nonce);
 
+  // We need to pass the updated headers to the Request so the App Router consumes it
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -52,7 +57,7 @@ export default clerkMiddleware(async (auth, request) => {
   // Referrer Policy
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   
-  // Content Security Policy - Updated for strict nonces
+  // Set the final CSP on the Outbound Response
   response.headers.set("Content-Security-Policy", cspHeader);
 
   // Permissions Policy
