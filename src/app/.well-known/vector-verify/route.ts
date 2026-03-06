@@ -2,6 +2,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   return NextResponse.json({
-    token: "df061e1d2b0ae28a06186ae82ab3b219ad111f02de3f71a92f4492e4cded5841",
+    token: "4c4cc47bd9105205e9ea267eb810dd097a19e5e54f4869c22765ef4f7c24d80f",
   });
 }
