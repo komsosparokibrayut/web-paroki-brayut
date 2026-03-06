@@ -1,10 +1,16 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
+import { NextResponse } from "next/server";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
-// Define the logic that sets security headers
-function addSecurityHeaders(response: NextResponse) {
+export default clerkMiddleware(async (auth, request) => {
+  if (isAdminRoute(request)) {
+    await auth.protect();
+  }
+
+  // Security headers
+  const response = NextResponse.next();
+
   // Prevent clickjacking
   response.headers.set("X-Frame-Options", "DENY");
   
@@ -38,33 +44,7 @@ function addSecurityHeaders(response: NextResponse) {
   );
 
   return response;
-}
-
-// Create the Clerk middleware instance
-const clerkAuthMiddleware = clerkMiddleware(async (auth, request) => {
-  if (isAdminRoute(request)) {
-    await auth.protect();
-  }
-
-  return addSecurityHeaders(NextResponse.next());
 });
-
-export default async function middleware(request: NextRequest, event: NextFetchEvent) {
-  const pathname = request.nextUrl.pathname;
-
-  // Only run Clerk middleware on routes that need auth context 
-  // to avoid handshake redirects breaking public pages when Clerk is down
-  if (
-    pathname.startsWith("/admin") || 
-    pathname.startsWith("/layanan-inti") || 
-    pathname.startsWith("/api")
-  ) {
-    return clerkAuthMiddleware(request, event);
-  }
-
-  // For all other public routes, just apply security headers
-  return addSecurityHeaders(NextResponse.next());
-}
 
 export const config = {
   matcher: [
