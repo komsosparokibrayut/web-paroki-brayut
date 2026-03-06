@@ -4,6 +4,15 @@ import { NextResponse } from "next/server";
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // If Clerk needs to handle a handshake redirect or status cleanup, 
+  // let it process this without overriding its response with custom headers.
+  if (
+    request.nextUrl.searchParams.has("__clerk_hs_reason") ||
+    request.nextUrl.searchParams.has("__clerk_status")
+  ) {
+    return;
+  }
+
   if (isAdminRoute(request)) {
     await auth.protect();
   }
