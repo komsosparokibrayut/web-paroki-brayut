@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getAllPosts } from "@/features/news/actions/posts";
 import PostList from "@/features/news/components/PostList";
 import { getMasterCategories } from "@/actions/master-categories";
@@ -44,6 +45,10 @@ export default async function CategoryPage({
     const matchedCategory = masterCategories.post.find(
         (cat) => cat.toLowerCase() === normalizedParam
     );
+
+    if (!matchedCategory) {
+        notFound();
+    }
 
     // 3. Use matched category or fallback to Sentence case
     const displayCategory = matchedCategory ||

@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getAlbum } from "@/services/github/albums";
 import { ImageUpload } from "@/features/gallery/components/ImageUpload";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     const album = await getAlbum(id);
 
     if (!album) {
-        return <div>Album not found</div>;
+        notFound();
     }
 
     return (
