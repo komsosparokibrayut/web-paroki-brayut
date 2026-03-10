@@ -21,7 +21,7 @@ const libre = Libre_Baskerville({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://parokibrayut.or.id"),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://www.parokibrayut.org"),
   title: "Paroki Brayut",
   description: "Website Resmi Paroki Brayut - Santo Yohanes Paulus II",
   icons: {

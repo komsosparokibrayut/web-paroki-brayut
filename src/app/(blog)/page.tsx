@@ -43,8 +43,27 @@ export default async function HomePage() {
     return post.published && new Date(post.publishedAt) <= new Date();
   });
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CatholicChurch",
+    "name": "Paroki Brayut Santo Yohanes Paulus II",
+    "url": process.env.NEXTAUTH_URL || "https://www.parokibrayut.org",
+    "logo": `${process.env.NEXTAUTH_URL || "https://www.parokibrayut.org"}/images/logo/logo.png`,
+    "description": "Website Resmi Paroki Brayut - Santo Yohanes Paulus II. Dapatkan informasi jadwal misa terbaru, warta paroki, berita kegiatan, dan profil gereja.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Sleman",
+      "addressRegion": "DIY",
+      "addressCountry": "ID"
+    }
+  };
+
   return (
     <main className="min-h-screen bg-brand-warm selection:bg-brand-gold selection:text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Section Navigation */}
       <SectionNav />
 
