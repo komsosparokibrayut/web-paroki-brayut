@@ -69,15 +69,20 @@ export async function submitBooking(
 
 export async function getBookings(): Promise<MeetingBooking[]> {
   try {
-    const snapshot = await adminDb.collection(COLLECTION)
-      .orderBy("date", "desc")
-      .orderBy("startTime", "asc")
-      .get();
+    const snapshot = await adminDb.collection(COLLECTION).get();
       
-    return snapshot.docs.map(doc => ({
+    const bookings = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as MeetingBooking));
+    
+    // Sort by date DESC, then startTime ASC
+    return bookings.sort((a, b) => {
+      if (a.date !== b.date) {
+         return b.date.localeCompare(a.date);
+      }
+      return a.startTime.localeCompare(b.startTime);
+    });
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return [];

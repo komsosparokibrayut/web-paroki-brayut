@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
 import { submitBooking } from "@/features/booking/actions/bookings";
 import { verifyMeetingRoomPassword } from "@/features/booking/actions/auth";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ export default function MeetingRoomClient({
     const [isAuth, setIsAuth] = useState(isAuthenticated);
     const [password, setPassword] = useState("");
     const [isBookingOpen, setIsBookingOpen] = useState(false);
+    const router = useRouter();
     
     const [newBooking, setNewBooking] = useState({
         placeId: "",
@@ -106,12 +108,16 @@ export default function MeetingRoomClient({
                         <h1 className="text-3xl font-bold tracking-tight text-brand-dark">Jadwal Penggunaan Ruangan</h1>
                         <p className="text-muted-foreground mt-1">Daftar peminjaman ruang rapat / gedung di lingkungan paroki.</p>
                     </div>
-                    <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-                        <DialogTrigger asChild>
-                            <Button size="lg" className="bg-brand-blue hover:bg-brand-dark transition-colors">
-                                Booking Ruang
-                            </Button>
-                        </DialogTrigger>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="lg" onClick={() => router.refresh()}>
+                            Refresh Jadwal
+                        </Button>
+                        <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+                            <DialogTrigger asChild>
+                                <Button size="lg" className="bg-brand-blue hover:bg-brand-dark transition-colors">
+                                    Booking Ruang
+                                </Button>
+                            </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px]">
                             <DialogHeader>
                                 <DialogTitle>Form Peminjaman Ruang</DialogTitle>
@@ -162,6 +168,7 @@ export default function MeetingRoomClient({
                             </form>
                         </DialogContent>
                     </Dialog>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
 import { updateBookingStatus, deleteBooking, submitBooking } from "@/features/booking/actions/bookings";
 import { saveMeetingPlace, deleteMeetingPlace } from "@/features/booking/actions/places";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -30,6 +31,7 @@ export default function MeetingRoomsClient({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [places, setPlaces] = useState(initialPlaces);
+  const router = useRouter();
 
   // States for Places
   const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
@@ -181,13 +183,15 @@ export default function MeetingRoomsClient({
         <TabsContent value="bookings" className="space-y-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Current Bookings</h2>
-            <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Booking
-                </Button>
-              </DialogTrigger>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => router.refresh()}>Refresh Data</Button>
+              <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Booking
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>Add New Booking</DialogTitle>
@@ -238,6 +242,7 @@ export default function MeetingRoomsClient({
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {bookings.length === 0 ? (
@@ -297,13 +302,15 @@ export default function MeetingRoomsClient({
         <TabsContent value="places" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Managed Places</h2>
-            <Dialog open={isAddPlaceOpen} onOpenChange={setIsAddPlaceOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Place
-                </Button>
-              </DialogTrigger>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => router.refresh()}>Refresh Data</Button>
+              <Dialog open={isAddPlaceOpen} onOpenChange={setIsAddPlaceOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Place
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add Meeting Place</DialogTitle>
@@ -325,6 +332,7 @@ export default function MeetingRoomsClient({
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -96,60 +96,64 @@ export function PasswordInputWithValidation({
         </Button>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="h-2 flex-grow bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className={cn("h-full transition-all duration-300", barColor)}
-              style={{ width: `${strengthPercentage}%` }}
-            />
+      {value.length > 0 && (
+        <>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-grow bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full transition-all duration-300", barColor)}
+                  style={{ width: `${strengthPercentage}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end pr-1">
+              <span className="text-sm font-semibold">{strengthLabel}</span>
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end pr-1">
-          <span className="text-sm font-semibold">{strengthLabel}</span>
-        </div>
-      </div>
 
-      <div className="space-y-2">
-        <p className="font-semibold text-sm">Password harus mengandung:</p>
-        <ul className="space-y-1.5">
-          {rules.map((rule, index) => {
-            const passed = rule.test(value);
-            return (
-              <li
-                key={index}
-                className={cn(
-                  "flex items-center gap-2 text-sm",
-                  passed ? "text-green-600" : "text-red-500"
-                )}
-              >
-                {passed ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                ) : (
-                  <div className="h-4 w-4 shrink-0 rounded-[4px] bg-red-500 flex items-center justify-center">
-                    <svg
-                      width="10"
-                      height="8"
-                      viewBox="0 0 10 8"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M1.5 4L3.5 6L8.5 1"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                )}
-                <span>{rule.label}</span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+          <div className="space-y-2">
+            <p className="font-semibold text-sm">Password harus mengandung:</p>
+            <ul className="space-y-1.5">
+              {rules.map((rule, index) => {
+                const passed = rule.test(value);
+                return (
+                  <li
+                    key={index}
+                    className={cn(
+                      "flex items-center gap-2 text-sm",
+                      passed ? "text-green-600" : "text-red-500"
+                    )}
+                  >
+                    {passed ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <div className="h-4 w-4 shrink-0 rounded-[4px] bg-red-500 flex items-center justify-center">
+                        <svg
+                          width="10"
+                          height="8"
+                          viewBox="0 0 10 8"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M1.5 4L3.5 6L8.5 1"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <span>{rule.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 }
