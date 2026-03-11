@@ -45,7 +45,7 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
     const now = Date.now();
@@ -81,7 +81,7 @@ export async function deleteMeetingPlace(id: string): Promise<ActionResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
     await adminDb.collection(COLLECTION).doc(id).delete();

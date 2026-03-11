@@ -13,16 +13,16 @@ const COLLECTION = "meeting_bookings";
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error?: string };
 
 const bookingSchema = z.object({
-  placeId: z.string().min(1, "Place is required"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-  userName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
-  userContact: z.string().min(5, "Contact must be at least 5 characters").max(100, "Contact too long"),
-  purpose: z.string().min(3, "Purpose must be at least 3 characters").max(500, "Purpose too long"),
+  placeId: z.string().min(1, "Ruangan harus dipilih"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
+  userName: z.string().min(2, "Nama minimal 2 karakter").max(100, "Nama terlalu panjang"),
+  userContact: z.string().min(5, "Kontak minimal 5 karakter").max(100, "Kontak terlalu panjang"),
+  purpose: z.string().min(3, "Keperluan minimal 3 karakter").max(500, "Keperluan terlalu panjang"),
   isAdminDirectCreate: z.boolean().optional(),
 }).refine(data => data.endTime > data.startTime, {
-  message: "End time must be after start time",
+  message: "Waktu selesai harus setelah waktu mulai",
 });
 
 export async function submitBooking(
@@ -32,13 +32,13 @@ export async function submitBooking(
     // Server-side input validation
     const parsed = bookingSchema.safeParse(booking);
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0]?.message || "Invalid input" };
+      return { success: false, error: parsed.error.errors[0]?.message || "Input tidak valid" };
     }
 
     // Validate date is not in the past
     const today = new Date().toISOString().split('T')[0];
     if (parsed.data.date < today) {
-      return { success: false, error: "Cannot book a date in the past" };
+      return { success: false, error: "Tidak dapat memesan tanggal di masa lalu" };
     }
 
     // Rate limiting for public users (not admin direct creation)
@@ -143,7 +143,7 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
     await adminDb.collection(COLLECTION).doc(id).update({
@@ -164,7 +164,7 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
     await adminDb.collection(COLLECTION).doc(id).delete();
@@ -185,13 +185,13 @@ export async function updateBooking(
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Unauthorized" };
+      return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
     // Server-side input validation
     const parsed = bookingSchema.safeParse(data);
     if (!parsed.success) {
-      return { success: false, error: parsed.error.errors[0]?.message || "Invalid input" };
+      return { success: false, error: parsed.error.errors[0]?.message || "Input tidak valid" };
     }
 
     // Check for overlap, excluding this current booking

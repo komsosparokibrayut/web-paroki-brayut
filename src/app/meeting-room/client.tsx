@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
-import { submitBooking } from "@/features/booking/actions/bookings";
+import { submitBooking, getBookings } from "@/features/booking/actions/bookings";
 import { verifyMeetingRoomPassword } from "@/features/booking/actions/auth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export default function MeetingRoomClient({
     isAuthenticated,
@@ -27,9 +30,19 @@ export default function MeetingRoomClient({
     places: MeetingPlace[];
 }) {
     const [isAuth, setIsAuth] = useState(isAuthenticated);
+    const [bookings, setBookings] = useState(initialBookings);
     const [password, setPassword] = useState("");
     const [isBookingOpen, setIsBookingOpen] = useState(false);
     const router = useRouter();
+    const [isRefreshing, startRefresh] = useTransition();
+    const [conflictError, setConflictError] = useState<string | null>(null);
+
+    const handleRefresh = () => {
+        startRefresh(async () => {
+            const fresh = await getBookings();
+            setBookings(fresh);
+        });
+    };
     
     const [newBooking, setNewBooking] = useState({
         placeId: "",
@@ -56,19 +69,20 @@ export default function MeetingRoomClient({
     const handleBook = async (e: React.FormEvent) => {
         e.preventDefault();
         // Validation length and required fields mostly handled by required attributes
-        if (!newBooking.placeId || !newBooking.date || !newBooking.startTime || !newBooking.endTime) {
-            return toast.error("Semua field harus diisi");
+        const res = await submitBooking(newBooking);
+        if (!res.success) {
+            if (res.error?.includes("bertabrakan")) {
+                setConflictError(res.error);
+            } else {
+                toast.error(res.error || "Gagal mengirim permohonan");
+            }
+            return;
         }
 
-        toast.promise(submitBooking(newBooking), {
-            loading: "Mengirim permohonan peminjaman...",
-            success: () => {
-                setIsBookingOpen(false);
-                setTimeout(() => window.location.reload(), 1500);
-                return "Permohonan berhasil dikirim, menunggu persetujuan admin.";
-            },
-            error: "Gagal mengirim permohonan",
-        });
+        setIsBookingOpen(false);
+        setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "" });
+        toast.success("Permohonan berhasil dikirim, menunggu persetujuan admin.");
+        handleRefresh(); // Refresh list to show the new pending booking
     };
 
     if (!isAuth) {
@@ -110,13 +124,14 @@ export default function MeetingRoomClient({
                         <p className="text-muted-foreground mt-1">Daftar peminjaman ruang rapat / gedung di lingkungan paroki.</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="lg" onClick={() => router.refresh()}>
+                        <Button variant="outline" size="lg" onClick={handleRefresh} disabled={isRefreshing}>
+                            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
                             Refresh Jadwal
                         </Button>
                         <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
                             <DialogTrigger asChild>
                                 <Button size="lg" className="bg-brand-blue hover:bg-brand-dark transition-colors">
-                                    Booking Ruang
+                                    Pinjam Ruangan
                                 </Button>
                             </DialogTrigger>
                         <DialogContent className="sm:max-w-[500px]">
@@ -128,7 +143,7 @@ export default function MeetingRoomClient({
                                     <Label htmlFor="place">Ruangan</Label>
                                     <Select value={newBooking.placeId} onValueChange={(val) => setNewBooking({...newBooking, placeId: val})} required>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Pilih Ruang" />
+                                            <SelectValue placeholder="Pilih Ruangan" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {places.map(p => (
@@ -140,7 +155,11 @@ export default function MeetingRoomClient({
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="date">Tanggal</Label>
-                                        <Input id="date" type="date" value={newBooking.date} onChange={e => setNewBooking({...newBooking, date: e.target.value})} required />
+                                        <DatePicker 
+                                            value={newBooking.date} 
+                                            onChange={val => setNewBooking({...newBooking, date: val})} 
+                                            disablePast 
+                                        />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -171,9 +190,32 @@ export default function MeetingRoomClient({
                     </Dialog>
                     </div>
                 </div>
-
+                
+                {isRefreshing ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i} className="overflow-hidden border-t-4 border-t-brand-blue/20">
+                                <CardHeader className="pb-3 bg-white">
+                                    <Skeleton className="h-5 w-3/4 mb-2" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </CardHeader>
+                                <CardContent className="space-y-4 pt-4 bg-slate-50/50">
+                                    <Skeleton className="h-10 w-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-3 w-16" />
+                                        <Skeleton className="h-4 w-32" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-3 w-16" />
+                                        <Skeleton className="h-4 w-full" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {initialBookings.length === 0 ? (
+                    {bookings.length === 0 ? (
                         <Card className="col-span-full py-12">
                             <CardContent className="flex flex-col items-center justify-center text-muted-foreground">
                                 <CalendarIcon className="w-12 h-12 mb-4 opacity-20" />
@@ -181,7 +223,7 @@ export default function MeetingRoomClient({
                             </CardContent>
                         </Card>
                     ) : (
-                        initialBookings.map((booking) => {
+                        bookings.map((booking) => {
                             const place = places.find(p => p.id === booking.placeId);
                             return (
                                 <Card key={booking.id} className="overflow-hidden border-t-4 border-t-brand-blue">
@@ -191,7 +233,7 @@ export default function MeetingRoomClient({
                                                 {booking.status === "pending" ? "Menunggu Konfirmasi" : booking.status === "confirmed" ? "Disetujui" : "Ditolak"}
                                             </Badge>
                                         </div>
-                                        <CardTitle className="text-xl">{place?.name || "Unknown Place"}</CardTitle>
+                                        <CardTitle className="text-xl">{place?.name || "Ruangan Tidak Diketahui"}</CardTitle>
                                         <CardDescription className="flex items-center text-sm font-medium pt-1">
                                             <CalendarIcon className="w-4 h-4 mr-2" />
                                             {new Date(booking.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -216,7 +258,23 @@ export default function MeetingRoomClient({
                         })
                     )}
                 </div>
+                )}
             </div>
+
+            {/* Conflict Alert Modal */}
+            <AlertDialog open={!!conflictError} onOpenChange={() => setConflictError(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Jadwal Sudah Terpakai</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {conflictError}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setConflictError(null)}>Mengerti</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
