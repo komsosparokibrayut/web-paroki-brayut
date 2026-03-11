@@ -35,6 +35,7 @@ export default function PageHeader({
                         fill
                         className="object-cover"
                         priority
+                        unoptimized={true}
                     />
                     <div className="absolute inset-0 bg-brand-dark/50" />
                 </div>

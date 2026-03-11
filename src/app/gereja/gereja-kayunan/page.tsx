@@ -45,7 +45,7 @@ export default async function Gereja2Page() {
             <PageHeader
                 title="Gereja St. Petrus Kayunan"
                 subtitle="Gereja Wilayah – Paroki Brayut"
-                image="/images/carousel/GerejaKayunan.JPG"
+                image="/images/carousel/GerejaKayunan.jpg"
                 align="left"
             />
 

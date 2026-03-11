@@ -7,12 +7,12 @@ import Image from "next/image";
 
 const heroImages = [
     "/images/carousel/GerejaTambakrejo.jpg",
-    "/images/carousel/GerejaKarangelo.jpg",
+    "/images/carousel/GerejaKarangelo.jpeg",
     "/images/carousel/GerejaNgelo.jpg",
     "/images/carousel/GerejaDukuh.JPG",
     "/images/carousel/GerejaKarangkepuh.JPG",
-    "/images/carousel/GerejaKayunan.JPG",
-    "/images/carousel/inGerejaTambakrejo.JPG",
+    "/images/carousel/GerejaKayunan.jpg",
+    "/images/carousel/inGerejaTambakrejo.jpg",
 ];
 
 export default function ImmersiveHero() {
@@ -54,6 +54,7 @@ export default function ImmersiveHero() {
                             fill
                             className="object-cover"
                             priority={true}
+                            unoptimized={true}
                         />
                         <div className="absolute inset-0 bg-black/50 z-10" />
                         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-brand-dark z-10" />
