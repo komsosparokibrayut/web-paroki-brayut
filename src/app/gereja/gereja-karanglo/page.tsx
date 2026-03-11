@@ -45,7 +45,7 @@ export default async function Gereja4Page() {
             <PageHeader
                 title="Gereja St. Yosef Karanglo"
                 subtitle="Gereja Wilayah – Paroki Brayut"
-                image="https://images.unsplash.com/photo-1470686164816-830d3688f62c?q=80&w=2073&auto=format&fit=crop"
+                image="/images/carousel/GerejaKarangelo.jpg"
                 align="left"
             />
 

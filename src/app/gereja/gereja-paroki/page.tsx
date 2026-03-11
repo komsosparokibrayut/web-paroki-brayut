@@ -44,7 +44,7 @@ export default async function Gereja1Page() {
             <PageHeader
                 title="Gereja St. Yusup Tambakrejo"
                 subtitle="Gereja Paroki St. Yohanes Paulus II Brayut"
-                image="https://images.unsplash.com/photo-1548625149-fc4a29cf7092?q=80&w=2072&auto=format&fit=crop"
+                image="/images/carousel/GerejaTambakrejo.jpg"
                 align="left"
             />
 

@@ -45,7 +45,7 @@ export default async function Gereja3Page() {
             <PageHeader
                 title="Gereja St. Venantius Ngelo"
                 subtitle="Gereja Wilayah – Paroki Brayut"
-                image="https://images.unsplash.com/photo-1548625149-fc4a29cf7092?q=80&w=2072&auto=format&fit=crop"
+                image="/images/carousel/GerejaNgelo.jpg"
                 align="left"
             />
 

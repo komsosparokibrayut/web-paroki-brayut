@@ -48,7 +48,7 @@ export default async function Gereja6Page() {
             <PageHeader
                 title="Gereja St. Fransiskus Xaverius Dukuh"
                 subtitle="Gereja Wilayah – Paroki Brayut"
-                image="https://images.unsplash.com/photo-1438032005730-c779502df39b?q=80&w=2070&auto=format&fit=crop"
+                image="/images/carousel/GerejaDukuh.JPG"
                 align="left"
             />
 
