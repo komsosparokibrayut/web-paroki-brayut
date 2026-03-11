@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 
@@ -36,6 +36,7 @@ export default function MeetingRoomClient({
     const router = useRouter();
     const [isRefreshing, startRefresh] = useTransition();
     const [conflictError, setConflictError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleRefresh = () => {
         startRefresh(async () => {
@@ -98,13 +99,29 @@ export default function MeetingRoomClient({
                     <CardContent>
                         <form onSubmit={handleLogin} className="space-y-4">
                             <div className="space-y-2">
-                                <Input 
-                                    type="password" 
-                                    placeholder="Password" 
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input 
+                                        type={showPassword ? "text" : "password"} 
+                                        placeholder="Password" 
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        required
+                                        className="pr-10"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4 text-gray-500" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 text-gray-500" />
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
                             <Button type="submit" className="w-full">Akses Masuk</Button>
                         </form>

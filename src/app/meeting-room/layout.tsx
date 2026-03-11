@@ -1,0 +1,18 @@
+import Header from "@/components/layout/Header";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+
+export default function MeetingRoomLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="min-h-screen bg-brand-warm flex flex-col font-rubik">
+            <Header />
+            <main className="flex-grow">
+                {children}
+            </main>
+            <WhatsAppWidget />
+        </div>
+    );
+}
