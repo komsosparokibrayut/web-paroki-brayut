@@ -1,4 +1,63 @@
 import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
+import DOMPurify from "isomorphic-dompurify";
+
+/**
+ * Validates and sanitizes a video embed URL.
+ * Only allows YouTube and Vimeo embeds over HTTPS.
+ * Returns null for invalid/disallowed URLs.
+ */
+function sanitizeVideoUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url.trim());
+    if (parsed.protocol !== "https:") return null;
+    const hostname = parsed.hostname.toLowerCase();
+    const allowed = [
+      "youtube.com",
+      "www.youtube.com",
+      "youtu.be",
+      "www.youtu.be",
+      "vimeo.com",
+      "www.vimeo.com",
+      "player.vimeo.com",
+    ];
+    if (!allowed.some((d) => hostname === d || hostname.endsWith(`.${d}`)))
+      return null;
+
+    // Convert watch URLs to embed URLs
+    let embedUrl = parsed.href;
+    if (hostname.includes("youtube.com") && parsed.searchParams.has("v")) {
+      const videoId = parsed.searchParams.get("v");
+      if (videoId && /^[a-zA-Z0-9_-]+$/.test(videoId)) {
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      } else {
+        return null;
+      }
+    } else if (hostname === "youtu.be" || hostname === "www.youtu.be") {
+      const videoId = parsed.pathname.slice(1);
+      if (videoId && /^[a-zA-Z0-9_-]+$/.test(videoId)) {
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      } else {
+        return null;
+      }
+    }
+
+    return embedUrl;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * HTML-escape a string to prevent attribute injection.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 export async function renderContent(content: any): Promise<string> {
   if (!content) return "";
@@ -43,22 +102,22 @@ export async function renderContent(content: any): Promise<string> {
       
       const converter = new QuillDeltaToHtmlConverter(deltaOps, options);
       
-      // Custom renderer for videos
+      // Custom renderer for videos with URL validation
       converter.renderCustomWith((op) => {
         if (op.insert.type === 'video') {
-          const url = String(op.insert.value).trim();
-          let embedUrl = url;
-          if (url.includes('youtube.com/watch?v=')) {
-            embedUrl = url.replace('watch?v=', 'embed/');
-          } else if (url.includes('youtu.be/')) {
-            embedUrl = url.replace('youtu.be/', 'youtube.com/embed/');
+          const rawUrl = String(op.insert.value).trim();
+          const safeUrl = sanitizeVideoUrl(rawUrl);
+
+          if (!safeUrl) {
+            // Block invalid/disallowed video URLs
+            return `<p><em>[Video blocked: invalid or disallowed URL]</em></p>`;
           }
 
           return `
             <div class="ql-video-wrapper my-8">
               <iframe 
                 class="ql-video" 
-                src="${embedUrl}" 
+                src="${escapeHtml(safeUrl)}" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 allowfullscreen
@@ -68,26 +127,23 @@ export async function renderContent(content: any): Promise<string> {
         return '';
       });
 
-      const html = converter.convert();
+      let html = converter.convert();
       
       // Post-process to ensure all videos are wrapped in ql-video-wrapper
       // This catches standard embeds that renderCustomWith might miss
-      return html.replace(
+      html = html.replace(
         /<iframe[^>]*class="ql-video"[^>]*src="([^"]+)"[^>]*><\/iframe>/g,
         (match, src) => {
-          // Ensure it's an embed URL
-          let embedUrl = src;
-          if (src.includes('youtube.com/watch?v=')) {
-            embedUrl = src.replace('watch?v=', 'embed/');
-          } else if (src.includes('youtu.be/')) {
-            embedUrl = src.replace('youtu.be/', 'youtube.com/embed/');
+          const safeUrl = sanitizeVideoUrl(src);
+          if (!safeUrl) {
+            return `<p><em>[Video blocked: invalid or disallowed URL]</em></p>`;
           }
           
           return `
             <div class="ql-video-wrapper my-8">
               <iframe 
                 class="ql-video" 
-                src="${embedUrl}" 
+                src="${escapeHtml(safeUrl)}" 
                 frameborder="0" 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 allowfullscreen
@@ -95,11 +151,21 @@ export async function renderContent(content: any): Promise<string> {
             </div>`;
         }
       );
+
+      // Sanitize the final HTML to prevent stored XSS
+      return DOMPurify.sanitize(html, {
+        ADD_TAGS: ['iframe'],
+        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'class'],
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|data):)/i,
+        FORBID_TAGS: ['script', 'object', 'embed', 'form'],
+        FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus', 'onblur'],
+      });
     } catch (error) {
       console.error("Delta to HTML conversion failed:", error);
     }
   }
 
-  // Final fallback: return as string if it is one, otherwise empty
-  return typeof content === 'string' ? content : "";
+  // Final fallback: return sanitized string if it is one, otherwise empty
+  return typeof content === 'string' ? DOMPurify.sanitize(content) : "";
 }
+

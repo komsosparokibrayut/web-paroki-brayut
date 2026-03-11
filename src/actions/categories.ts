@@ -1,6 +1,8 @@
 "use server";
 
 import { getFile, commitFiles } from "@/services/github/content";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
 
 const CATEGORIES_FILE = "categories.json";
 
@@ -26,6 +28,10 @@ export async function getAllCategories(): Promise<string[]> {
 
 export async function addCategory(category: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_news_categories")) {
+      return { success: false, error: "Unauthorized" };
+    }
     const content = await getFile(CATEGORIES_FILE);
     let data: CategoriesData = { categories: [] };
 

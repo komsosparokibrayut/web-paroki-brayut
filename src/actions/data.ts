@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getFile, commitFiles } from "@/services/github/content";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
 
 const UMKM_FILE = "umkm.json";
 const STATISTIK_FILE = "statistik.json";
@@ -40,6 +42,10 @@ export async function getUMKM(): Promise<UMKMData[]> {
 
 export async function saveUMKM(data: UMKMData[]) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
     await commitFiles(
       [{ path: UMKM_FILE, content: JSON.stringify(data, null, 2) }],
       `Update UMKM data (${data.length} entries)`
@@ -66,6 +72,10 @@ export async function getStatistik(): Promise<StatistikData | null> {
 
 export async function saveStatistik(data: StatistikData) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
     const dataWithDate = {
         ...data,
         lastUpdated: new Date().toISOString()
@@ -168,6 +178,10 @@ export async function getWilayahLingkungan(): Promise<Wilayah[]> {
 
 export async function saveWilayahLingkungan(data: Wilayah[]) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
     await commitFiles(
       [{ path: WILAYAH_FILE, content: JSON.stringify(data, null, 2) }],
       `Update wilayah & lingkungan data`
@@ -193,6 +207,10 @@ export async function getPastorTimKerja(): Promise<PastorTimKerjaData> {
 
 export async function savePastorTimKerja(data: PastorTimKerjaData) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
     await commitFiles(
       [{ path: PASTOR_FILE, content: JSON.stringify(data, null, 2) }],
       `Update pastor & tim kerja data`
@@ -218,6 +236,10 @@ export async function getFormulir(): Promise<Formulir[]> {
 
 export async function saveFormulir(data: Formulir[]) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
     await commitFiles(
       [{ path: FORMULIR_FILE, content: JSON.stringify(data, null, 2) }],
       `Update formulir data`

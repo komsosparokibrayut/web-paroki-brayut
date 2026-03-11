@@ -1,6 +1,8 @@
 "use server";
 
 import { getFile, commitFiles } from "@/services/github/content";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
 
 const FILES = {
   post: "post-categories.json",
@@ -69,6 +71,10 @@ async function saveCategoryFile(type: CategoryType, categories: string[]): Promi
 
 export async function addCategory(type: CategoryType, category: string): Promise<{ success: boolean; error?: string }> {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news_categories")) {
+            return { success: false, error: "Unauthorized" };
+        }
         const categories = await getCategoryFile(type);
         const trimmed = category.trim();
         
@@ -88,6 +94,10 @@ export async function addCategory(type: CategoryType, category: string): Promise
 
 export async function deleteCategory(type: CategoryType, category: string): Promise<{ success: boolean; error?: string }> {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news_categories")) {
+            return { success: false, error: "Unauthorized" };
+        }
         let categories = await getCategoryFile(type);
         categories = categories.filter(c => c !== category);
         return await saveCategoryFile(type, categories);
@@ -98,6 +108,10 @@ export async function deleteCategory(type: CategoryType, category: string): Prom
 
 export async function updateCategory(type: CategoryType, oldCategory: string, newCategory: string): Promise<{ success: boolean; error?: string }> {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news_categories")) {
+            return { success: false, error: "Unauthorized" };
+        }
         const categories = await getCategoryFile(type);
         const trimmed = newCategory.trim();
 

@@ -7,6 +7,25 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import sharp from "sharp";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
+
+/**
+ * Validates that a URL is safe for server-side fetching (SSRF protection).
+ */
+function isAllowedExternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    const hostname = parsed.hostname.toLowerCase();
+    // Block internal/private IPs and localhost
+    const blocked = ['127.0.0.1', 'localhost', '0.0.0.0', '[::1]'];
+    const blockedPrefixes = ['169.254.', '10.', '172.16.', '172.17.', '172.18.', '172.19.', '172.20.', '172.21.', '172.22.', '172.23.', '172.24.', '172.25.', '172.26.', '172.27.', '172.28.', '172.29.', '172.30.', '172.31.', '192.168.'];
+    if (blocked.includes(hostname)) return false;
+    if (blockedPrefixes.some(p => hostname.startsWith(p))) return false;
+    return true;
+  } catch { return false; }
+}
 
 const createAlbumSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -16,6 +35,10 @@ const createAlbumSchema = z.object({
 
 export async function createAlbumAction(prevState: any, formData: FormData) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+      return { success: false, error: "Unauthorized" };
+    }
     const data = {
       title: formData.get("title") as string,
       date: formData.get("date") as string,
@@ -33,12 +56,20 @@ export async function createAlbumAction(prevState: any, formData: FormData) {
 }
 
 export async function deleteAlbumAction(id: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+    throw new Error("Unauthorized");
+  }
   await deleteAlbum(id);
   revalidatePath("/admin/gallery");
 }
 
 export async function uploadImagesAction(albumId: string, formData: FormData) {
   try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+        return { success: false, error: "Unauthorized" };
+      }
       const files = formData.getAll("images");
       const filesToCommit: FileToCommit[] = [];
       const imagePaths: AlbumImage[] = [];
@@ -90,6 +121,10 @@ export async function uploadImagesAction(albumId: string, formData: FormData) {
 
 export async function setCoverImageAction(albumId: string, imagePath: string) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+          return { success: false, error: "Unauthorized" };
+        }
         await updateAlbum(albumId, { coverImage: imagePath });
         revalidatePath(`/admin/gallery/${albumId}`);
         return { success: true };
@@ -100,6 +135,10 @@ export async function setCoverImageAction(albumId: string, imagePath: string) {
 
 export async function deleteImageAction(albumId: string, imagePath: string) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+          return { success: false, error: "Unauthorized" };
+        }
         const album = await getAlbum(albumId);
         if (!album) return { success: false, error: "Album not found" };
         
@@ -127,6 +166,16 @@ export async function deleteImageAction(albumId: string, imagePath: string) {
 
 export async function addExternalImageAction(albumId: string, imageUrl: string) {
     try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+          return { success: false, error: "Unauthorized" };
+        }
+
+        // SSRF protection: validate URL before fetching
+        if (!isAllowedExternalUrl(imageUrl)) {
+          return { success: false, error: "Invalid or blocked URL" };
+        }
+
         const album = await getAlbum(albumId);
         if (!album) return { success: false, error: "Album not found" };
 

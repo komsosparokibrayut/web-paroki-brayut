@@ -221,6 +221,15 @@ export async function updatePost(
 
 export async function deletePost(slug: string) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return { success: false, error: "Unauthorized" };
+    }
+    // news_reporter cannot delete; only news_admin+ can
+    if (currentUser.role === "news_reporter") {
+      return { success: false, error: "News Reporters cannot delete posts." };
+    }
+
     const files = await listPosts();
     const item = files.find((file) => file.path.includes(slug) && file.path.endsWith(".json"));
 

@@ -2,12 +2,18 @@
 
 import { commitFiles, listFiles, deleteFile } from "@/services/github/content";
 import { processImage, generateImageFilename } from "@/lib/images/processor";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
 
 export async function uploadImages(
   formData: FormData,
   type: "banner" | "inline"
 ): Promise<{ success: boolean; paths?: string[]; error?: string }> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+      return { success: false, error: "Unauthorized" };
+    }
     const files = formData.getAll("files") as File[];
     
     if (!files || files.length === 0) {
@@ -84,6 +90,10 @@ export async function listImages(): Promise<{
 
 export async function deleteImage(path: string) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_news")) {
+      return { success: false, error: "Unauthorized" };
+    }
     // Remove leading slash
     const filePath = path.startsWith("/") ? path.substring(1) : path;
 

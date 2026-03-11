@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSessionCookie } from "@/lib/firebase/auth";
 
 // In-memory rate limiter for login attempts
+// NOTE: In serverless environments (e.g., Vercel), this Map resets per cold start.
+// For production, consider using Vercel KV, Upstash Redis, or similar.
 const loginAttempts = new Map<string, { count: number; expiresAt: number }>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+// Periodic cleanup of expired entries to prevent memory leaks
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of loginAttempts) {
+      if (now >= entry.expiresAt) loginAttempts.delete(key);
+    }
+  }, 5 * 60 * 1000);
+}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();

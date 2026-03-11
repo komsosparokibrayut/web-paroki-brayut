@@ -26,9 +26,21 @@ function getCorsOrigin(request: NextRequest): string {
  * Usage: /api/gdrive-image/FILE_ID
  */
 // Simple in-memory rate limiter
+// NOTE: In serverless environments (e.g., Vercel), this Map resets per cold start.
+// For production, consider using Vercel KV, Upstash Redis, or similar.
 const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
 const RATE_LIMIT_MAX = 60; // Max requests
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+
+// Periodic cleanup of expired entries to prevent memory leaks
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitMap) {
+      if (now >= entry.expiresAt) rateLimitMap.delete(key);
+    }
+  }, 5 * 60 * 1000);
+}
 
 // Allowed MIME types
 const ALLOWED_MIME_TYPES = new Set([

@@ -6,8 +6,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { secret, path, tag } = body;
 
-    // Verify secret token
-    if (secret !== process.env.NEXTAUTH_SECRET) {
+    // Verify secret token — use dedicated revalidation secret, fallback to NEXTAUTH_SECRET
+    const expectedSecret = process.env.REVALIDATION_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!expectedSecret || secret !== expectedSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

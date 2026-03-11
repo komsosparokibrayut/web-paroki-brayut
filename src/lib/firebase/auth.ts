@@ -6,7 +6,7 @@ const SESSION_COOKIE_NAME = "__session";
 const SESSION_EXPIRY = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 // Root super admin email — always granted super_admin
-const ROOT_ADMIN_EMAIL = "nikolasnanda@gmail.com";
+const ROOT_ADMIN_EMAIL = process.env.ROOT_ADMIN_EMAIL || "";
 
 export interface SessionUser {
   uid: string;

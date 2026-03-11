@@ -8,6 +8,8 @@ import {
   updateJadwalMisa as updateJadwalMisaService,
 } from "@/services/github/schedule";
 import { JadwalEvent, JadwalMisaData } from "../types";
+import { getCurrentUser } from "@/lib/firebase/auth";
+import { hasPermission } from "@/lib/roles";
 
 /** Standard result type for schedule actions */
 type ActionResult = { success: true } | { success: false; error?: string };
@@ -18,6 +20,10 @@ type ActionResult = { success: true } | { success: false; error?: string };
  * @returns Promise resolving to ActionResult
  */
 export async function saveJadwalMisa(data: JadwalMisaData): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+    return { success: false, error: "Unauthorized" };
+  }
   const result = await updateJadwalMisaService(data);
   if (result.success) {
     revalidatePath("/jadwal-misa");
@@ -43,6 +49,10 @@ export async function getJadwalKegiatan(): Promise<JadwalEvent[]> {
  * @returns Promise resolving to ActionResult
  */
 export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+    return { success: false, error: "Unauthorized" };
+  }
   const result = await updateScheduleEvents(data);
   if (result.success) {
     revalidatePath("/event");
