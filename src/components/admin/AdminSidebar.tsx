@@ -21,6 +21,7 @@ import {
     PenTool,
     Church,
     LogOut,
+    DoorOpen,
 } from "lucide-react";
 import {
     Sidebar,
@@ -75,6 +76,7 @@ export function AdminSidebar() {
         {
             title: "Data Management",
             items: [
+                { name: "Meeting Rooms", href: "/admin/meeting-rooms", icon: DoorOpen },
                 { name: "UMKM", href: "/admin/data/umkm", icon: Store },
                 { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar },
                 { name: "Gereja", href: "/admin/data/gereja", icon: Church },

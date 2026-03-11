@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
             { title: "Event", href: "/event" },
             { title: "Formulir Gereja", href: "/data/formulir" },
             { title: "Data UMKM", href: "/data/umkm" },
+            { title: "Peminjaman Ruang", href: "/meeting-room" },
         ],
     },
 ];
