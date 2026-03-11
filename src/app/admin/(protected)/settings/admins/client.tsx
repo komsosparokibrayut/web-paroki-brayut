@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { PasswordInputWithValidation } from "@/components/ui/password-input-with-validation";
 import {
     Dialog,
     DialogContent,
@@ -114,16 +115,15 @@ export default function AdminsClient({ invitations, users }: Props) {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Label htmlFor="invite-password">Password <span className="text-slate-400 font-normal">(opsional)</span></Label>
-                            <Input
+                            <PasswordInputWithValidation
                                 id="invite-password"
                                 placeholder="Min. 12 karakter"
-                                type="password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={setPassword}
+                                minLength={12}
                             />
-                            {password && <PasswordStrength password={password} />}
                             <p className="text-xs text-slate-400">Jika dikosongkan, admin hanya bisa login lewat Google.</p>
                         </div>
                         <div className="space-y-2">
@@ -357,16 +357,15 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     <Label htmlFor={`reset-pw-${user.id}`}>Password Baru</Label>
-                                    <Input
+                                    <PasswordInputWithValidation
                                         id={`reset-pw-${user.id}`}
-                                        type="password"
                                         placeholder="Min. 12 karakter"
                                         value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        onChange={setNewPassword}
+                                        minLength={12}
                                     />
-                                    {newPassword && <PasswordStrength password={newPassword} />}
                                 </div>
                             </div>
                             <DialogFooter>
@@ -424,25 +423,4 @@ function UserRow({ user }: { user: Props['users'][0] }) {
     );
 }
 
-function PasswordStrength({ password }: { password: string }) {
-    return (
-        <div className="space-y-1 mt-2">
-            {PASSWORD_RULES.map((rule, i) => {
-                const passed = rule.test(password);
-                return (
-                    <div
-                        key={i}
-                        className={`flex items-center gap-1.5 text-xs ${passed ? "text-green-600" : "text-slate-400"}`}
-                    >
-                        {passed ? (
-                            <Check className="h-3 w-3" />
-                        ) : (
-                            <X className="h-3 w-3" />
-                        )}
-                        {rule.message}
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
+

@@ -71,7 +71,7 @@ export async function setMeetingRoomPassword(password: string): Promise<{ succes
     }
 
     if (password.length < 6) {
-      return { success: false, error: "Password must be at least 6 characters" };
+      return { success: false, error: "Password harus terdiri dari minimal 6 karakter" };
     }
 
     const passwordHash = hashPassword(password);
@@ -79,7 +79,7 @@ export async function setMeetingRoomPassword(password: string): Promise<{ succes
     return { success: true };
   } catch (error: any) {
     console.error("Error setting password:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: `${error.message}. Stack: ${error.stack}` };
   }
 }
 
@@ -87,7 +87,7 @@ export async function verifyMeetingRoomPassword(password: string): Promise<boole
   const storedHash = await getMeetingRoomPassword();
 
   if (!storedHash) {
-    console.warn("Meeting room password is not set!");
+    console.warn("Password booking ruang pertemuan belum diatur!");
     return false;
   }
 

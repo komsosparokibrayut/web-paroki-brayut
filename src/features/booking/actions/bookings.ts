@@ -9,7 +9,7 @@ import { z } from "zod";
 
 const COLLECTION = "meeting_bookings";
 
-type ActionResult = { success: true } | { success: false; error?: string };
+type ActionResult<T = void> = { success: true; data?: T } | { success: false; error?: string };
 
 const bookingSchema = z.object({
   placeId: z.string().min(1, "Place is required"),
@@ -19,11 +19,14 @@ const bookingSchema = z.object({
   userName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
   userContact: z.string().min(5, "Contact must be at least 5 characters").max(100, "Contact too long"),
   purpose: z.string().min(3, "Purpose must be at least 3 characters").max(500, "Purpose too long"),
+  isAdminDirectCreate: z.boolean().optional(),
 }).refine(data => data.endTime > data.startTime, {
   message: "End time must be after start time",
 });
 
-export async function submitBooking(booking: Omit<MeetingBooking, "id" | "status" | "createdAt" | "updatedAt">): Promise<ActionResult> {
+export async function submitBooking(
+  booking: Omit<MeetingBooking, "id" | "status" | "createdAt" | "updatedAt"> & { isAdminDirectCreate?: boolean }
+): Promise<ActionResult<string>> {
   try {
     // Server-side input validation
     const parsed = bookingSchema.safeParse(booking);
@@ -37,17 +40,27 @@ export async function submitBooking(booking: Omit<MeetingBooking, "id" | "status
       return { success: false, error: "Cannot book a date in the past" };
     }
 
+    let targetStatus = "pending";
+    if (parsed.data.isAdminDirectCreate) {
+      const currentUser = await getCurrentUser();
+      if (currentUser && hasPermission(currentUser.role, "manage_data")) {
+        targetStatus = "confirmed";
+      }
+    }
+
+    const { isAdminDirectCreate, ...bookingDataToSave } = parsed.data as any;
+
     const now = Date.now();
-    await adminDb.collection(COLLECTION).add({
-      ...parsed.data,
-      status: "pending",
+    const docRef = await adminDb.collection(COLLECTION).add({
+      ...bookingDataToSave,
+      status: targetStatus,
       createdAt: now,
       updatedAt: now,
     });
     
     revalidatePath("/meeting-room");
     revalidatePath("/admin/meeting-rooms");
-    return { success: true };
+    return { success: true, data: docRef.id };
   } catch (error: any) {
     console.error("Error submitting booking:", error);
     return { success: false, error: error.message };

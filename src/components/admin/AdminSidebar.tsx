@@ -76,9 +76,9 @@ export function AdminSidebar() {
         {
             title: "Data Management",
             items: [
-                { name: "Meeting Rooms", href: "/admin/meeting-rooms", icon: DoorOpen },
                 { name: "UMKM", href: "/admin/data/umkm", icon: Store },
                 { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar },
+                { name: "Booking Ruang", href: "/admin/meeting-rooms", icon: DoorOpen },
                 { name: "Gereja", href: "/admin/data/gereja", icon: Church },
                 { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar },
                 { name: "Formulir", href: "/admin/data/formulir", icon: Database },

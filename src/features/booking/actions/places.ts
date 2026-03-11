@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 
 const COLLECTION = "meeting_places";
 
-type ActionResult = { success: true } | { success: false; error?: string };
+type ActionResult<T = void> = { success: true; data?: T } | { success: false; error?: string };
 
 export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
@@ -25,22 +25,23 @@ export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
 
 export async function getActiveMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
-    const snapshot = await adminDb.collection(COLLECTION)
-      .where("isActive", "==", true)
-      .orderBy("name")
-      .get();
+    const snapshot = await adminDb.collection(COLLECTION).get();
       
-    return snapshot.docs.map(doc => ({
+    const places = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as MeetingPlace));
+    
+    return places
+      .filter(p => p.isActive)
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error("Error fetching active places:", error);
     return [];
   }
 }
 
-export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "createdAt" | "updatedAt"> & { id?: string }): Promise<ActionResult> {
+export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "createdAt" | "updatedAt"> & { id?: string }): Promise<ActionResult<string>> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
@@ -49,7 +50,7 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
 
     const now = Date.now();
     const collectionRef = adminDb.collection(COLLECTION);
-    
+    let savedId = place.id;
     if (place.id) {
       // Update
       const { id, ...updateData } = place;
@@ -59,16 +60,17 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
       });
     } else {
       // Create
-      await collectionRef.add({
+      const docRef = await collectionRef.add({
         ...place,
         createdAt: now,
         updatedAt: now,
       });
+      savedId = docRef.id;
     }
 
     revalidatePath("/admin/meeting-rooms/places");
     revalidatePath("/meeting-room");
-    return { success: true };
+    return { success: true, data: savedId };
   } catch (error: any) {
     console.error("Error saving meeting place:", error);
     return { success: false, error: error.message };
