@@ -70,6 +70,22 @@ export async function submitBooking(
       }
     }
 
+    // Check for overlap
+    const overlaps = await adminDb.collection(COLLECTION)
+      .where("placeId", "==", parsed.data.placeId)
+      .get();
+      
+    const hasOverlap = overlaps.docs.some(doc => {
+      const b = doc.data() as MeetingBooking;
+      if (b.date !== parsed.data.date) return false;
+      if (b.status === "rejected") return false;
+      return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+    });
+
+    if (hasOverlap) {
+      return { success: false, error: "Jadwal bertabrakan dengan peminjaman lain (waktu sudah terpakai)." };
+    }
+
     let targetStatus = "pending";
     if (parsed.data.isAdminDirectCreate) {
       const currentUser = await getCurrentUser();
@@ -176,6 +192,23 @@ export async function updateBooking(
     const parsed = bookingSchema.safeParse(data);
     if (!parsed.success) {
       return { success: false, error: parsed.error.errors[0]?.message || "Invalid input" };
+    }
+
+    // Check for overlap, excluding this current booking
+    const overlaps = await adminDb.collection(COLLECTION)
+      .where("placeId", "==", parsed.data.placeId)
+      .get();
+      
+    const hasOverlap = overlaps.docs.some(doc => {
+      if (doc.id === id) return false; // Ignore current booking
+      const b = doc.data() as MeetingBooking;
+      if (b.date !== parsed.data.date) return false;
+      if (b.status === "rejected") return false;
+      return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+    });
+
+    if (hasOverlap) {
+      return { success: false, error: "Jadwal bertabrakan dengan peminjaman lain (waktu sudah terpakai)." };
     }
 
     const { isAdminDirectCreate, ...bookingDataToSave } = parsed.data as any;

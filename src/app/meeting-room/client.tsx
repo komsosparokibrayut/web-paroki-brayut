@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
+import { TimePicker } from "@/components/ui/time-picker";
 
 export default function MeetingRoomClient({
     isAuthenticated,
@@ -141,14 +142,14 @@ export default function MeetingRoomClient({
                                         <Label htmlFor="date">Tanggal</Label>
                                         <Input id="date" type="date" value={newBooking.date} onChange={e => setNewBooking({...newBooking, date: e.target.value})} required />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="startTime">Mulai</Label>
-                                            <Input id="startTime" type="time" value={newBooking.startTime} onChange={e => setNewBooking({...newBooking, startTime: e.target.value})} required />
+                                            <Label htmlFor="startTime">Waktu Mulai</Label>
+                                            <TimePicker id="startTime" value={newBooking.startTime} onChange={val => setNewBooking({ ...newBooking, startTime: val })} required />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="endTime">Selesai</Label>
-                                            <Input id="endTime" type="time" value={newBooking.endTime} onChange={e => setNewBooking({...newBooking, endTime: e.target.value})} required />
+                                            <Label htmlFor="endTime">Waktu Selesai</Label>
+                                            <TimePicker id="endTime" value={newBooking.endTime} onChange={val => setNewBooking({ ...newBooking, endTime: val })} required />
                                         </div>
                                     </div>
                                 </div>

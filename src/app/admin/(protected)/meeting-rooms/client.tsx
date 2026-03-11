@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PasswordInputWithValidation } from "@/components/ui/password-input-with-validation";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { TimePicker } from "@/components/ui/time-picker";
 
 import { setMeetingRoomPassword } from "@/features/booking/actions/auth";
 
@@ -284,11 +285,11 @@ export default function MeetingRoomsClient({
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-2">
                         <Label htmlFor="startTime">Start</Label>
-                        <Input id="startTime" type="time" value={newBooking.startTime} onChange={e => setNewBooking({ ...newBooking, startTime: e.target.value })} required />
+                        <TimePicker id="startTime" value={newBooking.startTime} onChange={val => setNewBooking({ ...newBooking, startTime: val })} required />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="endTime">End</Label>
-                        <Input id="endTime" type="time" value={newBooking.endTime} onChange={e => setNewBooking({ ...newBooking, endTime: e.target.value })} required />
+                        <TimePicker id="endTime" value={newBooking.endTime} onChange={val => setNewBooking({ ...newBooking, endTime: val })} required />
                       </div>
                     </div>
                   </div>
