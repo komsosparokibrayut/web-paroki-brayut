@@ -82,15 +82,15 @@ const ListItem = React.forwardRef<
 });
 ListItem.displayName = "ListItem";
 
-export default function Header() {
+export default function Header({ forceScrolled = false }: { forceScrolled?: boolean }) {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-    const [isScrolled, setIsScrolled] = React.useState(false);
+    const [isScrolled, setIsScrolled] = React.useState(forceScrolled);
     const [isOverFooter, setIsOverFooter] = React.useState(false);
     const [expandedItem, setExpandedItem] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
+            setIsScrolled(window.scrollY > 20 || forceScrolled);
 
             // Check footer intersection
             const footer = document.querySelector('footer');
@@ -102,8 +102,10 @@ export default function Header() {
             }
         };
         window.addEventListener("scroll", handleScroll);
+        // Initial call to set state correctly
+        handleScroll();
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [forceScrolled]);
 
     // Lock body scroll when menu is open
     React.useEffect(() => {

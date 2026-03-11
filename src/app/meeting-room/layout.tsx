@@ -8,7 +8,7 @@ export default function MeetingRoomLayout({
 }) {
     return (
         <div className="min-h-screen bg-brand-warm flex flex-col font-rubik">
-            <Header />
+            <Header forceScrolled={true} />
             <main className="flex-grow">
                 {children}
             </main>
