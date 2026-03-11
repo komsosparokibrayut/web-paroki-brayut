@@ -2,16 +2,43 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase/client";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleSessionAndRedirect = async (idToken: string) => {
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      await auth.signOut();
+      setError(data.error || "Login gagal. Silakan coba lagi.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/admin/dashboard");
+    router.refresh();
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -20,37 +47,38 @@ export default function LoginPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
-
-      const response = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Sign out of Firebase client since the server rejected them
-        await auth.signOut();
-        setError(data.error || "Login gagal. Silakan coba lagi.");
-        setLoading(false);
-        return;
-      }
-
-      router.push("/admin/dashboard");
-      router.refresh();
+      await handleSessionAndRedirect(idToken);
     } catch (err: any) {
       console.error("Login error:", err);
-      // Don't show error for user-cancelled popups
       if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-        setError("Terjadi kesalahan saat login. Silakan coba lagi.");
+        setError("Terjadi kesalahan saat login lewat Google. Silakan coba lagi.");
+      }
+      setLoading(false);
+    }
+  };
+
+  const handleEmailPasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await result.user.getIdToken();
+      await handleSessionAndRedirect(idToken);
+    } catch (err: any) {
+      console.error("Login error:", err);
+      if (err.code === "auth/invalid-login-credentials" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setError("Email atau password tidak valid.");
+      } else {
+        setError("Terjadi kesalahan sistem saat login. Silakan coba lagi.");
       }
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-warm">
+    <div className="flex min-h-screen items-center justify-center bg-brand-warm py-12">
       <div className="w-full max-w-sm mx-auto px-4">
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
           {/* Logo */}
@@ -75,12 +103,118 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Email / Password Form */}
+          <form onSubmit={handleEmailPasswordLogin} className="space-y-4 mb-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
+                required
+                disabled={loading}
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={loading}
+                className="h-11"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Masuk"}
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setForgotMode(true); setError(null); setResetSent(false); }}
+              className="w-full text-xs text-blue-600 hover:text-blue-700 hover:underline mt-1"
+            >
+              Lupa password?
+            </button>
+          </form>
+
+          {/* Forgot Password Section */}
+          {forgotMode && (
+            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <p className="text-sm font-medium text-slate-700 mb-3">Reset Password</p>
+              {resetSent ? (
+                <div className="text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+                  Link reset password telah dikirim ke email Anda. Silakan cek inbox.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Masukkan email admin"
+                    disabled={loading}
+                    className="h-10"
+                  />
+                  <Button
+                    type="button"
+                    disabled={loading || !email}
+                    className="w-full h-10 bg-amber-600 hover:bg-amber-700 text-white text-sm"
+                    onClick={async () => {
+                      setLoading(true);
+                      setError(null);
+                      try {
+                        await sendPasswordResetEmail(auth, email);
+                        setResetSent(true);
+                      } catch (err: any) {
+                        if (err.code === "auth/user-not-found") {
+                          setResetSent(true); // Don't reveal if user exists
+                        } else {
+                          setError("Gagal mengirim link reset. Silakan coba lagi.");
+                        }
+                      }
+                      setLoading(false);
+                    }}
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim Link Reset"}
+                  </Button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => { setForgotMode(false); setResetSent(false); }}
+                className="text-xs text-slate-500 hover:text-slate-700 mt-3 hover:underline"
+              >
+                ← Kembali ke login
+              </button>
+            </div>
+          )}
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-slate-500">Atau</span>
+            </div>
+          </div>
+
           {/* Google Login Button */}
           <Button
+            type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
             variant="outline"
-            className="w-full h-12 text-sm font-medium gap-3 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all"
+            className="w-full h-11 text-sm font-medium gap-3 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all text-slate-600"
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -104,12 +238,8 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            {loading ? "Memproses..." : "Masuk dengan Google"}
+            Masuk dengan Google
           </Button>
-
-          <p className="text-xs text-slate-400 text-center mt-6">
-            Hanya admin terdaftar yang dapat mengakses.
-          </p>
         </div>
       </div>
     </div>

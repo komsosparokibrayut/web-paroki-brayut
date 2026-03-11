@@ -20,7 +20,7 @@ export async function getAdminUsers() {
         }));
 }
 
-export async function inviteAdmin(email: string, role: UserRole) {
+export async function inviteAdmin(email: string, role: UserRole, password?: string) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
@@ -31,11 +31,16 @@ export async function inviteAdmin(email: string, role: UserRole) {
         try {
             const existingUser = await adminAuth.getUserByEmail(email);
             uid = existingUser.uid;
+            // If password provided, update it for existing user
+            if (password) {
+                await adminAuth.updateUser(uid, { password });
+            }
         } catch {
             // User doesn't exist, create them
             const newUser = await adminAuth.createUser({
                 email,
                 emailVerified: true,
+                ...(password ? { password } : {}),
             });
             uid = newUser.uid;
         }
@@ -86,6 +91,28 @@ export async function removeAdmin(targetUserId: string) {
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message || "Failed to remove admin" };
+    }
+}
+
+export async function resetAdminPassword(targetUserId: string, newPassword: string) {
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Unauthorized");
+        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can reset passwords");
+
+        if (currentUser.uid === targetUserId) {
+            throw new Error("You cannot reset your own password from here");
+        }
+
+        if (newPassword.length < 6) {
+            throw new Error("Password must be at least 6 characters");
+        }
+
+        await adminAuth.updateUser(targetUserId, { password: newPassword });
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || "Failed to reset password" };
     }
 }
 

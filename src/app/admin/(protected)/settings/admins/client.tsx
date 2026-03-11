@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { inviteAdmin, revokeInvitation, updateUserRole, removeAdmin } from "@/features/admin/actions/users";
+import { inviteAdmin, revokeInvitation, updateUserRole, removeAdmin, resetAdminPassword } from "@/features/admin/actions/users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, ShieldAlert } from "lucide-react";
+import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, KeyRound } from "lucide-react";
 import Image from "next/image";
 import {
     Select,
@@ -25,6 +26,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
 import { UserRole, ROLE_LABELS, ROLES } from "@/lib/roles";
 
@@ -48,6 +50,7 @@ interface Props {
 
 export default function AdminsClient({ invitations, users }: Props) {
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [role, setRole] = useState<UserRole>("news_reporter");
     const [isPending, startTransition] = useTransition();
 
@@ -55,13 +58,14 @@ export default function AdminsClient({ invitations, users }: Props) {
         if (!email) return;
 
         startTransition(async () => {
-            const result = await inviteAdmin(email, role);
+            const result = await inviteAdmin(email, role, password || undefined);
             if (result.success) {
-                toast.success("Invitation sent successfully");
+                toast.success("Admin berhasil ditambahkan");
                 setEmail("");
+                setPassword("");
                 setRole("news_reporter");
             } else {
-                toast.error(result.error || "Failed to send invitation");
+                toast.error(result.error || "Gagal menambahkan admin");
             }
         });
     };
@@ -95,12 +99,14 @@ export default function AdminsClient({ invitations, users }: Props) {
                             Invite New Admin
                         </CardTitle>
                         <CardDescription>
-                            Send an email invitation to a new team member.
+                            Add a new admin with email and optional password.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
+                            <Label htmlFor="invite-email">Email</Label>
                             <Input
+                                id="invite-email"
                                 placeholder="email@example.com"
                                 type="email"
                                 value={email}
@@ -108,6 +114,18 @@ export default function AdminsClient({ invitations, users }: Props) {
                             />
                         </div>
                         <div className="space-y-2">
+                            <Label htmlFor="invite-password">Password <span className="text-slate-400 font-normal">(opsional)</span></Label>
+                            <Input
+                                id="invite-password"
+                                placeholder="Min. 6 karakter"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <p className="text-xs text-slate-400">Jika dikosongkan, admin hanya bisa login lewat Google.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Role</Label>
                             <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select role" />
@@ -127,7 +145,7 @@ export default function AdminsClient({ invitations, users }: Props) {
                             disabled={isPending || !email}
                         >
                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                            Send Invitation
+                            Tambah Admin
                         </Button>
                     </CardContent>
                 </Card>
@@ -218,6 +236,10 @@ function UserRow({ user }: { user: Props['users'][0] }) {
     const [role, setRole] = useState<UserRole>(user.role || "news_reporter");
     const [isPending, startTransition] = useTransition();
 
+    // Reset password state
+    const [newPassword, setNewPassword] = useState("");
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
     const handleSaveRole = () => {
         startTransition(async () => {
             const result = await updateUserRole(user.id, role);
@@ -240,6 +262,24 @@ function UserRow({ user }: { user: Props['users'][0] }) {
             }
         });
     }
+
+    const handleResetPassword = () => {
+        if (!newPassword || newPassword.length < 6) {
+            toast.error("Password harus minimal 6 karakter");
+            return;
+        }
+
+        startTransition(async () => {
+            const result = await resetAdminPassword(user.id, newPassword);
+            if (result.success) {
+                toast.success(`Password untuk ${user.email} berhasil direset`);
+                setNewPassword("");
+                setResetDialogOpen(false);
+            } else {
+                toast.error(result.error || "Gagal mereset password");
+            }
+        });
+    };
 
     return (
         <TableRow>
@@ -293,36 +333,88 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                 {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString() : "Never"}
             </TableCell>
             <TableCell className="text-right">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Remove Admin?</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to remove <strong>{user.name}</strong> from admins? This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => { }}>Cancel</Button>
+                <div className="flex items-center justify-end gap-1">
+                    {/* Reset Password Dialog */}
+                    <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setNewPassword(""); }}>
+                        <DialogTrigger asChild>
                             <Button
-                                variant="destructive"
-                                onClick={handleRemoveUser}
-                                disabled={isPending}
+                                variant="ghost"
+                                size="icon"
+                                className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                title="Reset Password"
                             >
-                                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                Remove Admin
+                                <KeyRound className="h-4 w-4" />
                             </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Reset Password</DialogTitle>
+                                <DialogDescription>
+                                    Masukkan password baru untuk <strong>{user.name}</strong> ({user.email}).
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`reset-pw-${user.id}`}>Password Baru</Label>
+                                    <Input
+                                        id={`reset-pw-${user.id}`}
+                                        type="password"
+                                        placeholder="Min. 6 karakter"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline">Batal</Button>
+                                </DialogClose>
+                                <Button
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                    onClick={handleResetPassword}
+                                    disabled={isPending || !newPassword}
+                                >
+                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                                    Reset Password
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Remove Admin Dialog */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Remove Admin?</DialogTitle>
+                                <DialogDescription>
+                                    Are you sure you want to remove <strong>{user.name}</strong> from admins? This action cannot be undone.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline">Cancel</Button>
+                                </DialogClose>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleRemoveUser}
+                                    disabled={isPending}
+                                >
+                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                    Remove Admin
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </TableCell>
         </TableRow>
     );
