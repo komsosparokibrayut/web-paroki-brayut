@@ -21,8 +21,9 @@ export async function generateStaticParams() {
     const paths: { category: string; slug: string }[] = [];
 
     posts.forEach((post) => {
-        if (post.categories && Array.isArray(post.categories)) {
-            post.categories.forEach((cat: string) => {
+        if (post.categories) {
+            const cats = Array.isArray(post.categories) ? post.categories : [post.categories];
+            cats.forEach((cat: string) => {
                 // Normalize category for URL: lowercase, kebab-case
                 const normalizedCat = cat.toLowerCase().trim().replace(/\s+/g, '-');
                 paths.push({
@@ -61,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             publishedTime: frontmatter.publishedAt,
             modifiedTime: frontmatter.updatedAt,
             authors: [frontmatter.author],
-            tags: frontmatter.categories,
+            tags: Array.isArray(frontmatter.categories) ? frontmatter.categories : (frontmatter.categories ? [frontmatter.categories] : []),
         },
         twitter: {
             card: "summary_large_image",
@@ -86,9 +87,12 @@ export default async function PostPage({ params }: Props) {
     }
 
     // Verify the category matches one of the post's categories
-    const postCategories = post.frontmatter.categories?.map((cat: string) =>
+    const rawCategories = post.frontmatter.categories || [];
+    const normalizedRawCategories = Array.isArray(rawCategories) ? rawCategories : [rawCategories];
+    
+    const postCategories = normalizedRawCategories.map((cat: string) =>
         cat.toLowerCase().trim().replace(/\s+/g, '-')
-    ) || [];
+    );
 
     // Check if the requested category URL param matches any of the post's normalized categories
     const isValidCategory = postCategories.includes(category.toLowerCase());

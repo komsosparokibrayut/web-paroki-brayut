@@ -54,7 +54,12 @@ export async function getPostBySlug(slug: string) {
     return null;
   }
 
-  return parseContent(content, item.path);
+  try {
+    return parseContent(content, item.path);
+  } catch (error) {
+    console.error(`Error parsing post ${slug}:`, error);
+    return null;
+  }
 }
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
