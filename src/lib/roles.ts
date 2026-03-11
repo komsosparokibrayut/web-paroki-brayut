@@ -1,5 +1,3 @@
-import { User } from "@clerk/nextjs/server";
-
 export type UserRole = "super_admin" | "news_admin" | "news_reporter" | "data_admin";
 
 export const ROLES: Record<string, UserRole> = {
@@ -29,12 +27,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   super_admin: ["manage_everything", "manage_news", "manage_news_categories", "create_news_draft", "manage_data", "manage_admins"],
   news_admin: ["manage_news", "manage_news_categories", "create_news_draft"],
   news_reporter: ["create_news_draft"],
-  data_admin: ["manage_data", "manage_news_categories"], // Assuming categories are shared or this covers specific categories
+  data_admin: ["manage_data", "manage_news_categories"],
 };
 
-export function getUserRole(user: { publicMetadata: Record<string, unknown> } | null | undefined): UserRole | null {
-  if (!user || !user.publicMetadata) return null;
-  return (user.publicMetadata.role as UserRole) || null;
+export function getUserRole(customClaims: Record<string, unknown> | undefined): UserRole | null {
+  if (!customClaims) return null;
+  return (customClaims.role as UserRole) || null;
 }
 
 export function hasPermission(role: UserRole | null, permission: Permission): boolean {

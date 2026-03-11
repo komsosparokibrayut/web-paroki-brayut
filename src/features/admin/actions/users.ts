@@ -1,129 +1,67 @@
 "use server";
 
-import { clerkClient } from "@clerk/nextjs/server";
+import { adminAuth } from "@/lib/firebase/server";
+import { getCurrentUser } from "@/lib/firebase/auth";
 import { revalidatePath } from "next/cache";
-import { UserRole, getUserRole, ROLES } from "@/lib/roles";
-import { auth } from "@clerk/nextjs/server";
+import { UserRole, getUserRole } from "@/lib/roles";
 
-interface InvitationsResponse {
-  data: Array<{
-    id: string;
-    emailAddress: string;
-    status: string;
-    createdAt: number;
-    role?: string;
-  }>;
-}
+export async function getAdminUsers() {
+    const listResult = await adminAuth.listUsers(100);
 
-export async function getInvitations() {
-  const client = await clerkClient();
-  const invitations = await client.invitations.getInvitationList({
-      status: "pending"
-  });
-  
-  return {
-      data: invitations.data.map(inv => ({
-          id: inv.id,
-          emailAddress: inv.emailAddress,
-          status: inv.status,
-          createdAt: inv.createdAt,
-          role: inv.publicMetadata?.role as string || "news_reporter" // Default to lowest role if not set
-      }))
-  };
+    return listResult.users
+        .filter(user => user.customClaims?.role) // Only show users with a role
+        .map(user => ({
+            id: user.uid,
+            email: user.email || "",
+            name: user.displayName || user.email || "Unknown",
+            imageUrl: user.photoURL || "",
+            lastSignInAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : null,
+            role: (user.customClaims?.role as UserRole) || "news_reporter",
+        }));
 }
 
 export async function inviteAdmin(email: string, role: UserRole) {
-  try {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Unauthorized");
+        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can invite new admins");
 
-    const client = await clerkClient();
-    
-    // Check if current user is Super Admin
-    const currentUser = await client.users.getUser(userId);
-    const currentUserRole = getUserRole(currentUser);
-    
-    if (currentUserRole !== "super_admin") {
-         throw new Error("Only Super Admins can invite new admins");
+        // Check if user already exists in Firebase Auth
+        let uid: string;
+        try {
+            const existingUser = await adminAuth.getUserByEmail(email);
+            uid = existingUser.uid;
+        } catch {
+            // User doesn't exist, create them
+            const newUser = await adminAuth.createUser({
+                email,
+                emailVerified: true,
+            });
+            uid = newUser.uid;
+        }
+
+        // Set role via custom claims
+        await adminAuth.setCustomUserClaims(uid, { role });
+
+        revalidatePath("/admin/settings/admins");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to invite admin:", error);
+        return { success: false, error: error.message || "Failed to invite admin" };
     }
-
-    await client.invitations.createInvitation({
-      emailAddress: email,
-      redirectUrl: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/registrasi-khusus",
-      publicMetadata: {
-        role: role
-      }
-    });
-    
-    revalidatePath("/admin/settings/admins");
-    return { success: true };
-  } catch (error: any) {
-    console.error("Failed to invite admin:", error);
-    return { success: false, error: error.message || "Failed to invite admin" };
-  }
-}
-
-export async function revokeInvitation(invitationId: string) {
-  try {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
-    
-    const client = await clerkClient();
-    
-     // Check if current user is Super Admin
-    const currentUser = await client.users.getUser(userId);
-    if (getUserRole(currentUser) !== "super_admin") {
-         throw new Error("Only Super Admins can revoke invitations");
-    }
-
-    await client.invitations.revokeInvitation(invitationId);
-    
-    revalidatePath("/admin/settings/admins");
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function getAdminUsers() {
-    const client = await clerkClient();
-    const response = await client.users.getUserList({
-        limit: 100,
-    });
-    
-    return response.data.map(user => ({
-        id: user.id,
-        email: user.emailAddresses[0]?.emailAddress,
-        name: user.fullName || user.username || "Unknown",
-        imageUrl: user.imageUrl,
-        lastSignInAt: user.lastSignInAt,
-        role: getUserRole(user) || "news_reporter" // Default fallback
-    }));
 }
 
 export async function updateUserRole(targetUserId: string, newRole: UserRole) {
     try {
-        const { userId } = await auth();
-        if (!userId) throw new Error("Unauthorized");
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Unauthorized");
+        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can change roles");
 
-        const client = await clerkClient();
-
-        // Check if current user is Super Admin
-        const currentUser = await client.users.getUser(userId);
-        if (getUserRole(currentUser) !== "super_admin") {
-            throw new Error("Only Super Admins can change roles");
+        if (currentUser.uid === targetUserId) {
+            throw new Error("You cannot change your own role");
         }
 
-        // Prevent changing own role (optional safety check, but usually good)
-        if (userId === targetUserId) {
-             throw new Error("You cannot change your own role");
-        }
-
-        await client.users.updateUser(targetUserId, {
-            publicMetadata: {
-                role: newRole
-            }
-        });
+        await adminAuth.setCustomUserClaims(targetUserId, { role: newRole });
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
@@ -132,29 +70,31 @@ export async function updateUserRole(targetUserId: string, newRole: UserRole) {
     }
 }
 
-
 export async function removeAdmin(targetUserId: string) {
     try {
-        const { userId } = await auth();
-         if (!userId) throw new Error("Unauthorized");
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("Unauthorized");
+        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can remove admins");
 
-        const client = await clerkClient();
-
-        // Check if current user is Super Admin
-        const currentUser = await client.users.getUser(userId);
-        if (getUserRole(currentUser) !== "super_admin") {
-            throw new Error("Only Super Admins can remove admins");
-        }
-        
-        if (userId === targetUserId) {
+        if (currentUser.uid === targetUserId) {
             throw new Error("You cannot remove yourself");
-       }
+        }
 
-        await client.users.deleteUser(targetUserId);
+        await adminAuth.deleteUser(targetUserId);
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
     } catch (error: any) {
-         return { success: false, error: error.message || "Failed to remove admin" };
+        return { success: false, error: error.message || "Failed to remove admin" };
     }
+}
+
+// Invitations are no longer needed with Firebase Auth.
+// Admin users are directly created/authorized.
+export async function getInvitations() {
+    return { data: [] };
+}
+
+export async function revokeInvitation(_invitationId: string) {
+    return { success: true };
 }

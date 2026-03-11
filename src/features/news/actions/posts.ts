@@ -62,8 +62,7 @@ export async function getPostBySlug(slug: string) {
   }
 }
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getUserRole } from "@/lib/roles";
+import { getCurrentUser } from "@/lib/firebase/auth";
 
 export async function createPost(formData: {
   title: string;
@@ -77,13 +76,9 @@ export async function createPost(formData: {
   publishedAt?: string;
 }) {
   try {
-    const { userId } = await auth();
-    if (userId) {
-        const client = await clerkClient();
-        const user = await client.users.getUser(userId);
-        const role = getUserRole(user);
-        
-        if (role === "news_reporter" && formData.published) {
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+        if (currentUser.role === "news_reporter" && formData.published) {
             throw new Error("News Reporters can only save posts as drafts. Please uncheck 'Publish' or use 'Save as Draft'.");
         }
     }
@@ -141,14 +136,10 @@ export async function updatePost(
   }
 ) {
   try {
-     const { userId } = await auth();
-    if (userId) {
-        const client = await clerkClient();
-        const user = await client.users.getUser(userId);
-        const role = getUserRole(user);
-        
-        if (role === "news_reporter" && formData.published) {
-             throw new Error("News Reporters can only save posts as drafts. Please uncheck 'Publish' or use 'Save as Draft'.");
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+        if (currentUser.role === "news_reporter" && formData.published) {
+            throw new Error("News Reporters can only save posts as drafts. Please uncheck 'Publish' or use 'Save as Draft'.");
         }
     }
 

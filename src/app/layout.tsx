@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Rubik, Libre_Baskerville } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { headers } from "next/headers";
@@ -21,7 +20,7 @@ const libre = Libre_Baskerville({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://www.parokibrayut.org"),
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://parokibrayut.or.id"),
   title: "Paroki Brayut",
   description: "Website Resmi Paroki Brayut - Santo Yohanes Paulus II",
   icons: {
@@ -50,18 +49,16 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${rubik.variable} ${libre.variable} font-rubik bg-brand-warm text-brand-dark antialiased`} suppressHydrationWarning>
-        <ClerkProvider nonce={nonce}>
-          <Script
-            src="https://cloud.umami.is/script.js"
-            data-website-id="4fd6cd8f-898d-4ad9-b98a-4795fda4cea3"
-            strategy="afterInteractive"
-            nonce={nonce}
-          />
-          <GlobalLoader />
-          <SmoothScroll>{children}</SmoothScroll>
-          <SpeedInsights />
-          <MainToaster />
-        </ClerkProvider>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="4fd6cd8f-898d-4ad9-b98a-4795fda4cea3"
+          strategy="afterInteractive"
+          nonce={nonce}
+        />
+        <GlobalLoader />
+        <SmoothScroll>{children}</SmoothScroll>
+        <SpeedInsights />
+        <MainToaster />
       </body>
     </html>
   );

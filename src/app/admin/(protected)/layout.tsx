@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/firebase/auth";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminPageTitle } from "@/components/admin/AdminPageTitle";
 import { LoadingProvider } from "@/components/admin/LoadingProvider";
@@ -21,9 +21,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
+  const user = await getCurrentUser();
 
-  if (!userId) {
+  if (!user) {
     redirect("/layanan-inti");
   }
 
@@ -31,7 +31,7 @@ export default async function AdminLayout({
     <div className="admin-theme font-rubik bg-[#F8FAFC]">
       <LoadingProvider>
         <SidebarProvider>
-          <AdminRoleProvider>
+          <AdminRoleProvider serverUser={user}>
             <TooltipProvider>
               <AdminSidebar />
               <SidebarInset>

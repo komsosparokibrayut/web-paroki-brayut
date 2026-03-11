@@ -1,12 +1,11 @@
 "use client";
 
-import { useAdminRole } from "@/components/admin/AdminRoleProvider"; // Import context
-import { UserRole } from "@/lib/roles"; // Import UserRole type
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
+import { UserRole } from "@/lib/roles";
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { usePathname, useRouter } from "next/navigation";
 import { useLoading } from "@/components/admin/LoadingProvider";
 import {
     LayoutDashboard,
@@ -21,6 +20,7 @@ import {
     Database,
     PenTool,
     Church,
+    LogOut,
 } from "lucide-react";
 import {
     Sidebar,
@@ -42,12 +42,13 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AdminSidebar() {
-    const { user } = useUser();
+    const { user, role } = useAdminRole();
     const pathname = usePathname();
+    const router = useRouter();
     const { setOpenMobile, state } = useSidebar();
-    const { role } = useAdminRole(); // Use simulated role
 
     const isCollapsed = state === "collapsed";
 
@@ -109,6 +110,16 @@ export function AdminSidebar() {
     ].filter(group => group.items.length > 0);
 
     const isDashboardActive = pathname === "/admin/dashboard";
+
+    const handleLogout = async () => {
+        try {
+            await fetch("/api/auth/logout", { method: "POST" });
+            router.push("/layanan-inti");
+            router.refresh();
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    };
 
     // Reusable nav item component
     const NavItem = ({ href, icon: Icon, name, isActive }: { href: string; icon: React.ComponentType<{ className?: string }>; name: string; isActive: boolean }) => {
@@ -224,20 +235,30 @@ export function AdminSidebar() {
                             </Link>
                         </Button>
 
-                        <div className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-50 transition-colors">
-                            <UserButton
-                                afterSignOutUrl="/admin"
-                                appearance={{
-                                    elements: {
-                                        userButtonAvatarBox: "size-8",
-                                        userButtonTrigger: "focus:shadow-none focus:ring-0"
-                                    }
-                                }}
-                            />
+                        <div className="flex items-center gap-3 px-2 py-2 rounded-md">
+                            <Avatar className="size-8">
+                                <AvatarImage src={user?.picture} alt={user?.name || "Admin"} />
+                                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
+                                    {user?.name?.charAt(0)?.toUpperCase() || "A"}
+                                </AvatarFallback>
+                            </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
-                                <span className="truncate font-medium text-slate-900">{user?.fullName || "Admin"}</span>
-                                <span className="truncate text-xs text-slate-500">{user?.primaryEmailAddress?.emailAddress}</span>
+                                <span className="truncate font-medium text-slate-900">{user?.name || "Admin"}</span>
+                                <span className="truncate text-xs text-slate-500">{user?.email}</span>
                             </div>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                        onClick={handleLogout}
+                                    >
+                                        <LogOut className="size-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Logout</TooltipContent>
+                            </Tooltip>
                         </div>
                     </div>
                 ) : (
@@ -253,16 +274,19 @@ export function AdminSidebar() {
                             <TooltipContent side="right">View Site</TooltipContent>
                         </Tooltip>
 
-                        <div className="py-1">
-                            <UserButton
-                                afterSignOutUrl="/admin"
-                                appearance={{
-                                    elements: {
-                                        userButtonAvatarBox: "size-7"
-                                    }
-                                }}
-                            />
-                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                    onClick={handleLogout}
+                                >
+                                    <LogOut className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">Logout</TooltipContent>
+                        </Tooltip>
                     </div>
                 )}
             </SidebarFooter>

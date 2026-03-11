@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { UserRole, getUserRole } from "@/lib/roles";
+import { UserRole } from "@/lib/roles";
+import type { SessionUser } from "@/lib/firebase/auth";
 
 interface AdminRoleContextType {
     role: UserRole | null; // The effective role (simulated or actual)
@@ -10,24 +10,28 @@ interface AdminRoleContextType {
     isSuperAdmin: boolean;
     setSimulatedRole: (role: UserRole | null) => void;
     isLoading: boolean;
+    user: SessionUser | null;
 }
 
 const AdminRoleContext = createContext<AdminRoleContextType | undefined>(undefined);
 
-export function AdminRoleProvider({ children }: { children: React.ReactNode }) {
-    const { user, isLoaded } = useUser();
+interface AdminRoleProviderProps {
+    children: React.ReactNode;
+    serverUser: SessionUser;
+}
+
+export function AdminRoleProvider({ children, serverUser }: AdminRoleProviderProps) {
     const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
 
-    // Derived state
-    const actualRole = isLoaded ? getUserRole(user) : null;
+    const actualRole = serverUser.role;
     const isSuperAdmin = actualRole === "super_admin";
 
-    // If not super admin, we can't simulate. Resets if user changes or role changes.
+    // If not super admin, we can't simulate. Resets if role changes.
     useEffect(() => {
-        if (isLoaded && !isSuperAdmin && simulatedRole) {
+        if (!isSuperAdmin && simulatedRole) {
             setSimulatedRole(null);
         }
-    }, [isLoaded, isSuperAdmin, simulatedRole]);
+    }, [isSuperAdmin, simulatedRole]);
 
     // The role that the app should perceive
     const effectiveRole = (isSuperAdmin && simulatedRole) ? simulatedRole : actualRole;
@@ -39,7 +43,8 @@ export function AdminRoleProvider({ children }: { children: React.ReactNode }) {
                 actualRole,
                 isSuperAdmin,
                 setSimulatedRole,
-                isLoading: !isLoaded,
+                isLoading: false,
+                user: serverUser,
             }}
         >
             {children}

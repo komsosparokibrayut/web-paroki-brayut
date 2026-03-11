@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createPost, updatePost, deletePost } from "@/features/news/actions/posts";
 import { toast } from "sonner";
-import { useUser } from "@clerk/nextjs";
 import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { getAllCategories, addCategory } from "@/actions/categories";
 import QuillEditor from "./QuillEditor";
@@ -71,7 +70,7 @@ const formSchema = z.object({
 });
 
 export default function PostForm({ post, mode, categories: masterCategories }: PostFormProps) {
-    const { user } = useUser();
+    const { user, role } = useAdminRole();
     const router = useRouter();
     const { startTransition } = useLoading();
 
@@ -82,7 +81,7 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
             title: post?.frontmatter.title || "",
             slug: post?.frontmatter.slug || "",
             description: post?.frontmatter.description || "",
-            author: post?.frontmatter.author || user?.fullName || "Admin Paroki",
+            author: post?.frontmatter.author || user?.name || "Admin Paroki",
             categories: post?.frontmatter.categories || [],
             content: post?.content || { ops: [] },
             banner: post?.frontmatter.banner || "",
@@ -235,7 +234,6 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
         form.setValue("categories", currentCategories.filter((c) => c !== cat));
     };
 
-    const { role } = useAdminRole();
     const isReporter = role === "news_reporter";
 
     return (

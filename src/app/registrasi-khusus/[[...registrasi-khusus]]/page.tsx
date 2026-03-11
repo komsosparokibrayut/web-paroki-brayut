@@ -1,9 +1,6 @@
-import { SignUp } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
+// Sign-up is disabled — redirect to login
 export default function Page() {
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-brand-warm">
-            <SignUp path="/registrasi-khusus" routing="path" signInUrl="/layanan-inti" />
-        </div>
-    );
+  redirect("/layanan-inti");
 }

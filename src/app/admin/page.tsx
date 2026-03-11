@@ -1,14 +1,14 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/firebase/auth";
 
 export default async function AdminRootPage() {
-  const { userId } = await auth();
+  const user = await getCurrentUser();
 
-  // If already authenticated by Clerk, go to dashboard
-  if (userId) {
+  // If already authenticated, go to dashboard
+  if (user) {
     redirect("/admin/dashboard");
   }
 
-  // Otherwise redirect to Clerk sign-in page
+  // Otherwise redirect to login page
   redirect("/layanan-inti");
 }
