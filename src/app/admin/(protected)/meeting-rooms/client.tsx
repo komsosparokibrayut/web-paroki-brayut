@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useTransition } from "react";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
 import { updateBookingStatus, deleteBooking, submitBooking, updateBooking, getBookings } from "@/features/booking/actions/bookings";
@@ -23,10 +25,6 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 
 import { setMeetingRoomPassword } from "@/features/booking/actions/auth";
-
-"use client";
-
-const { bookings: b, places: p, isSuperAdmin, initialBookings, initialPlaces } = {} as any;
 
 export default function MeetingRoomsClient({
   initialBookings,
