@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/firebase/auth";
 import { hasPermission } from "@/lib/roles";
 import { MeetingBooking } from "../types";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 
 const COLLECTION = "meeting_bookings";
@@ -38,6 +39,35 @@ export async function submitBooking(
     const today = new Date().toISOString().split('T')[0];
     if (parsed.data.date < today) {
       return { success: false, error: "Cannot book a date in the past" };
+    }
+
+    // Rate limiting for public users (not admin direct creation)
+    if (!parsed.data.isAdminDirectCreate) {
+      const headersList = await headers();
+      const ip = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown_ip";
+      
+      if (ip !== "unknown_ip") {
+        const safeIp = ip.split(',')[0].trim().replace(/\//g, '_');
+        const rateLimitRef = adminDb.collection("booking_rate_limits").doc(safeIp);
+        const rlDoc = await rateLimitRef.get();
+        const nowMs = Date.now();
+        const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+        const MAX_PER_WINDOW = 5; 
+        
+        if (rlDoc.exists) {
+          const data = rlDoc.data()!;
+          if (nowMs < data.resetAt) {
+            if (data.count >= MAX_PER_WINDOW) {
+              return { success: false, error: "Terlalu banyak permohonan (Maks 5 per jam). Silakan coba lagi nanti." };
+            }
+            await rateLimitRef.update({ count: data.count + 1 });
+          } else {
+            await rateLimitRef.set({ count: 1, resetAt: nowMs + WINDOW_MS });
+          }
+        } else {
+          await rateLimitRef.set({ count: 1, resetAt: nowMs + WINDOW_MS });
+        }
+      }
     }
 
     let targetStatus = "pending";
@@ -128,6 +158,38 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting booking:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateBooking(
+  id: string,
+  data: Omit<MeetingBooking, "id" | "status" | "createdAt" | "updatedAt">
+): Promise<ActionResult> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Server-side input validation
+    const parsed = bookingSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.errors[0]?.message || "Invalid input" };
+    }
+
+    const { isAdminDirectCreate, ...bookingDataToSave } = parsed.data as any;
+
+    await adminDb.collection(COLLECTION).doc(id).update({
+      ...bookingDataToSave,
+      updatedAt: Date.now()
+    });
+
+    revalidatePath("/admin/meeting-rooms");
+    revalidatePath("/meeting-room");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating booking:", error);
     return { success: false, error: error.message };
   }
 }

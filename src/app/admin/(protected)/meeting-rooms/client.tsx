@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
-import { updateBookingStatus, deleteBooking, submitBooking } from "@/features/booking/actions/bookings";
+import { updateBookingStatus, deleteBooking, submitBooking, updateBooking } from "@/features/booking/actions/bookings";
 import { saveMeetingPlace, deleteMeetingPlace } from "@/features/booking/actions/places";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,13 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, CheckCircle, XCircle, Clock, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, Clock, Eye, EyeOff, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PasswordInputWithValidation } from "@/components/ui/password-input-with-validation";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 import { setMeetingRoomPassword } from "@/features/booking/actions/auth";
 
@@ -54,39 +55,63 @@ export default function MeetingRoomsClient({
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // States for Editing
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+
+  // States for Confirm Modal
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "default" | "destructive";
+    action: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "default",
+    action: () => {},
+  });
+
+  const openConfirm = (title: string, message: string, variant: "default" | "destructive", action: () => void | Promise<void>) => {
+    setConfirmModal({ isOpen: true, title, message, variant, action });
+  };
+
   const getPlaceName = (id: string) => places.find(p => p.id === id)?.name || "Unknown Room";
 
-  const handleApprove = async (id: string) => {
-    toast.promise(updateBookingStatus(id, "confirmed"), {
-      loading: "Approving booking...",
-      success: () => {
+  const handleApprove = (id: string) => {
+    openConfirm("Approve Booking", "Are you sure you want to approve this booking?", "default", async () => {
+      const res = await updateBookingStatus(id, "confirmed");
+      if (res.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "confirmed" } : b));
-        return "Booking approved!";
-      },
-      error: "Failed to approve booking",
+        toast.success("Booking approved!");
+      } else {
+        toast.error("Failed to approve booking");
+      }
     });
   };
 
-  const handleReject = async (id: string) => {
-    toast.promise(updateBookingStatus(id, "rejected"), {
-      loading: "Rejecting booking...",
-      success: () => {
+  const handleReject = (id: string) => {
+    openConfirm("Reject Booking", "Are you sure you want to reject this booking?", "destructive", async () => {
+      const res = await updateBookingStatus(id, "rejected");
+      if (res.success) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: "rejected" } : b));
-        return "Booking rejected";
-      },
-      error: "Failed to reject booking",
+        toast.success("Booking rejected");
+      } else {
+        toast.error("Failed to reject booking");
+      }
     });
   };
 
-  const handleDeleteBooking = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this booking?")) return;
-    toast.promise(deleteBooking(id), {
-      loading: "Deleting booking...",
-      success: () => {
+  const handleDeleteBooking = (id: string) => {
+    openConfirm("Delete Booking", "Are you sure you want to delete this booking? This action cannot be undone.", "destructive", async () => {
+      const res = await deleteBooking(id);
+      if (res.success) {
         setBookings(prev => prev.filter(b => b.id !== id));
-        return "Booking deleted";
-      },
-      error: "Failed to delete booking",
+        toast.success("Booking deleted");
+      } else {
+        toast.error("Failed to delete booking");
+      }
     });
   };
 
@@ -114,35 +139,70 @@ export default function MeetingRoomsClient({
       return toast.error("Semua field harus diisi");
     }
 
-    toast.promise(submitBooking({ ...newBooking, isAdminDirectCreate: true } as any), {
-      loading: "Saving booking...",
-      success: (res) => {
-        if (res.success && res.data) {
-          setBookings(prev => [{
-            ...newBooking,
-            id: res.data,
-            status: "confirmed",
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          } as MeetingBooking, ...prev]);
-        }
-        setIsAddBookingOpen(false);
-        setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "" });
-        return "Booking created automatically!";
-      },
-      error: "Failed to create booking",
-    });
+    if (editingBookingId) {
+      toast.promise(updateBooking(editingBookingId, newBooking as any), {
+        loading: "Updating booking...",
+        success: (res) => {
+          if (res.success) {
+            setBookings(prev => prev.map(b => b.id === editingBookingId ? {
+              ...b,
+              ...newBooking,
+              updatedAt: Date.now()
+            } as MeetingBooking : b));
+            setIsAddBookingOpen(false);
+            setEditingBookingId(null);
+            setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "" });
+            return "Booking updated!";
+          }
+          throw new Error(res.error || "Failed");
+        },
+        error: "Failed to update booking"
+      });
+    } else {
+      toast.promise(submitBooking({ ...newBooking, isAdminDirectCreate: true } as any), {
+        loading: "Saving booking...",
+        success: (res) => {
+          if (res.success && res.data) {
+            setBookings(prev => [{
+              ...newBooking,
+              id: res.data,
+              status: "confirmed",
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            } as MeetingBooking, ...prev]);
+          }
+          setIsAddBookingOpen(false);
+          setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "" });
+          return "Booking created automatically!";
+        },
+        error: "Failed to create booking",
+      });
+    }
   };
 
-  const handleDeletePlace = async (id: string) => {
-    if (!confirm("Are you sure? This may affect existing bookings for this place.")) return;
-    toast.promise(deleteMeetingPlace(id), {
-      loading: "Deleting place...",
-      success: () => {
+  const openEditBooking = (booking: MeetingBooking) => {
+    setEditingBookingId(booking.id);
+    setNewBooking({
+      placeId: booking.placeId,
+      date: booking.date,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      userName: booking.userName,
+      userContact: booking.userContact,
+      purpose: booking.purpose
+    });
+    setIsAddBookingOpen(true);
+  };
+
+  const handleDeletePlace = (id: string) => {
+    openConfirm("Delete Place", "Are you sure? This may affect existing bookings for this place.", "destructive", async () => {
+      const res = await deleteMeetingPlace(id);
+      if (res.success) {
         setPlaces(prev => prev.filter(p => p.id !== id));
-        return "Place deleted";
-      },
-      error: "Failed to delete place",
+        toast.success("Place deleted");
+      } else {
+        toast.error("Failed to delete place");
+      }
     });
   };
 
@@ -185,7 +245,13 @@ export default function MeetingRoomsClient({
             <h2 className="text-xl font-semibold">Current Bookings</h2>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => router.refresh()}>Refresh Data</Button>
-              <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
+              <Dialog open={isAddBookingOpen} onOpenChange={(open) => {
+                setIsAddBookingOpen(open);
+                if (!open) {
+                  setEditingBookingId(null);
+                  setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "" });
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -194,7 +260,7 @@ export default function MeetingRoomsClient({
                 </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Booking</DialogTitle>
+                  <DialogTitle>{editingBookingId ? "Edit Booking" : "Add New Booking"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSaveBooking} className="space-y-4 py-4">
                   <div className="space-y-2">
@@ -238,7 +304,7 @@ export default function MeetingRoomsClient({
                     <Label htmlFor="purpose">Purpose</Label>
                     <Textarea id="purpose" value={newBooking.purpose} onChange={e => setNewBooking({ ...newBooking, purpose: e.target.value })} required />
                   </div>
-                  <Button type="submit" className="w-full mt-4">Save Booking</Button>
+                  <Button type="submit" className="w-full mt-4">{editingBookingId ? "Update Booking" : "Save Booking"}</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -277,18 +343,21 @@ export default function MeetingRoomsClient({
                     </div>
                   </CardContent>
                   <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                    {booking.status === "pending" && (
-                      <>
-                        <Button variant="outline" size="sm" onClick={() => handleReject(booking.id)} className="text-red-600">
-                          <XCircle className="w-4 h-4 mr-1" />
-                          Reject
-                        </Button>
-                        <Button size="sm" onClick={() => handleApprove(booking.id)} className="bg-green-600 hover:bg-green-700">
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Approve
-                        </Button>
-                      </>
+                    {(booking.status === "pending" || booking.status === "confirmed") && (
+                      <Button variant="outline" size="sm" onClick={() => handleReject(booking.id)} className="text-red-600">
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
                     )}
+                    {(booking.status === "pending" || booking.status === "rejected") && (
+                      <Button size="sm" onClick={() => handleApprove(booking.id)} className="bg-green-600 hover:bg-green-700 font-medium text-white border-0">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => openEditBooking(booking)}>
+                      <Pencil className="w-4 h-4 text-slate-400 hover:text-blue-600" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBooking(booking.id)}>
                       <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-600" />
                     </Button>
@@ -392,6 +461,18 @@ export default function MeetingRoomsClient({
           </TabsContent>
         )}
       </Tabs>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant={confirmModal.variant}
+        onConfirm={async () => {
+          await confirmModal.action();
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }}
+        confirmText="Ya, Lanjutkan"
+      />
     </div>
   );
 }
