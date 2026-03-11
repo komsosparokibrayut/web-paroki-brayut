@@ -7,9 +7,11 @@ import Image from "next/image";
 
 const heroImages = [
     "/images/carousel/GerejaTambakrejo.jpg",
+    "/images/carousel/GerejaKarangelo.jpg",
     "/images/carousel/GerejaNgelo.jpg",
-    "/images/carousel/GerejaKarangkepuh.JPG",
     "/images/carousel/GerejaDukuh.JPG",
+    "/images/carousel/GerejaKarangkepuh.JPG",
+    "/images/carousel/GerejaKayunan.JPG",
     "/images/carousel/inGerejaTambakrejo.JPG",
 ];
 
