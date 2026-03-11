@@ -4,6 +4,7 @@ import { adminAuth } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
 import { revalidatePath } from "next/cache";
 import { UserRole, getUserRole } from "@/lib/roles";
+import { validatePassword } from "@/lib/password-validation";
 
 export async function getAdminUsers() {
     const listResult = await adminAuth.listUsers(100);
@@ -25,6 +26,14 @@ export async function inviteAdmin(email: string, role: UserRole, password?: stri
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
         if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can invite new admins");
+
+        // Validate password complexity if provided
+        if (password) {
+            const validation = validatePassword(password);
+            if (!validation.isValid) {
+                return { success: false, error: `Password tidak memenuhi syarat: ${validation.errors.join(", ")}` };
+            }
+        }
 
         // Check if user already exists in Firebase Auth
         let uid: string;
@@ -104,8 +113,9 @@ export async function resetAdminPassword(targetUserId: string, newPassword: stri
             throw new Error("You cannot reset your own password from here");
         }
 
-        if (newPassword.length < 6) {
-            throw new Error("Password must be at least 6 characters");
+        const validation = validatePassword(newPassword);
+        if (!validation.isValid) {
+            throw new Error(`Password tidak memenuhi syarat: ${validation.errors.join(", ")}`);
         }
 
         await adminAuth.updateUser(targetUserId, { password: newPassword });

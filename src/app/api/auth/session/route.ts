@@ -1,8 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSessionCookie } from "@/lib/firebase/auth";
 
-export async function POST(request: Request) {
+// In-memory rate limiter for login attempts
+const loginAttempts = new Map<string, { count: number; expiresAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+
+  if (entry && now < entry.expiresAt) {
+    if (entry.count >= MAX_ATTEMPTS) return false;
+    entry.count++;
+  } else {
+    loginAttempts.set(ip, { count: 1, expiresAt: now + WINDOW_MS });
+  }
+  return true;
+}
+
+export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for") || "unknown";
+    if (ip !== "unknown" && !checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit." },
+        { status: 429 }
+      );
+    }
+
     const { idToken } = await request.json();
 
     if (!idToken) {

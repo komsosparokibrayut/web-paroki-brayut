@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const ALLOWED_ORIGINS = [
+  "https://www.parokibrayut.org",
+  "https://parokibrayut.org",
+];
+
+if (process.env.NODE_ENV !== "production") {
+  ALLOWED_ORIGINS.push("http://localhost:3000", "http://localhost:3001");
+}
+
+function getCorsOrigin(request: NextRequest): string {
+  const origin = request.headers.get("origin") || "";
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  return ALLOWED_ORIGINS[0]; // Default to primary origin
+}
+
 /**
  * Server-side proxy for Google Drive images.
  *
@@ -94,7 +109,8 @@ export async function GET(
         headers: {
           "Content-Type": fallbackType,
           "Cache-Control": "public, max-age=86400, s-maxage=604800",
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": getCorsOrigin(request),
+          "Vary": "Origin",
         },
       });
     }
@@ -113,7 +129,8 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400, s-maxage=604800",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": getCorsOrigin(request),
+        "Vary": "Origin",
       },
     });
   } catch (error) {

@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
     connect-src 'self' https: wss: https://cloud.umami.is https://vitals.vercel-insights.com https://*.googleapis.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
     frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com https://player.vimeo.com https://*.firebaseapp.com https://accounts.google.com;
     frame-ancestors 'none';
+    report-uri /api/csp-report;
   `.replace(/\s{2,}/g, " ").trim();
 
   const requestHeaders = new Headers(request.headers);
@@ -46,6 +47,10 @@ export function middleware(request: NextRequest) {
   response.headers.set(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
+  );
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=63072000; includeSubDomains; preload"
   );
 
   return response;
