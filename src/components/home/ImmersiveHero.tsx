@@ -7,8 +7,10 @@ import Image from "next/image";
 
 const heroImages = [
     "/images/carousel/GerejaTambakrejo.jpg",
-    "/images/carousel/TestHeroImage.jpg",
-    // Add more if available or duplicate for loop
+    "/images/carousel/GerejaNgelo.jpg",
+    "/images/carousel/GerejaKarangkepuh.JPG",
+    "/images/carousel/GerejaDukuh.JPG",
+    "/images/carousel/inGerejaTambakrejo.JPG",
 ];
 
 export default function ImmersiveHero() {
