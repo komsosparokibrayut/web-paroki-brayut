@@ -152,7 +152,8 @@ export async function renderContent(content: any): Promise<string> {
       );
 
       // Sanitize the final HTML to prevent stored XSS
-      const DOMPurify = (await import("isomorphic-dompurify")).default;
+      const DOMPurify = require("isomorphic-dompurify");
+      
       return DOMPurify.sanitize(html, {
         ADD_TAGS: ["iframe"],
         ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "class"],
@@ -174,7 +175,7 @@ export async function renderContent(content: any): Promise<string> {
 
   // Final fallback: return sanitized string if it is one, otherwise empty
   if (typeof content === "string") {
-    const DOMPurify = (await import("isomorphic-dompurify")).default;
+    const DOMPurify = require("isomorphic-dompurify");
     return DOMPurify.sanitize(content);
   }
   return "";
