@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: [
+    "isomorphic-dompurify",
+    "jsdom",
+    "cssstyle",
+    "@asamuzakjp/css-color",
+    "@csstools/css-calc",
+  ],
   images: {
     remotePatterns: [
       {
