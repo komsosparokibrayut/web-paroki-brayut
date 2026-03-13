@@ -45,7 +45,7 @@ export default async function Gereja5Page() {
             <PageHeader
                 title="Gereja St. Yohanes Rasul Karangkepuh"
                 subtitle="Gereja Wilayah – Paroki Brayut"
-                image="/images/carousel/GerejaKarangkepuh.jpg"
+                image="/images/carousel/gereja-karangkepuh.jpg"
                 align="left"
             />
 

@@ -10,9 +10,9 @@ const heroImages = [
     "/images/carousel/GerejaKarangelo.jpeg",
     "/images/carousel/GerejaNgelo.jpg",
     "/images/carousel/GerejaDukuh.JPG",
-    "/images/carousel/GerejaKarangkepuh.jpg",
+    "/images/carousel/gereja-karangkepuh.jpg",
     "/images/carousel/GerejaKayunan.jpg",
-    "/images/carousel/inGerejaTambakrejo.jpg",
+    "/images/carousel/tambakrejo-in.jpg",
 ];
 
 export default function ImmersiveHero() {
