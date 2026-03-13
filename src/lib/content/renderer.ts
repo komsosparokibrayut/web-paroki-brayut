@@ -126,30 +126,7 @@ export async function renderContent(content: any): Promise<string> {
         return '';
       });
 
-      let html = converter.convert();
-      
-      // Post-process to ensure all videos are wrapped in ql-video-wrapper
-      // This catches standard embeds that renderCustomWith might miss
-      html = html.replace(
-        /<iframe[^>]*class="ql-video"[^>]*src="([^"]+)"[^>]*><\/iframe>/g,
-        (match, src) => {
-          const safeUrl = sanitizeVideoUrl(src);
-          if (!safeUrl) {
-            return `<p><em>[Video blocked: invalid or disallowed URL]</em></p>`;
-          }
-          
-          return `
-            <div class="ql-video-wrapper my-8">
-              <iframe 
-                class="ql-video" 
-                src="${escapeHtml(safeUrl)}" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                allowfullscreen
-              ></iframe>
-            </div>`;
-        }
-      );
+      let html = converter.convert().replace(/\n/g, '');
 
       // Sanitize the final HTML to prevent stored XSS
       const DOMPurify = require("isomorphic-dompurify");
@@ -157,7 +134,6 @@ export async function renderContent(content: any): Promise<string> {
       return DOMPurify.sanitize(html, {
         ADD_TAGS: ["iframe"],
         ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "class"],
-        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|data):)/i,
         FORBID_TAGS: ["script", "object", "embed", "form"],
         FORBID_ATTR: [
           "onerror",
