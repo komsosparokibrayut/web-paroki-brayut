@@ -1,5 +1,4 @@
 import { QuillDeltaToHtmlConverter } from "quill-delta-to-html";
-import DOMPurify from "isomorphic-dompurify";
 
 /**
  * Validates and sanitizes a video embed URL.
@@ -153,12 +152,20 @@ export async function renderContent(content: any): Promise<string> {
       );
 
       // Sanitize the final HTML to prevent stored XSS
+      const DOMPurify = (await import("isomorphic-dompurify")).default;
       return DOMPurify.sanitize(html, {
-        ADD_TAGS: ['iframe'],
-        ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'class'],
+        ADD_TAGS: ["iframe"],
+        ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "class"],
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|data):)/i,
-        FORBID_TAGS: ['script', 'object', 'embed', 'form'],
-        FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover', 'onfocus', 'onblur'],
+        FORBID_TAGS: ["script", "object", "embed", "form"],
+        FORBID_ATTR: [
+          "onerror",
+          "onclick",
+          "onload",
+          "onmouseover",
+          "onfocus",
+          "onblur",
+        ],
       });
     } catch (error) {
       console.error("Delta to HTML conversion failed:", error);
@@ -166,6 +173,10 @@ export async function renderContent(content: any): Promise<string> {
   }
 
   // Final fallback: return sanitized string if it is one, otherwise empty
-  return typeof content === 'string' ? DOMPurify.sanitize(content) : "";
+  if (typeof content === "string") {
+    const DOMPurify = (await import("isomorphic-dompurify")).default;
+    return DOMPurify.sanitize(content);
+  }
+  return "";
 }
 
