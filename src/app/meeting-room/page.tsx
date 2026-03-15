@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { getBookings } from "@/features/booking/actions/bookings";
 import { getActiveMeetingPlaces } from "@/features/booking/actions/places";
+import { getActiveInventoryItems } from "@/features/booking/actions/inventory";
 import { isMeetingRoomAuthenticated } from "@/features/booking/actions/auth";
 import MeetingRoomClient from "./client";
 
@@ -14,12 +15,15 @@ export default async function MeetingRoomPage() {
     // Only fetch data if authenticated to save reads
     const bookings = isAuthenticated ? await getBookings() : [];
     const places = isAuthenticated ? await getActiveMeetingPlaces() : [];
+    const inventoryItems = isAuthenticated ? await getActiveInventoryItems() : [];
 
     return (
         <MeetingRoomClient 
             isAuthenticated={isAuthenticated} 
             initialBookings={bookings} 
-            places={places} 
+            places={places}
+            inventoryItems={inventoryItems}
         />
     );
+
 }

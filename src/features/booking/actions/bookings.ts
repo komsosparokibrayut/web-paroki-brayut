@@ -13,7 +13,8 @@ const COLLECTION = "meeting_bookings";
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error?: string };
 
 const bookingSchema = z.object({
-  placeId: z.string().min(1, "Ruangan harus dipilih"),
+  type: z.enum(['room', 'inventory', 'both']),
+  placeId: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid"),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
@@ -21,6 +22,13 @@ const bookingSchema = z.object({
   userContact: z.string().min(5, "Kontak minimal 5 karakter").max(100, "Kontak terlalu panjang"),
   purpose: z.string().min(3, "Keperluan minimal 3 karakter").max(500, "Keperluan terlalu panjang"),
   isAdminDirectCreate: z.boolean().optional(),
+  submissionSource: z.enum(['online', 'manual']).optional(),
+  
+  // New Tracking fields
+  borrowedItems: z.array(z.object({ itemId: z.string(), quantity: z.number(), name: z.string() })).optional(),
+  location: z.string().optional(),
+  inventoryDateTake: z.string().optional(),
+  returnDate: z.string().optional(),
 }).refine(data => data.endTime > data.startTime, {
   message: "Waktu selesai harus setelah waktu mulai",
 });
@@ -37,7 +45,7 @@ export async function submitBooking(
 
     // Validate date is not in the past
     const today = new Date().toISOString().split('T')[0];
-    if (parsed.data.date < today) {
+    if (parsed.data.date < today && !parsed.data.isAdminDirectCreate) {
       return { success: false, error: "Tidak dapat memesan tanggal di masa lalu" };
     }
 
@@ -70,20 +78,22 @@ export async function submitBooking(
       }
     }
 
-    // Check for overlap
-    const overlaps = await adminDb.collection(COLLECTION)
-      .where("placeId", "==", parsed.data.placeId)
-      .get();
-      
-    const hasOverlap = overlaps.docs.some(doc => {
-      const b = doc.data() as MeetingBooking;
-      if (b.date !== parsed.data.date) return false;
-      if (b.status === "rejected") return false;
-      return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
-    });
+    // Check for overlap ONLY with confirmed bookings
+    if (parsed.data.type === 'room' || parsed.data.type === 'both') {
+        const overlaps = await adminDb.collection(COLLECTION)
+          .where("placeId", "==", parsed.data.placeId)
+          .where("status", "==", "confirmed")
+          .get();
+          
+        const hasOverlap = overlaps.docs.some(doc => {
+          const b = doc.data() as MeetingBooking;
+          if (b.date !== parsed.data.date) return false;
+          return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+        });
 
-    if (hasOverlap) {
-      return { success: false, error: "Jadwal bertabrakan dengan peminjaman lain (waktu sudah terpakai)." };
+        if (hasOverlap) {
+          return { success: false, error: "Jadwal sudah disetujui untuk peminjaman lain (waktu sudah terpakai)." };
+        }
     }
 
     let targetStatus = "pending";
@@ -94,7 +104,10 @@ export async function submitBooking(
       }
     }
 
-    const { isAdminDirectCreate, ...bookingDataToSave } = parsed.data as any;
+    const { isAdminDirectCreate, submissionSource, ...bookingDataToSave } = parsed.data as any;
+    
+    // Assign Submission Source
+    bookingDataToSave.submissionSource = submissionSource || (isAdminDirectCreate ? 'manual' : 'online');
 
     const now = Date.now();
     const docRef = await adminDb.collection(COLLECTION).add({
@@ -103,6 +116,17 @@ export async function submitBooking(
       createdAt: now,
       updatedAt: now,
     });
+    
+    // If admin bypasses directly to confirmed, trigger auto-reject for other pending ones
+    if (targetStatus === "confirmed" && bookingDataToSave.placeId) {
+         await autoRejectOverlappingPending(
+             bookingDataToSave.placeId, 
+             bookingDataToSave.date, 
+             bookingDataToSave.startTime, 
+             bookingDataToSave.endTime, 
+             docRef.id
+         );
+    }
     
     revalidatePath("/meeting-room");
     revalidatePath("/admin/meeting-rooms");
@@ -136,10 +160,43 @@ export async function getBookings(): Promise<MeetingBooking[]> {
 }
 
 /**
+ * Automatically reject any overlapping pending room bookings
+ */
+async function autoRejectOverlappingPending(placeId: string, date: string, startTime: string, endTime: string, currentBookingId: string) {
+    const overlaps = await adminDb.collection(COLLECTION)
+      .where("placeId", "==", placeId)
+      .where("status", "==", "pending")
+      .get();
+      
+    const batch = adminDb.batch();
+    let hasUpdates = false;
+    
+    overlaps.docs.forEach(doc => {
+      if (doc.id === currentBookingId) return;
+      const b = doc.data() as MeetingBooking;
+      
+      if (b.date === date && startTime < b.endTime && endTime > b.startTime) {
+        // Only reject if it's a room/both booking, inventory-only don't conflict on room usage
+        if (b.type === 'room' || b.type === 'both') {
+            batch.update(doc.ref, { 
+                status: 'rejected',
+                adminNotes: 'Otomatis ditolak karena jadwal ruangan sudah terpakai',
+                updatedAt: Date.now()
+            });
+            hasUpdates = true;
+        }
+      }
+    });
+
+    if (hasUpdates) {
+        await batch.commit();
+    }
+}
+
+/**
  * Update the status of a booking (approve/reject).
  * Requires admin privileges.
- */
-export async function updateBookingStatus(id: string, status: "confirmed" | "rejected"): Promise<ActionResult> {
+ */export async function updateBookingStatus(id: string, status: "confirmed" | "rejected"): Promise<ActionResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
@@ -150,9 +207,18 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       status,
       updatedAt: Date.now()
     });
+    
+    if (status === "confirmed") {
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (bookingDoc.exists) {
+            const b = bookingDoc.data() as MeetingBooking;
+            if (b.placeId && (b.type === 'room' || b.type === 'both')) {
+                await autoRejectOverlappingPending(b.placeId, b.date, b.startTime, b.endTime, id);
+            }
+        }
+    }
 
-    revalidatePath("/admin/meeting-rooms");
-    revalidatePath("/meeting-room");
+    revalidatePath("/admin/meeting-rooms");    revalidatePath("/meeting-room");
     return { success: true };
   } catch (error: any) {
     console.error("Error updating booking status:", error);
@@ -194,25 +260,32 @@ export async function updateBooking(
       return { success: false, error: parsed.error.errors[0]?.message || "Input tidak valid" };
     }
 
-    // Check for overlap, excluding this current booking
-    const overlaps = await adminDb.collection(COLLECTION)
-      .where("placeId", "==", parsed.data.placeId)
-      .get();
-      
-    const hasOverlap = overlaps.docs.some(doc => {
-      if (doc.id === id) return false; // Ignore current booking
-      const b = doc.data() as MeetingBooking;
-      if (b.date !== parsed.data.date) return false;
-      if (b.status === "rejected") return false;
-      return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
-    });
+    // Check for overlap ONLY with confirmed bookings, excluding this current booking
+    if (parsed.data.type === 'room' || parsed.data.type === 'both') {
+        const overlaps = await adminDb.collection(COLLECTION)
+          .where("placeId", "==", parsed.data.placeId)
+          .where("status", "==", "confirmed")
+          .get();
+          
+        const hasOverlap = overlaps.docs.some(doc => {
+          if (doc.id === id) return false; // Ignore current booking
+          const b = doc.data() as MeetingBooking;
+          if (b.date !== parsed.data.date) return false;
+          return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+        });
 
-    if (hasOverlap) {
-      return { success: false, error: "Jadwal bertabrakan dengan peminjaman lain (waktu sudah terpakai)." };
+        if (hasOverlap) {
+          return { success: false, error: "Jadwal sudah disetujui untuk peminjaman lain (waktu sudah terpakai)." };
+        }
     }
 
-    const { isAdminDirectCreate, ...bookingDataToSave } = parsed.data as any;
-
+    const { isAdminDirectCreate, submissionSource, ...bookingDataToSave } = parsed.data as any;
+    
+    // Tag as rescheduled
+    bookingDataToSave.isRescheduled = true;
+    if (submissionSource) {
+      bookingDataToSave.submissionSource = submissionSource;
+    }
     await adminDb.collection(COLLECTION).doc(id).update({
       ...bookingDataToSave,
       updatedAt: Date.now()

@@ -52,7 +52,7 @@ export function DatePicker({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
+            "bg-white w-full justify-start text-left font-normal",
             !date && "text-muted-foreground"
           )}
         >
@@ -62,11 +62,11 @@ export function DatePicker({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
+          className="bg-white"
           mode="single"
           selected={date}
           onSelect={handleSelect}
           disabled={disablePast ? { before: today } : undefined}
-          initialFocus
         />
       </PopoverContent>
     </Popover>
