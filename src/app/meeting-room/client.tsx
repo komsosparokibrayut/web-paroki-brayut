@@ -231,7 +231,7 @@ export default function MeetingRoomClient({
                         <h1 className="text-4xl font-extrabold tracking-tight text-brand-dark sm:text-5xl">Peminjaman Ruang</h1>
                         <p className="text-muted-foreground text-lg">Cek ketersediaan jadwal dan ajukan peminjaman ruangan atau inventaris.</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
                         <Button variant="outline" className="bg-white text-blue-500 hover:bg-blue-50 hover:text-blue-600" onClick={handleRefresh} disabled={isRefreshing}>
                             <RefreshCw className={cn(isRefreshing && "animate-spin")} />
                         </Button>

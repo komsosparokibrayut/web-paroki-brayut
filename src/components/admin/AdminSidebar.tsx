@@ -153,7 +153,7 @@ export function AdminSidebar() {
     };
 
     return (
-        <Sidebar collapsible="icon" className="bg-white border-r border-slate-200">
+        <Sidebar collapsible="icon" className="bg-sidebar border-r border-slate-200">
             {/* Header with Logo */}
             <SidebarHeader className="border-b border-slate-100 p-2">
                 <Tooltip>
@@ -183,7 +183,7 @@ export function AdminSidebar() {
                 </Tooltip>
             </SidebarHeader>
 
-            <SidebarContent className="p-2">
+            <SidebarContent className="p-2 bg-sidebar">
                 {/* Dashboard */}
                 <div className="mb-2">
                     <NavItem

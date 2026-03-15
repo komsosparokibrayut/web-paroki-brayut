@@ -6,7 +6,7 @@ import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-brand-warm flex flex-col font-rubik">
-      <Header />
+      <Header forceScrolled={true} />
       <main className="flex-grow flex items-center justify-center px-4 py-20">
         <div className="max-w-md w-full text-center space-y-8">
           <div className="relative">

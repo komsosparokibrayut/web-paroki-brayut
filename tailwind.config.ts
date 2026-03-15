@@ -15,8 +15,19 @@ export default {
   			brand: {
   				dark: '#0f172a',
   				blue: '#1e3a8a',
+  				darkBlue: '#172554',
   				gold: '#b45309',
   				warm: '#FBF8F4'
+  			},
+  			sidebar: {
+  				DEFAULT: 'var(--sidebar-background)',
+  				foreground: 'var(--sidebar-foreground)',
+  				primary: 'var(--sidebar-primary)',
+  				'primary-foreground': 'var(--sidebar-primary-foreground)',
+  				accent: 'var(--sidebar-accent)',
+  				'accent-foreground': 'var(--sidebar-accent-foreground)',
+  				border: 'var(--sidebar-border)',
+  				ring: 'var(--sidebar-ring)'
   			},
   			card: {
   				DEFAULT: 'var(--card)',

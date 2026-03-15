@@ -7,7 +7,7 @@ export default function MeetingRoomLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-screen bg-brand-warm flex flex-col font-rubik">
+        <div className="min-h-screen bg-brand-warm flex flex-col font-rubik pt-12">
             <Header forceScrolled={true} />
             <main className="flex-grow">
                 {children}

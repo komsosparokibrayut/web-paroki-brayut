@@ -126,6 +126,21 @@
     --chart-3: #264653;
     --chart-4: #E9C46A;
     --chart-5: #F4A261;
+    --sidebar-background: #FFFFFF;
+    --sidebar-foreground: #0F172A;
+    --sidebar-primary: #2563EB;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #EFF6FF;
+    --sidebar-accent-foreground: #1E40AF;
+    --sidebar-border: #E2E8F0;
+    --sidebar-ring: #2563EB;
+    /* Status colors */
+    --info: #3B82F6;
+    --info-foreground: #FFFFFF;
+    --warning: #F59E0B;
+    --warning-foreground: #FFFFFF;
+    --success: #22C55E;
+    --success-foreground: #FFFFFF;
   }
 
   /* Admin CMS Color Scheme - Black/White with Blue Accent */
