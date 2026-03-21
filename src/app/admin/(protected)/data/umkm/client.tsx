@@ -38,6 +38,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
     const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
     const [pendingFormData, setPendingFormData] = useState<UMKMData | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [formValues, setFormValues] = useState({
         businessName: "",
         owner: "",
@@ -54,6 +56,17 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
     const filteredData = data.filter(item =>
         item.businessName.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const paginatedData = filteredData.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset to page 1 when search term changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     // Check if form has changes compared to original
     const checkForChanges = useCallback(() => {
@@ -219,8 +232,8 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                        {filteredData.length > 0 ? (
-                            filteredData.map((item) => (
+                        {paginatedData.length > 0 ? (
+                            paginatedData.map((item) => (
                                 <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-slate-900">{item.businessName}</td>
                                     <td className="px-6 py-4 text-slate-600">{item.owner}</td>
@@ -261,6 +274,36 @@ export default function UMKMClient({ initialData, categories }: { initialData: U
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="p-4 border-t border-slate-200 flex items-center justify-between">
+                <div className="text-slate-500 text-xs font-medium">
+                    Menampilkan {paginatedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, filteredData.length)} dari {filteredData.length} UMKM
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="h-8 px-3"
+                    >
+                        Sebelumnya
+                    </Button>
+                    <div className="flex items-center justify-center min-w-[2rem] text-xs font-bold text-slate-700">
+                        {currentPage} / {totalPages || 1}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="h-8 px-3"
+                    >
+                        Selanjutnya
+                    </Button>
+                </div>
             </div>
 
             {/* Add/Edit Dialog */}

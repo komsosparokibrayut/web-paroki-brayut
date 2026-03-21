@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Store, MapPin, Info, Search, MessageCircle, ExternalLink } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Store, MapPin, Info, Search, MessageCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Image from "next/image";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UMKMListProps {
     initialUMKM: any[];
@@ -12,6 +22,11 @@ interface UMKMListProps {
 export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
     const [selectedCategory, setSelectedCategory] = useState("Semua");
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 9;
+    const isMobile = useIsMobile();
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+    const [loadingMore, setLoadingMore] = useState(false);
 
     const formatPhone = (phone: string) => {
         if (!phone) return "";
@@ -51,6 +66,113 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
             return true;
         });
     }, [initialUMKM, selectedCategory, searchQuery]);
+
+    // Derived values
+    const totalPages = Math.ceil(filteredUMKM.length / itemsPerPage);
+
+    // Get current items
+    const displayedUMKM = useMemo(() => {
+        if (isMobile) {
+            return filteredUMKM.slice(0, currentPage * itemsPerPage);
+        }
+        return filteredUMKM.slice(
+            (currentPage - 1) * itemsPerPage,
+            currentPage * itemsPerPage
+        );
+    }, [filteredUMKM, currentPage, itemsPerPage, isMobile]);
+
+    // Reset page when filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedCategory, searchQuery]);
+
+    // Infinite Scroll Intersection Observer
+    useEffect(() => {
+        if (!isMobile || currentPage >= totalPages) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !loadingMore) {
+                    setLoadingMore(true);
+                    // Simulate loading delay for better UX
+                    setTimeout(() => {
+                        setCurrentPage((prev) => prev + 1);
+                        setLoadingMore(false);
+                    }, 500);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [isMobile, currentPage, totalPages, loadingMore]);
+
+    const PaginationUI = () => (
+        !isMobile && totalPages > 1 ? (
+            <div className="flex justify-center py-2">
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious
+                                href="#"
+                                onClick={(e: React.MouseEvent) => {
+                                    e.preventDefault();
+                                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                                }}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                        </PaginationItem>
+
+                        {[...Array(totalPages)].map((_, i) => {
+                            const pageNum = i + 1;
+                            if (
+                                pageNum === 1 ||
+                                pageNum === totalPages ||
+                                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                            ) {
+                                return (
+                                    <PaginationItem key={pageNum}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={currentPage === pageNum}
+                                            onClick={(e: React.MouseEvent) => {
+                                                e.preventDefault();
+                                                setCurrentPage(pageNum);
+                                            }}
+                                            className="cursor-pointer"
+                                        >
+                                            {pageNum}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                );
+                            } else if (
+                                pageNum === currentPage - 2 ||
+                                pageNum === currentPage + 2
+                            ) {
+                                return <PaginationItem key={pageNum}><PaginationEllipsis /></PaginationItem>;
+                            }
+                            return null;
+                        })}
+
+                        <PaginationItem>
+                            <PaginationNext
+                                href="#"
+                                onClick={(e: React.MouseEvent) => {
+                                    e.preventDefault();
+                                    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                                }}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            </div>
+        ) : null
+    );
 
     return (
         <div className="space-y-8">
@@ -98,10 +220,13 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
                 </div>
             </div>
 
+            {/* Top Pagination (Desktop only) */}
+            <PaginationUI />
+
             {/* UMKM List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredUMKM.length > 0 ? (
-                    filteredUMKM.map((umkm, index) => (
+                {displayedUMKM.length > 0 ? (
+                    displayedUMKM.map((umkm, index) => (
                         <div
                             key={index}
                             className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:border-brand-blue hover:shadow-lg transition-all group flex flex-col h-full"
@@ -195,6 +320,27 @@ export default function UMKMList({ initialUMKM, categories }: UMKMListProps) {
                             {searchQuery ? "Tidak ada UMKM yang cocok dengan pencarian." : "Belum ada UMKM terdaftar di kategori ini."}
                         </p>
                     </div>
+                )}
+            </div>
+
+            {/* Pagination / Infinite Scroll Indicator */}
+            <div className="pt-8">
+                {isMobile ? (
+                    <div ref={loadMoreRef} className="py-10 flex justify-center w-full">
+                        {loadingMore && currentPage < totalPages && (
+                            <div className="flex flex-col items-center gap-3">
+                                <Loader2 className="h-8 w-8 text-brand-blue animate-spin" />
+                                <p className="text-sm text-gray-400 font-medium">Memuat UMKM lainnya...</p>
+                            </div>
+                        )}
+                        {currentPage >= totalPages && filteredUMKM.length > itemsPerPage && (
+                            <p className="text-sm text-gray-400 font-medium bg-gray-50 px-6 py-2 rounded-full border border-gray-100">
+                                Semua UMKM telah ditampilkan ✨
+                            </p>
+                        )}
+                    </div>
+                ) : (
+                    <PaginationUI />
                 )}
             </div>
         </div>
