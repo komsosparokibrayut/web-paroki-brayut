@@ -42,28 +42,28 @@ export default async function LingkunganPage() {
 
                     {/* Wilayah Overview */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                        <div className="relative rounded-xl p-6 text-center border bg-gray-100 border-gray-200">
                             <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Wilayah</div>
                             <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
                                 {stats?.churches?.toLocaleString('id-ID') || "6"}
                             </div>
                         </div>
 
-                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                        <div className="relative rounded-xl p-6 text-center border bg-gray-100 border-gray-200">
                             <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Lingkungan</div>
                             <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
                                 {stats?.wards?.toLocaleString('id-ID') || "26"}
                             </div>
                         </div>
 
-                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                        <div className="relative rounded-xl p-6 text-center border bg-gray-100 border-gray-200">
                             <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Keluarga</div>
                             <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
                                 {stats?.families?.toLocaleString('id-ID') || "-"}
                             </div>
                         </div>
 
-                        <div className="relative rounded-xl p-6 text-center border bg-brand-gold/10 border-brand-gold/30">
+                        <div className="relative rounded-xl p-6 text-center border bg-gray-100 border-gray-200">
                             <div className="text-xs font-bold tracking-wider uppercase mb-1 text-gray-500">Total Umat</div>
                             <div className="text-4xl font-extrabold tracking-tight text-brand-dark mb-1">
                                 {stats?.parishioners?.toLocaleString('id-ID') || "-"}
@@ -120,10 +120,10 @@ export default async function LingkunganPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {wilayah.lingkungan.length > 0 ? (
                                             wilayah.lingkungan.map((lingkungan) => (
-                                                <div key={lingkungan.id} className="bg-gray-50 rounded-xl p-5 border border-gray-100 hover:bg-white hover:shadow-md hover:border-brand-blue/20 transition-all duration-300 group">
-                                                    <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-200 group-hover:border-blue-100">
-                                                        <Home className="h-5 w-5 text-gray-400 group-hover:text-brand-blue transition-colors" />
-                                                        <span className="font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{lingkungan.name}</span>
+                                                <div key={lingkungan.id} className="bg-gray-50 rounded-xl p-5 border border-gray-100 transition-all duration-300 group">
+                                                    <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-200">
+                                                        <Home className="h-5 w-5 text-gray-400" />
+                                                        <span className="font-bold text-brand-dark">{lingkungan.name}</span>
                                                     </div>
                                                     <div className="space-y-2 text-sm text-gray-600">
                                                         {lingkungan.chief && (
