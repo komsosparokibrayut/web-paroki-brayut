@@ -1,0 +1,4 @@
+src/app/admin/(protected)/meeting-rooms/components/AdminBookingDialog.tsx(69,39): error TS2339: Property 'participants' does not exist on type 'MeetingBooking'.
+src/app/meeting-room/components/BookingDetailModal.tsx(110,48): error TS2339: Property 'participants' does not exist on type 'MeetingBooking'.
+src/app/meeting-room/components/BookingDetailModal.tsx(110,75): error TS2339: Property 'participants' does not exist on type 'MeetingBooking'.
+src/app/meeting-room/components/BookingDetailModal.tsx(117,78): error TS2339: Property 'participants' does not exist on type 'MeetingBooking'.
