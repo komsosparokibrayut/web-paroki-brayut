@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogBody, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw, Eye, EyeOff, ChevronLeft, ChevronRight, Plus, ChevronDown, Package, Building2, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, RefreshCw, Eye, EyeOff, ChevronLeft, ChevronRight, Plus, ChevronDown, Package, Building2, Search, X, User, Phone, Users, FileText, Hash } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, parseISO, isSameDay, addMonths, subMonths } from "date-fns";
@@ -62,6 +63,7 @@ export default function MeetingRoomClient({
     const router = useRouter();
     const [isRefreshing, startRefresh] = useTransition();
     const [conflictError, setConflictError] = useState<string | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<MeetingBooking | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedPlaceFilter, setSelectedPlaceFilter] = useState<string>("all");
@@ -160,7 +162,10 @@ export default function MeetingRoomClient({
 
         setIsBookingOpen(false);
         setNewBooking({ placeId: "", date: "", startTime: "", endTime: "", userName: "", userContact: "", purpose: "", participants: "1", notes: "", isMultiDay: false, multiDayDetails: "", dateTake: "", dateReturn: "", event: "", location: "", borrowedItems: [] });
-        toast.success("Permohonan berhasil dikirim, menunggu persetujuan admin.");
+        toast.success("Permohonan berhasil dikirim, menunggu persetujuan admin.", {
+            description: "Kami akan menghubungi Anda via WhatsApp untuk konfirmasi.",
+            duration: 6000,
+        });
         handleRefresh(); // Refresh list to show the new pending booking
     };
 
@@ -179,11 +184,11 @@ export default function MeetingRoomClient({
 
     if (!isAuth) {
         return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 pt-32 bg-slate-50">
+            <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 pt-32 bg-brand-warm">
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle className="text-2xl text-center">Peminjaman Ruang</CardTitle>
-                        <CardDescription className="text-center">
+                        <CardDescription className="text-center text-muted-foreground">
                             Masukkan password untuk mengakses jadwal ruang rapat
                         </CardDescription>
                     </CardHeader>
@@ -214,8 +219,14 @@ export default function MeetingRoomClient({
                                     </Button>
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full">Akses Masuk</Button>
+                            <Button type="submit" className="w-full bg-brand-dark hover:bg-brand-dark/90 text-white">Akses Masuk</Button>
                         </form>
+                        <p className="text-center text-sm text-muted-foreground mt-4">
+                            Belum punya password?{" "}
+                            <a href="/contact" className="text-brand-blue underline underline-offset-2 hover:text-brand-blue/80">
+                                Hubungi sekretariat paroki
+                            </a>
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -224,28 +235,24 @@ export default function MeetingRoomClient({
 
     // Authenticated View
     return (
-        <div className="min-h-screen pt-32 pb-16 bg-slate-50">
+        <div className="min-h-screen pt-32 pb-16 bg-brand-warm">
             <div className="container mx-auto px-4 max-w-6xl space-y-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-2 border-b-2 border-slate-200">
                     <div className="space-y-1">
                         <h1 className="text-4xl font-extrabold tracking-tight text-brand-dark sm:text-5xl">Peminjaman Ruang</h1>
                         <p className="text-muted-foreground text-lg">Cek ketersediaan jadwal dan ajukan peminjaman ruangan atau inventaris.</p>
                     </div>
-                    <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
-                        <Button variant="outline" className="bg-white text-blue-500 hover:bg-blue-50 hover:text-blue-600" onClick={handleRefresh} disabled={isRefreshing}>
-                            <RefreshCw className={cn(isRefreshing && "animate-spin")} />
-                        </Button>
-
+                    <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto">
                         <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
-                                <Button className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white">
+                                <Button className="bg-brand-dark hover:bg-brand-dark/90 text-white hover:text-white">
                                     Buat Peminjaman
                                     <ChevronDown className="size-4 ml-2 opacity-50" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="bg-white">
                                 <DropdownMenuItem onClick={() => { setBookingType("room"); setIsBookingOpen(true); }} className="py-3 cursor-pointer">
-                                    <Building2 className="size-4 mr-3 text-blue-600" />
+                                    <Building2 className="size-4 mr-3 text-brand-blue" />
                                     <span>Ruangan / Gedung</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setBookingType("inventory"); setIsBookingOpen(true); }} className="py-3 cursor-pointer">
@@ -254,6 +261,16 @@ export default function MeetingRoomClient({
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+
+                        <Button
+                            variant="outline"
+                            className="bg-white text-brand-dark hover:bg-brand-dark/10 hover:text-brand-dark h-11 w-11"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            aria-label="Perbarui data jadwal"
+                        >
+                            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                        </Button>
 
                         <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
                             <DialogContent className="sm:max-w-[500px]">
@@ -286,32 +303,101 @@ export default function MeetingRoomClient({
                                                             disablePast
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="timeSlot">Rentang Waktu</Label>
-                                                        <Select
-                                                            value={newBooking.startTime ? `${newBooking.startTime}-${newBooking.endTime}` : ''}
-                                                            onValueChange={(val) => {
-                                                                if (val) {
-                                                                    const [start, end] = val.split('-');
-                                                                    setNewBooking({ ...newBooking, startTime: start, endTime: end });
-                                                                }
-                                                            }}
-                                                            required
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Pilih Waktu" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {Array.from({ length: 17 }).map((_, i) => {
-                                                                    const hour = i + 6;
-                                                                    const start = `${hour.toString().padStart(2, '0')}:00`;
-                                                                    const end = `${(hour + 1).toString().padStart(2, '0')}:00`;
-                                                                    return (
-                                                                        <SelectItem key={start} value={`${start}-${end}`}>{start} - {end}</SelectItem>
-                                                                    )
-                                                                })}
-                                                            </SelectContent>
-                                                        </Select>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {(() => {
+                                                            // Confirmed bookings for the selected place+date
+                                                            const confirmedForSlot = (newBooking.placeId && newBooking.date)
+                                                                ? bookings.filter(b =>
+                                                                    b.status === 'confirmed' &&
+                                                                    b.placeId === newBooking.placeId &&
+                                                                    b.date === newBooking.date
+                                                                )
+                                                                : [];
+
+                                                            // Returns true if a proposed [propStart, propEnd] (hours as ints) overlaps any confirmed booking
+                                                            const isStartConflict = (h: number) =>
+                                                                confirmedForSlot.some(b => {
+                                                                    const bs = parseInt(b.startTime.split(':')[0]);
+                                                                    const be = parseInt(b.endTime.split(':')[0]);
+                                                                    // h falls inside an existing booking window
+                                                                    return h >= bs && h < be;
+                                                                });
+
+                                                            const isEndConflict = (h: number) => {
+                                                                const propStart = newBooking.startTime ? parseInt(newBooking.startTime.split(':')[0]) : -1;
+                                                                return confirmedForSlot.some(b => {
+                                                                    const bs = parseInt(b.startTime.split(':')[0]);
+                                                                    const be = parseInt(b.endTime.split(':')[0]);
+                                                                    // [propStart, h] overlaps [bs, be] when propStart < be && bs < h
+                                                                    return propStart < be && bs < h;
+                                                                });
+                                                            };
+
+                                                            const startHour = newBooking.startTime ? parseInt(newBooking.startTime.split(':')[0]) : 6;
+
+                                                            return (
+                                                                <>
+                                                                    <div className="space-y-2">
+                                                                        <Label htmlFor="startTime">Waktu Mulai</Label>
+                                                                        <Select
+                                                                            value={newBooking.startTime}
+                                                                            onValueChange={(val) => {
+                                                                                const sh = parseInt(val.split(':')[0]);
+                                                                                const eh = newBooking.endTime ? parseInt(newBooking.endTime.split(':')[0]) : 0;
+                                                                                let newEnd = newBooking.endTime;
+                                                                                if (!newBooking.endTime || eh <= sh) {
+                                                                                    newEnd = `${(sh + 1).toString().padStart(2, '0')}:00`;
+                                                                                }
+                                                                                setNewBooking({ ...newBooking, startTime: val, endTime: newEnd });
+                                                                            }}
+                                                                            required
+                                                                        >
+                                                                            <SelectTrigger className="bg-white">
+                                                                                <SelectValue placeholder="Mulai" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent className="bg-white">
+                                                                                {Array.from({ length: 17 }).map((_, i) => {
+                                                                                    const hour = i + 6;
+                                                                                    const time = `${hour.toString().padStart(2, '0')}:00`;
+                                                                                    const conflict = isStartConflict(hour);
+                                                                                    return (
+                                                                                        <SelectItem key={time} value={time} disabled={conflict}>
+                                                                                            {time}{conflict ? ' (Terpakai)' : ''}
+                                                                                        </SelectItem>
+                                                                                    );
+                                                                                })}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                    <div className="space-y-2">
+                                                                        <Label htmlFor="endTime">Waktu Selesai</Label>
+                                                                        <Select
+                                                                            value={newBooking.endTime}
+                                                                            onValueChange={(val) => setNewBooking({ ...newBooking, endTime: val })}
+                                                                            required
+                                                                            disabled={!newBooking.startTime}
+                                                                        >
+                                                                            <SelectTrigger className="bg-white">
+                                                                                <SelectValue placeholder="Selesai" />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent className="bg-white">
+                                                                                {Array.from({ length: 17 }).map((_, i) => {
+                                                                                    const hour = i + 7;
+                                                                                    if (hour <= startHour) return null;
+                                                                                    const time = `${hour.toString().padStart(2, '0')}:00`;
+                                                                                    const conflict = isEndConflict(hour);
+                                                                                    return (
+                                                                                        <SelectItem key={time} value={time} disabled={conflict}>
+                                                                                            {time}{conflict ? ' (Terpakai)' : ''}
+                                                                                        </SelectItem>
+                                                                                    );
+                                                                                })}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 </div>
                                             </>
@@ -417,12 +503,12 @@ export default function MeetingRoomClient({
                                                                 const newItems = newBooking.borrowedItems.filter((_, i) => i !== index);
                                                                 setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                             }}>
-                                                                X
+                                                                <X className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                     ))}
 
-                                                    <Button className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white w-full mt-2" type="button" variant="outline" size="sm" onClick={() => {
+                                                    <Button className="bg-brand-dark hover:bg-brand-dark/90 text-white hover:text-white w-full mt-2" type="button" variant="outline" size="sm" onClick={() => {
                                                         setNewBooking({ ...newBooking, borrowedItems: [...newBooking.borrowedItems, { itemId: '', quantity: 1, name: '' }] })
                                                     }}>
                                                         + Tambah Barang
@@ -476,16 +562,16 @@ export default function MeetingRoomClient({
                                                                 setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                             }} />
                                                         </div>
-                                                        <Button className="bg-red-500 hover:bg-red-600 text-white hover:text-white" type="button" variant="destructive" size="icon" onClick={() => {
+                                                        <Button type="button" variant="destructive" size="icon" onClick={() => {
                                                             const newItems = newBooking.borrowedItems.filter((_, i) => i !== index);
                                                             setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                         }}>
-                                                            X
+                                                            <X className="h-4 w-4" />
                                                         </Button>
                                                     </div>
                                                 ))}
 
-                                                <Button type="button" variant="outline" size="sm" className="bg-blue-500 hover:bg-blue-600 text-white hover:text-white w-full mt-2" onClick={() => {
+                                                <Button type="button" variant="outline" size="sm" className="bg-brand-dark hover:bg-brand-dark/90 text-white hover:text-white w-full mt-2" onClick={() => {
                                                     setNewBooking({ ...newBooking, borrowedItems: [...newBooking.borrowedItems, { itemId: '', quantity: 1, name: '' }] })
                                                 }}>
                                                     + Tambah Barang
@@ -502,8 +588,8 @@ export default function MeetingRoomClient({
 
                 <Tabs defaultValue="approved" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8 bg-slate-100/50 gap-4">
-                        <TabsTrigger className="text-black transition-all bg-slate-200/50 hover:bg-slate-300/50 data-[state=active]:bg-brand-dark data-[state=active]:text-white shadow-sm" value="approved">Jadwal Disetujui</TabsTrigger>
-                        <TabsTrigger className="text-black transition-all bg-slate-200/50 hover:bg-slate-300/50 data-[state=active]:bg-brand-dark data-[state=active]:text-white shadow-sm" value="pending">Permohonan Pending</TabsTrigger>
+                        <TabsTrigger className="text-brand-dark transition-all bg-slate-200/50 hover:bg-slate-300/50 data-[state=active]:bg-brand-dark data-[state=active]:text-white shadow-sm" value="approved">Jadwal Disetujui</TabsTrigger>
+                        <TabsTrigger className="text-brand-dark transition-all bg-slate-200/50 hover:bg-slate-300/50 data-[state=active]:bg-brand-dark data-[state=active]:text-white shadow-sm" value="pending">Permohonan Pending</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="approved">
@@ -537,7 +623,10 @@ export default function MeetingRoomClient({
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-0 overflow-x-auto">
+                            <CardContent className="p-0 relative">
+                                {/* Mobile scroll affordance: gradient fade on right edge */}
+                                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 md:hidden" aria-hidden="true" />
+                                <div className="overflow-x-auto">
                                 <div className="min-w-[800px]">
                                     {/* Calendar Header */}
                                     <div className="grid grid-cols-7 border-b bg-slate-50">
@@ -569,31 +658,80 @@ export default function MeetingRoomClient({
                                                             {format(day, dateFormat)}
                                                             {isToday(day) && <span className="h-2 w-2 rounded-full bg-brand-blue inline-block"></span>}
                                                         </div>
-                                                        <div className="space-y-1 overflow-y-auto max-h-[100px] no-scrollbar">
-                                                            {dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((booking) => {
-                                                                const place = places.find(p => p.id === booking.placeId);
-                                                                const placeIndex = places.findIndex(p => p.id === booking.placeId);
-                                                                const colorClass = selectedPlaceFilter !== 'all' ? PLACE_COLORS[0] : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
-
+                                                        <div className="space-y-1">
+                                                            {(() => {
+                                                                const sorted = dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                                                const MAX_VISIBLE = 2;
+                                                                const visible = sorted.slice(0, MAX_VISIBLE);
+                                                                const overflowBookings = sorted.slice(MAX_VISIBLE);
                                                                 return (
-                                                                    <div key={booking.id} className={`text-xs p-1.5 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight group relative`} title={`${booking.startTime}-${booking.endTime}: ${booking.purpose} - ${booking.userName}`}>
-                                                                        <div className="flex justify-between items-start gap-1">
-                                                                            <span className="font-bold whitespace-nowrap">{booking.startTime}</span>
-                                                                            {booking.isRescheduled && (
-                                                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-auto leading-none border-foreground/20 shrink-0">Pindah</Badge>
-                                                                            )}
-                                                                        </div>
-                                                                        <span className="font-medium truncate">{booking.purpose}</span>
-                                                                        <span className="opacity-80 truncate text-[10px]">{selectedPlaceFilter === 'all' && place ? place.name : booking.userName}</span>
-                                                                    </div>
+                                                                    <>
+                                                                        {visible.map((booking) => {
+                                                                            const place = places.find(p => p.id === booking.placeId);
+                                                                            const placeIndex = places.findIndex(p => p.id === booking.placeId);
+                                                                            const colorClass = selectedPlaceFilter !== 'all' ? PLACE_COLORS[0] : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
+                                                                            return (
+                                                                                <button
+                                                                                    key={booking.id}
+                                                                                    type="button"
+                                                                                    onClick={() => setSelectedBooking(booking)}
+                                                                                    className={`w-full text-left text-xs p-1.5 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight hover:brightness-95 active:scale-[0.98] transition-all cursor-pointer overflow-hidden`}
+                                                                                >
+                                                                                    <div className="flex justify-between items-start gap-1 w-full">
+                                                                                        <span className="font-bold whitespace-nowrap truncate">{booking.startTime}–{booking.endTime}</span>
+                                                                                        {booking.isRescheduled && (
+                                                                                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20 shrink-0">Pindah</Badge>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <span className="font-medium truncate">{booking.purpose}</span>
+                                                                                    <span className="opacity-80 truncate text-[10px]">{selectedPlaceFilter === 'all' && place ? place.name : booking.userName}</span>
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                        {overflowBookings.length > 0 && (
+                                                                            <Popover>
+                                                                                <PopoverTrigger asChild>
+                                                                                    <button type="button" className="w-full text-[10px] text-center py-0.5 px-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium cursor-pointer transition-colors">
+                                                                                        +{overflowBookings.length} lainnya
+                                                                                    </button>
+                                                                                </PopoverTrigger>
+                                                                                <PopoverContent className="w-64 p-2 space-y-1" align="start" side="right">
+                                                                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Jadwal lainnya</p>
+                                                                                    {overflowBookings.map((booking) => {
+                                                                                        const place = places.find(p => p.id === booking.placeId);
+                                                                                        const placeIndex = places.findIndex(p => p.id === booking.placeId);
+                                                                                        const colorClass = selectedPlaceFilter !== 'all' ? PLACE_COLORS[0] : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
+                                                                                        return (
+                                                                                            <button
+                                                                                                key={booking.id}
+                                                                                                type="button"
+                                                                                                onClick={() => setSelectedBooking(booking)}
+                                                                                                className={`w-full text-left text-xs p-2 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight hover:brightness-95 transition-all cursor-pointer overflow-hidden`}
+                                                                                            >
+                                                                                                <div className="flex justify-between items-start gap-1 w-full">
+                                                                                                    <span className="font-bold whitespace-nowrap truncate">{booking.startTime}–{booking.endTime}</span>
+                                                                                                    {booking.isRescheduled && (
+                                                                                                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20 shrink-0">Pindah</Badge>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                <span className="font-medium truncate">{booking.purpose}</span>
+                                                                                                <span className="opacity-80 truncate text-[10px]">{place ? place.name : booking.userName}</span>
+                                                                                            </button>
+                                                                                        );
+                                                                                    })}
+                                                                                </PopoverContent>
+                                                                            </Popover>
+                                                                        )}
+                                                                    </>
                                                                 );
-                                                            })}
+                                                            })()}
                                                         </div>
                                                     </div>
                                                 );
                                             });
                                         })()}
                                     </div>
+                                </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -693,6 +831,131 @@ export default function MeetingRoomClient({
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Booking Detail Modal */}
+            {selectedBooking && (() => {
+                const b = selectedBooking;
+                const place = places.find(p => p.id === b.placeId);
+                const isInventoryOnly = b.type === 'inventory';
+                return (
+                    <Dialog open={!!selectedBooking} onOpenChange={(open) => { if (!open) setSelectedBooking(null); }}>
+                        <DialogContent className="sm:max-w-[460px]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 pr-6">
+                                    {isInventoryOnly ? (
+                                        <Package className="h-5 w-5 text-emerald-600 shrink-0" />
+                                    ) : (
+                                        <Building2 className="h-5 w-5 text-brand-blue shrink-0" />
+                                    )}
+                                    {isInventoryOnly ? 'Peminjaman Inventaris' : place?.name || 'Ruangan Tidak Diketahui'}
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <div className="space-y-4 py-1">
+                                {/* Status + rescheduled badge */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+                                        Disetujui
+                                    </Badge>
+                                    {b.isRescheduled && (
+                                        <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50">
+                                            Dipindah Jadwal
+                                        </Badge>
+                                    )}
+                                    {b.submissionSource === 'manual' && (
+                                        <Badge variant="outline" className="text-slate-500 text-[10px]">
+                                            Manual
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                {/* Date & Time row */}
+                                <div className="rounded-lg border p-3 bg-slate-50 text-slate-800 space-y-1.5">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <CalendarIcon className="h-4 w-4 shrink-0 opacity-70" />
+                                        <span className="font-semibold">
+                                            {new Date(b.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    {!isInventoryOnly && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Clock className="h-4 w-4 shrink-0 opacity-70" />
+                                            <span className="font-semibold">{b.startTime} – {b.endTime}</span>
+                                        </div>
+                                    )}
+                                    {isInventoryOnly && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Clock className="h-4 w-4 shrink-0 opacity-70" />
+                                            <span>
+                                                Ambil: <span className="font-semibold">{b.inventoryDateTake || b.date}</span>
+                                                {b.returnDate && <> &nbsp;·&nbsp; Kembali: <span className="font-semibold">{b.returnDate}</span></>}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {b.location && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <MapPin className="h-4 w-4 shrink-0 opacity-70" />
+                                            <span>{b.location}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Peminjam */}
+                                    <div className="space-y-0.5">
+                                        <p className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                            <User className="h-3 w-3" /> Peminjam
+                                        </p>
+                                        <p className="text-sm font-medium">{b.userName}</p>
+                                    </div>
+                                    {/* Kontak */}
+                                    <div className="space-y-0.5">
+                                        <p className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                            <Phone className="h-3 w-3" /> Kontak
+                                        </p>
+                                        <a href={`https://wa.me/${b.userContact.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-blue underline underline-offset-2 hover:text-brand-blue/80">
+                                            {b.userContact}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {/* Purpose */}
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                        <FileText className="h-3 w-3" /> {isInventoryOnly ? 'Acara / Keperluan' : 'Gambaran Acara'}
+                                    </p>
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{b.purpose}</p>
+                                </div>
+
+                                {/* Borrowed Items */}
+                                {b.borrowedItems && b.borrowedItems.length > 0 && (
+                                    <div className="space-y-2 border-t pt-3">
+                                        <p className="text-[11px] font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                                            <Package className="h-3 w-3" /> Barang Dipinjam
+                                        </p>
+                                        <ul className="space-y-1">
+                                            {b.borrowedItems.map((item, idx) => (
+                                                <li key={idx} className="flex items-center justify-between text-sm bg-slate-50 rounded px-2.5 py-1.5">
+                                                    <span>{item.name}</span>
+                                                    <Badge variant="secondary" className="text-xs">{item.quantity}x</Badge>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {/* Admin notes */}
+                                {b.adminNotes && (
+                                    <div className="space-y-1 border-t pt-3">
+                                        <p className="text-[11px] font-semibold uppercase text-muted-foreground">Catatan Admin</p>
+                                        <p className="text-sm text-muted-foreground italic">{b.adminNotes}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                );
+            })()}
 
             {/* Conflict Alert Modal */}
             <AlertDialog open={!!conflictError} onOpenChange={() => setConflictError(null)}>

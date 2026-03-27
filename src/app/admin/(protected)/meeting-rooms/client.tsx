@@ -464,32 +464,58 @@ export default function MeetingRoomsClient({
                                   disablePast={false}
                                 />
                               </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="timeSlot">Rentang Waktu</Label>
-                                <Select
-                                  value={newBooking.startTime ? `${newBooking.startTime}-${newBooking.endTime}` : ''}
-                                  onValueChange={(val) => {
-                                    if (val) {
-                                      const [start, end] = val.split('-');
-                                      setNewBooking({ ...newBooking, startTime: start, endTime: end });
-                                    }
-                                  }}
-                                  required
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Waktu" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Array.from({ length: 17 }).map((_, i) => {
-                                      const hour = i + 6;
-                                      const start = `${hour.toString().padStart(2, '0')}:00`;
-                                      const end = `${(hour + 1).toString().padStart(2, '0')}:00`;
-                                      return (
-                                        <SelectItem key={start} value={`${start}-${end}`}>{start} - {end}</SelectItem>
-                                      )
-                                    })}
-                                  </SelectContent>
-                                </Select>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-2">
+                                  <Label htmlFor="startTime">Waktu Mulai</Label>
+                                  <Select
+                                    value={newBooking.startTime}
+                                    onValueChange={(val) => {
+                                      let startHour = parseInt(val.split(':')[0]);
+                                      let endHour = newBooking.endTime ? parseInt(newBooking.endTime.split(':')[0]) : 0;
+                                      
+                                      let newEnd = newBooking.endTime;
+                                      if (!newBooking.endTime || endHour <= startHour) {
+                                        newEnd = `${(startHour + 1).toString().padStart(2, '0')}:00`;
+                                      }
+                                      setNewBooking({ ...newBooking, startTime: val, endTime: newEnd });
+                                    }}
+                                    required
+                                  >
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="Mulai" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white">
+                                      {Array.from({ length: 17 }).map((_, i) => {
+                                        const hour = i + 6;
+                                        const time = `${hour.toString().padStart(2, '0')}:00`;
+                                        return <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      })}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="endTime">Waktu Selesai</Label>
+                                  <Select
+                                    value={newBooking.endTime}
+                                    onValueChange={(val) => setNewBooking({ ...newBooking, endTime: val })}
+                                    required
+                                    disabled={!newBooking.startTime}
+                                  >
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="Selesai" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-white">
+                                      {Array.from({ length: 17 }).map((_, i) => {
+                                        const hour = i + 7;
+                                        const startHour = newBooking.startTime ? parseInt(newBooking.startTime.split(':')[0]) : 6;
+                                        if (hour <= startHour) return null;
+                                        
+                                        const time = `${hour.toString().padStart(2, '0')}:00`;
+                                        return <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      })}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                             </div>
                           </>
