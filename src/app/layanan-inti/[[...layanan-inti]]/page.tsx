@@ -214,7 +214,7 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             disabled={loading}
             variant="outline"
-            className="w-full h-11 text-sm font-medium gap-3 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all text-slate-600"
+            className="w-full h-11 text-sm font-medium gap-3 border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all text-slate-600"
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />

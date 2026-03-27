@@ -350,43 +350,45 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                 <Plus className="h-4 w-4" />Tambah
                             </Button>
                         </div>
-                        <table className="w-full text-sm">
-                            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
-                                <tr>
-                                    <th className="px-6 py-3 text-left">Nama</th>
-                                    <th className="px-6 py-3 text-left">Jam</th>
-                                    <th className="px-6 py-3 text-left">Lokasi</th>
-                                    <th className="px-6 py-3 text-left">Keterangan</th>
-                                    <th className="px-6 py-3 text-right">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {data.specialMasses.length > 0 ? data.specialMasses.map((m) => (
-                                    <tr key={m.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-3 font-medium">{m.name}</td>
-                                        <td className="px-6 py-3 text-brand-blue font-semibold">{m.time}</td>
-                                        <td className="px-6 py-3 text-slate-600">{m.location}</td>
-                                        <td className="px-6 py-3 text-slate-500 line-clamp-1">{m.description}</td>
-                                        <td className="px-6 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600"
-                                                    onClick={() => openSpecialModal(m)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-600"
-                                                    onClick={() => setDeleteTarget({ type: "special", id: m.id })}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400">Belum ada misa khusus</td>
+                                        <th className="px-6 py-3 text-left">Nama</th>
+                                        <th className="px-6 py-3 text-left">Jam</th>
+                                        <th className="px-6 py-3 text-left">Lokasi</th>
+                                        <th className="px-6 py-3 text-left">Keterangan</th>
+                                        <th className="px-6 py-3 text-right">Aksi</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {data.specialMasses.length > 0 ? data.specialMasses.map((m) => (
+                                        <tr key={m.id} className="hover:bg-slate-50">
+                                            <td className="px-6 py-3 font-medium">{m.name}</td>
+                                            <td className="px-6 py-3 text-brand-blue font-semibold">{m.time}</td>
+                                            <td className="px-6 py-3 text-slate-600">{m.location}</td>
+                                            <td className="px-6 py-3 text-slate-500 line-clamp-1">{m.description}</td>
+                                            <td className="px-6 py-3 text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600"
+                                                        onClick={() => openSpecialModal(m)}>
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-600"
+                                                        onClick={() => setDeleteTarget({ type: "special", id: m.id })}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-400">Belum ada misa khusus</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </TabsContent>
             </Tabs>

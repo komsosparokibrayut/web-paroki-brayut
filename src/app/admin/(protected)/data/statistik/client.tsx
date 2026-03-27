@@ -24,7 +24,6 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
     const [hasChanges, setHasChanges] = useState(false);
     const router = useRouter();
 
-    // Check for changes compared to initial data
     const checkForChanges = useCallback(() => {
         if (!initialData) {
             setHasChanges(true);
@@ -61,93 +60,54 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
         });
     };
 
+    const fields = [
+        { key: "churches" as const, icon: Church, label: "Jumlah Gereja", hint: "Total gereja & kapel" },
+        { key: "wilayah" as const, icon: MapPin, label: "Jumlah Wilayah", hint: "Wilayah di paroki" },
+        { key: "wards" as const, icon: MapPin, label: "Jumlah Lingkungan", hint: "Total lingkungan" },
+        { key: "families" as const, icon: Home, label: "Kepala Keluarga", hint: "Total KK terdaftar" },
+        { key: "parishioners" as const, icon: Users, label: "Jumlah Umat", hint: "Total jiwa" },
+    ];
+
     return (
         <>
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 max-w-2xl">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Church className="h-4 w-4 text-blue-600" />
-                                Jumlah Gereja
-                            </Label>
-                            <Input
-                                type="number"
-                                value={data.churches}
-                                onChange={(e) => setData({ ...data, churches: parseInt(e.target.value) || 0 })}
-                                className="text-2xl font-bold h-14"
-                            />
-                            <p className="text-xs text-slate-500">Total gereja dan kapel</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-blue-600" />
-                                Jumlah Wilayah
-                            </Label>
-                            <Input
-                                type="number"
-                                value={data.wilayah}
-                                onChange={(e) => setData({ ...data, wilayah: parseInt(e.target.value) || 0 })}
-                                className="text-2xl font-bold h-14"
-                            />
-                            <p className="text-xs text-slate-500">Target wilayah di paroki</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-blue-600" />
-                                Jumlah Lingkungan
-                            </Label>
-                            <Input
-                                type="number"
-                                value={data.wards}
-                                onChange={(e) => setData({ ...data, wards: parseInt(e.target.value) || 0 })}
-                                className="text-2xl font-bold h-14"
-                            />
-                            <p className="text-xs text-slate-500">Total lingkungan di paroki</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Home className="h-4 w-4 text-blue-600" />
-                                Jumlah Kepala Keluarga
-                            </Label>
-                            <Input
-                                type="number"
-                                value={data.families}
-                                onChange={(e) => setData({ ...data, families: parseInt(e.target.value) || 0 })}
-                                className="text-2xl font-bold h-14"
-                            />
-                            <p className="text-xs text-slate-500">Total KK terdaftar</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-blue-600" />
-                                Jumlah Umat
-                            </Label>
-                            <Input
-                                type="number"
-                                value={data.parishioners}
-                                onChange={(e) => setData({ ...data, parishioners: parseInt(e.target.value) || 0 })}
-                                className="text-2xl font-bold h-14"
-                            />
-                            <p className="text-xs text-slate-500">Total jiwa</p>
-                        </div>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6 max-w-2xl w-full">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-5">
+                        {fields.map(({ key, icon: Icon, label, hint }) => (
+                            <div
+                                key={key}
+                                className={`space-y-1.5${key === "parishioners" ? " col-span-2 sm:col-span-1" : ""}`}
+                            >
+                                <Label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium">
+                                    <Icon className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                                    {label}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    value={data[key]}
+                                    onChange={(e) => setData({ ...data, [key]: parseInt(e.target.value) || 0 })}
+                                    className="text-xl sm:text-2xl font-bold h-11 sm:h-14"
+                                />
+                                <p className="text-xs text-slate-400">{hint}</p>
+                            </div>
+                        ))}
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div className="text-sm text-slate-500">
-                            Terakhir diperbarui: {data.lastUpdated ? new Date(data.lastUpdated).toLocaleDateString("id-ID", {
-                                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                            }) : '-'}
-                        </div>
+                    <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                        <p className="text-xs text-slate-400">
+                            Diperbarui:{" "}
+                            {data.lastUpdated
+                                ? new Date(data.lastUpdated).toLocaleDateString("id-ID", {
+                                    day: "numeric", month: "long", year: "numeric",
+                                    hour: "2-digit", minute: "2-digit",
+                                })
+                                : "—"}
+                        </p>
 
                         <Button
                             type="submit"
                             disabled={isPending || !hasChanges}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
                         >
                             {isPending ? (
                                 <>
@@ -155,17 +115,16 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
                                     Menyimpan...
                                 </>
                             ) : (
-                                <div className="flex items-center gap-2">
-                                    <Save className="h-4 w-4" />
+                                <>
+                                    <Save className="h-4 w-4 mr-2" />
                                     Simpan Perubahan
-                                </div>
+                                </>
                             )}
                         </Button>
                     </div>
                 </form>
             </div>
 
-            {/* Save Confirmation */}
             <ConfirmModal
                 isOpen={saveConfirmOpen}
                 onClose={() => setSaveConfirmOpen(false)}

@@ -470,8 +470,8 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
 
                                                             {/* Group Members */}
                                                             {isGroupExpanded && (
-                                                                <div className="border-t border-slate-200">
-                                                                    <table className="w-full text-sm">
+                                                                <div className="border-t border-slate-200 overflow-x-auto">
+                                                                    <table className="w-full text-sm min-w-[400px]">
                                                                         <thead className="bg-slate-50/50 text-xs text-slate-500 uppercase">
                                                                             <tr>
                                                                                 <th className="px-3 py-2 text-left">Nama</th>

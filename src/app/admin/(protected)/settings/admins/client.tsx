@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, KeyRound } from "lucide-react";
+import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, KeyRound, Clock } from "lucide-react";
 import Image from "next/image";
 import {
     Select,
@@ -29,8 +28,8 @@ import {
     DialogTrigger,
     DialogClose,
 } from "@/components/ui/dialog";
-import { UserRole, ROLE_LABELS, ROLES } from "@/lib/roles";
-import { validatePassword, PASSWORD_RULES } from "@/lib/password-validation";
+import { UserRole, ROLE_LABELS } from "@/lib/roles";
+import { validatePassword } from "@/lib/password-validation";
 
 interface Props {
     invitations: Array<{
@@ -84,23 +83,24 @@ export default function AdminsClient({ invitations, users }: Props) {
     };
 
     return (
-        <div className="space-y-8 max-w-5xl">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Manage Admins</h1>
-                    <p className="text-slate-500">Invite and manage administrators for the dashboard.</p>
-                </div>
+        <div className="space-y-6 w-full min-w-0">
+            {/* Page Header */}
+            <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Manage Admins</h1>
+                <p className="text-slate-500 text-sm mt-1">Invite and manage administrators for the dashboard.</p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            {/* Main Layout: stacked on mobile, side-by-side on md+ */}
+            <div className="flex flex-col md:grid md:grid-cols-3 gap-6">
+
                 {/* Invite Card */}
                 <Card className="md:col-span-1 h-fit">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-2 text-base">
                             <UserPlus className="h-5 w-5 text-blue-600" />
                             Invite New Admin
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-xs">
                             Add a new admin with email and optional password.
                         </CardDescription>
                     </CardHeader>
@@ -115,7 +115,7 @@ export default function AdminsClient({ invitations, users }: Props) {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             <Label htmlFor="invite-password">Password <span className="text-slate-400 font-normal">(opsional)</span></Label>
                             <PasswordInputWithValidation
                                 id="invite-password"
@@ -153,78 +153,61 @@ export default function AdminsClient({ invitations, users }: Props) {
                 </Card>
 
                 {/* Lists Column */}
-                <div className="md:col-span-2 space-y-8">
+                <div className="md:col-span-2 space-y-6 min-w-0">
 
                     {/* Pending Invitations */}
                     {invitations.length > 0 && (
                         <Card>
-                            <CardHeader>
+                            <CardHeader className="pb-3">
                                 <CardTitle className="text-base font-semibold text-amber-600 flex items-center gap-2">
                                     <Mail className="h-4 w-4" /> Pending Invitations
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>Role</TableHead>
-                                            <TableHead>Sent</TableHead>
-                                            <TableHead className="text-right">Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {invitations.map((inv) => (
-                                            <TableRow key={inv.id}>
-                                                <TableCell className="font-medium">{inv.emailAddress}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">{ROLE_LABELS[inv.role as UserRole] || inv.role}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-xs text-slate-500">
-                                                    {new Date(inv.createdAt).toLocaleDateString()}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                        onClick={() => handleRevoke(inv.id)}
-                                                        disabled={isPending}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                            <CardContent className="p-0">
+                                <div className="divide-y divide-slate-100">
+                                    {invitations.map((inv) => (
+                                        <div key={inv.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-medium text-sm text-slate-900 truncate">{inv.emailAddress}</p>
+                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {ROLE_LABELS[inv.role as UserRole] || inv.role}
+                                                    </Badge>
+                                                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {new Date(inv.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+                                                onClick={() => handleRevoke(inv.id)}
+                                                disabled={isPending}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     )}
 
-                    {/* Active Users */}
+                    {/* Active Administrators */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-3">
                             <CardTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Active Administrators
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Role</TableHead>
-                                        <TableHead>Last Active</TableHead>
-                                        <TableHead className="text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {users.map((user) => (
-                                        <UserRow key={user.id} user={user} />
-                                    ))}
-                                </TableBody>
-                            </Table>
+                        <CardContent className="p-0">
+                            <div className="divide-y divide-slate-100">
+                                {users.map((user) => (
+                                    <UserCard key={user.id} user={user} />
+                                ))}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -233,12 +216,10 @@ export default function AdminsClient({ invitations, users }: Props) {
     );
 }
 
-function UserRow({ user }: { user: Props['users'][0] }) {
+function UserCard({ user }: { user: Props['users'][0] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [role, setRole] = useState<UserRole>(user.role || "news_reporter");
     const [isPending, startTransition] = useTransition();
-
-    // Reset password state
     const [newPassword, setNewPassword] = useState("");
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
@@ -263,7 +244,7 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                 toast.error(result.error || "Failed to remove admin");
             }
         });
-    }
+    };
 
     const handleResetPassword = () => {
         const validation = validatePassword(newPassword);
@@ -285,65 +266,31 @@ function UserRow({ user }: { user: Props['users'][0] }) {
     };
 
     return (
-        <TableRow>
-            <TableCell>
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative">
-                        {user.imageUrl && (
-                            <Image src={user.imageUrl} alt={user.name} fill className="object-cover" />
-                        )}
-                    </div>
-                    <div>
-                        <div className="font-medium text-slate-900">{user.name}</div>
-                        <div className="text-xs text-slate-500">{user.email}</div>
-                    </div>
+        <div className="px-4 py-4 sm:px-6">
+            {/* Top row: Avatar + Name/Email + Action buttons */}
+            <div className="flex items-start gap-3">
+                {/* Avatar */}
+                <div className="h-9 w-9 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative mt-0.5">
+                    {user.imageUrl && (
+                        <Image src={user.imageUrl} alt={user.name} fill className="object-cover" />
+                    )}
                 </div>
-            </TableCell>
-            <TableCell>
-                {isEditing ? (
-                    <div className="flex items-center gap-2">
-                        <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
-                            <SelectTrigger className="h-8 w-[140px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                                    <SelectItem key={value} value={value}>
-                                        {label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveRole} disabled={isPending}>
-                            <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400" onClick={() => setIsEditing(false)} disabled={isPending}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2">
-                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"}>
-                            {ROLE_LABELS[user.role || "news_reporter"]}
-                        </Badge>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-blue-600" onClick={() => setIsEditing(true)}>
-                            <Pencil className="h-3 w-3" />
-                        </Button>
-                    </div>
-                )}
-            </TableCell>
-            <TableCell className="text-xs text-slate-500">
-                {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString() : "Never"}
-            </TableCell>
-            <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                    {/* Reset Password Dialog */}
+
+                {/* Name + email */}
+                <div className="flex-1 min-w-0">
+                    <div className="font-medium text-slate-900 text-sm truncate">{user.name}</div>
+                    <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Reset Password */}
                     <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setNewPassword(""); }}>
                         <DialogTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
                                 title="Reset Password"
                             >
                                 <KeyRound className="h-4 w-4" />
@@ -357,7 +304,7 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                     <Label htmlFor={`reset-pw-${user.id}`}>Password Baru</Label>
                                     <PasswordInputWithValidation
                                         id={`reset-pw-${user.id}`}
@@ -384,13 +331,13 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                         </DialogContent>
                     </Dialog>
 
-                    {/* Remove Admin Dialog */}
+                    {/* Remove Admin */}
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
@@ -418,9 +365,46 @@ function UserRow({ user }: { user: Props['users'][0] }) {
                         </DialogContent>
                     </Dialog>
                 </div>
-            </TableCell>
-        </TableRow>
+            </div>
+
+            {/* Bottom row: Role badge + last active + edit */}
+            <div className="mt-3 ml-12 flex items-center gap-2 flex-wrap">
+                {isEditing ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                            <SelectTrigger className="h-8 w-[160px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                        {label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveRole} disabled={isPending}>
+                            <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400" onClick={() => setIsEditing(false)} disabled={isPending}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"} className="text-xs">
+                            {ROLE_LABELS[user.role || "news_reporter"]}
+                        </Badge>
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-blue-600" onClick={() => setIsEditing(true)}>
+                            <Pencil className="h-3 w-3" />
+                        </Button>
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString("id-ID") : "Never"}
+                        </span>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
-
-

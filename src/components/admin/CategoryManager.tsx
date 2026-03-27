@@ -95,36 +95,42 @@ export default function CategoryManager({ initialData }: CategoryManagerProps) {
 
     const renderSection = (type: CategoryType) => (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" key={type}>
-            <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800">{SECTION_TITLES[type]}</h3>
+            {/* Section header */}
+            <div className="px-3 py-2.5 sm:p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 text-sm sm:text-base">{SECTION_TITLES[type]}</h3>
                 <span className="text-xs bg-white border border-slate-200 px-2 py-0.5 rounded-full text-slate-500 font-medium">
                     {data[type].length}
                 </span>
             </div>
 
-            <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+            {/* Category list */}
+            <div className="px-2 py-2 sm:p-4 space-y-1 max-h-[260px] overflow-y-auto">
                 {data[type].map(item => (
-                    <div key={item} className="flex justify-between items-center p-2 rounded-lg hover:bg-slate-50 group transition-colors border border-transparent hover:border-slate-100">
+                    <div
+                        key={item}
+                        className="flex justify-between items-center px-2 py-1.5 rounded-lg hover:bg-slate-50 group transition-colors border border-transparent hover:border-slate-100"
+                    >
                         {editingState?.type === type && editingState.oldVal === item ? (
-                            <div className="flex items-center gap-2 w-full">
+                            <div className="flex items-center gap-1.5 w-full">
                                 <input
                                     value={editingState.newVal}
                                     onChange={(e) => setEditingState({ ...editingState, newVal: e.target.value })}
-                                    className="flex-1 px-2 py-1 text-sm border border-blue-600 rounded outline-none"
+                                    className="flex-1 px-2 py-1 text-sm border border-blue-600 rounded outline-none min-w-0"
                                     autoFocus
                                     disabled={isProcessing}
                                 />
-                                <button onClick={handleUpdate} disabled={isProcessing} className="text-blue-600 hover:bg-blue-50 p-1 rounded">
-                                    <Save className="w-4 h-4" />
+                                <button onClick={handleUpdate} disabled={isProcessing} className="text-blue-600 hover:bg-blue-50 p-1 rounded shrink-0">
+                                    <Save className="w-3.5 h-3.5" />
                                 </button>
-                                <button onClick={() => setEditingState(null)} disabled={isProcessing} className="text-slate-400 hover:text-slate-600 p-1 rounded">
-                                    <X className="w-4 h-4" />
+                                <button onClick={() => setEditingState(null)} disabled={isProcessing} className="text-slate-400 hover:text-slate-600 p-1 rounded shrink-0">
+                                    <X className="w-3.5 h-3.5" />
                                 </button>
                             </div>
                         ) : (
                             <>
-                                <span className="text-sm font-medium text-slate-700">{item}</span>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-sm font-medium text-slate-700 flex-1 min-w-0 truncate pr-1">{item}</span>
+                                {/* Always visible on mobile (touch), hover-reveal on desktop */}
+                                <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => setEditingState({ type, oldVal: item, newVal: item })}
                                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -144,14 +150,15 @@ export default function CategoryManager({ initialData }: CategoryManagerProps) {
                 ))}
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/30">
+            {/* Add new */}
+            <div className="px-3 py-3 sm:p-4 border-t border-slate-100 bg-slate-50/30">
                 {newCategoryState?.type === type ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                         <input
                             value={newCategoryState.val}
                             onChange={(e) => setNewCategoryState({ ...newCategoryState, val: e.target.value })}
-                            placeholder="New category..."
-                            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10"
+                            placeholder="Kategori baru..."
+                            className="flex-1 px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 min-w-0"
                             autoFocus
                             disabled={isProcessing}
                             onKeyDown={(e) => e.key === 'Enter' && handleAdd(type)}
@@ -159,14 +166,14 @@ export default function CategoryManager({ initialData }: CategoryManagerProps) {
                         <button
                             onClick={() => handleAdd(type)}
                             disabled={isProcessing || !newCategoryState.val.trim()}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm shadow-blue-600/20 disabled:opacity-50 disabled:shadow-none"
+                            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 shrink-0"
                         >
                             {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                         </button>
                         <button
                             onClick={() => setNewCategoryState(null)}
                             disabled={isProcessing}
-                            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 shrink-0"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -174,9 +181,9 @@ export default function CategoryManager({ initialData }: CategoryManagerProps) {
                 ) : (
                     <button
                         onClick={() => setNewCategoryState({ type, val: "" })}
-                        className="w-full py-2 flex items-center justify-center gap-2 text-sm font-bold text-slate-500 border border-dashed border-slate-300 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-600/5 transition-all"
+                        className="w-full py-1.5 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 border border-dashed border-slate-300 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-600/5 transition-all"
                     >
-                        <Plus className="w-4 h-4" /> Add Category
+                        <Plus className="w-3.5 h-3.5" /> Tambah
                     </button>
                 )}
             </div>
@@ -185,7 +192,7 @@ export default function CategoryManager({ initialData }: CategoryManagerProps) {
 
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 items-start">
                 {renderSection("post")}
                 {renderSection("umkm")}
                 {renderSection("jadwal")}
