@@ -7,7 +7,7 @@ import { createPost, updatePost, deletePost } from "@/features/news/actions/post
 import { toast } from "sonner";
 import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { getAllCategories, addCategory } from "@/actions/categories";
-import QuillEditor from "./QuillEditor";
+import RichTextEditor from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
 import ConfirmModal from "./ConfirmModal";
 import StatusPill from "./StatusPill";
@@ -105,7 +105,22 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
     const [showBannerPicker, setShowBannerPicker] = useState(false);
     const [showOgImagePicker, setShowOgImagePicker] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isPostSettingsExpanded, setIsPostSettingsExpanded] = useState(true);
+    const [isImageExpanded, setIsImageExpanded] = useState(true);
+    const [isSeoExpanded, setIsSeoExpanded] = useState(true);
     const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Initial responsive state (collapsed on mobile, open on desktop)
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const isMobile = window.innerWidth < 1024; // lg breakpoint
+            if (isMobile) {
+                setIsPostSettingsExpanded(false);
+                setIsImageExpanded(false);
+                setIsSeoExpanded(false);
+            }
+        }
+    }, []);
 
     // Watch values for UI updates
     const watchedCategories = form.watch("categories");
@@ -375,15 +390,426 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Main Content Area */}
-                    <div className="lg:col-span-2">
+                    {/* Sidebar Settings (First on mobile, right on desktop) */}
+                    <div className="order-1 lg:order-2 space-y-4">
+                        <div className="lg:sticky lg:top-[76px] space-y-4">
+                            {/* Card 1: Post Settings */}
+                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPostSettingsExpanded(!isPostSettingsExpanded)}
+                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2 font-semibold text-sm text-slate-900">
+                                        <Settings className="w-4 h-4 text-slate-400" />
+                                        Post Settings
+                                    </div>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isPostSettingsExpanded && "rotate-180")} />
+                                </button>
+                                
+                                {isPostSettingsExpanded && (
+                                    <div className="p-4 pt-0 border-t border-slate-100 space-y-4 mt-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="title"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700">Title</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="Enter title..."
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {/* Slug Field */}
+                                        <FormField
+                                            control={form.control}
+                                            name="slug"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700">Slug (URL)</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="post-url-slug"
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500 font-mono text-sm"
+                                                        />
+                                                    </FormControl>
+                                                    <p className="text-[10px] text-slate-500 mt-1">
+                                                        {mode === "edit" ? "Warning: Changing the slug will change the post URL." : "Leave empty to auto-generate from title."}
+                                                    </p>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700">Description</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            placeholder="Short summary..."
+                                                            rows={2}
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500 resize-none"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        {/* Categories */}
+                                        <div className="space-y-2">
+                                            <Label className="text-slate-700">Categories</Label>
+                                            <p className="text-[10px] text-slate-500">
+                                                First category is the primary URL channel.
+                                            </p>
+
+                                            {watchedCategories.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                                    {watchedCategories.map((cat) => (
+                                                        <Badge key={cat} variant="secondary" className="gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                                                            {cat}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeCategoryItem(cat)}
+                                                                className="rounded-full hover:bg-blue-200 p-0.5 transition-colors"
+                                                            >
+                                                                <X className="h-3 w-3" />
+                                                            </button>
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            <div className="relative" ref={categoryDropdownRef}>
+                                                <div className="relative">
+                                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                                                    <Input
+                                                        value={categoryInput}
+                                                        onFocus={() => setShowCategoryDropdown(true)}
+                                                        onChange={(e) => {
+                                                            setCategoryInput(e.target.value);
+                                                            setShowCategoryDropdown(true);
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                e.preventDefault();
+                                                                addCategoryItem(categoryInput);
+                                                                setShowCategoryDropdown(false);
+                                                            }
+                                                        }}
+                                                        placeholder="Add category..."
+                                                        className="pl-9 border-slate-200 focus-visible:ring-blue-500"
+                                                    />
+                                                </div>
+
+                                                {showCategoryDropdown && (
+                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                                                        {loadingCategories ? (
+                                                            <div className="p-2 text-center text-xs text-slate-500">
+                                                                Loading...
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {existingCategories
+                                                                    .filter(cat =>
+                                                                        !watchedCategories.includes(cat) &&
+                                                                        cat.toLowerCase().includes(categoryInput.toLowerCase())
+                                                                    )
+                                                                    .map(cat => (
+                                                                        <button
+                                                                            key={cat}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                addCategoryItem(cat);
+                                                                                setShowCategoryDropdown(false);
+                                                                            }}
+                                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700"
+                                                                        >
+                                                                            {cat}
+                                                                        </button>
+                                                                    ))}
+                                                                {categoryInput && !existingCategories.some(c => c.toLowerCase() === categoryInput.toLowerCase()) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            addCategoryItem(categoryInput);
+                                                                            setShowCategoryDropdown(false);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 font-medium"
+                                                                    >
+                                                                        + Create &quot;{categoryInput}&quot;
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name="author"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700">Author</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} className="border-slate-200 focus-visible:ring-blue-500" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        
+                                        <FormField
+                                            control={form.control}
+                                            name="publishedAt"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col mt-4">
+                                                    <FormLabel className="text-slate-700">Schedule Publish</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button
+                                                                    variant={"outline"}
+                                                                    className={cn(
+                                                                        "w-full pl-3 text-left font-normal border-slate-200",
+                                                                        !field.value && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {field.value ? (
+                                                                        format(field.value, "PPP")
+                                                                    ) : (
+                                                                        <span>Pick a date</span>
+                                                                    )}
+                                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar
+                                                                mode="single"
+                                                                selected={field.value}
+                                                                onSelect={field.onChange}
+                                                                disabled={(date) =>
+                                                                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                                                                }
+                                                                initialFocus
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <FormMessage />
+                                                    <p className="text-[10px] text-slate-500">
+                                                        If set to a future date, post will be scheduled.
+                                                    </p>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Card 2: Featured Image */}
+                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsImageExpanded(!isImageExpanded)}
+                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2 font-semibold text-sm text-slate-900">
+                                        <FileImage className="w-4 h-4 text-slate-400" />
+                                        Featured Image
+                                    </div>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isImageExpanded && "rotate-180")} />
+                                </button>
+                                
+                                {isImageExpanded && (
+                                    <div className="p-4 pt-0 border-t border-slate-100 mt-4">
+                                        <div className="space-y-2">
+                                            {watchedBanner ? (
+                                                <div className="relative group rounded-lg overflow-hidden border border-slate-200 h-28">
+                                                    <Image
+                                                        src={watchedBanner}
+                                                        alt="Banner"
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => form.setValue("banner", "")}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    onClick={() => setShowBannerPicker(true)}
+                                                    className="h-28 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-sm hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors bg-slate-50"
+                                                >
+                                                    <ImageIcon className="h-6 w-6 mb-1" />
+                                                    Select Image
+                                                </div>
+                                            )}
+
+                                            {watchedBanner && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-full h-auto py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => setShowBannerPicker(true)}
+                                                >
+                                                    Replace Image
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Card 3: SEO Settings */}
+                            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSeoExpanded(!isSeoExpanded)}
+                                    className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2 font-semibold text-sm text-slate-900">
+                                        <Search className="w-4 h-4 text-slate-400" />
+                                        SEO Settings
+                                    </div>
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isSeoExpanded && "rotate-180")} />
+                                </button>
+                                
+                                {isSeoExpanded && (
+                                    <div className="p-4 pt-0 border-t border-slate-100 space-y-3 mt-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="metaTitle"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700 text-xs">Meta Title</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="Leave empty to use post title"
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500 h-8 text-sm"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="metaDescription"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700 text-xs">Meta Description</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            placeholder="Leave empty to use post description"
+                                                            rows={2}
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500 resize-none text-sm"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="metaKeywords"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-slate-700 text-xs">Meta Keywords</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="keyword1, keyword2"
+                                                            {...field}
+                                                            className="border-slate-200 focus-visible:ring-blue-500 h-8 text-sm"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-slate-700 text-xs">OG Image</Label>
+                                            {watchedOgImage ? (
+                                                <div className="relative group rounded-lg overflow-hidden border border-slate-200 h-20">
+                                                    <Image
+                                                        src={watchedOgImage}
+                                                        alt="OG Image"
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => form.setValue("ogImage", "")}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    onClick={() => setShowOgImagePicker(true)}
+                                                    className="h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors bg-slate-50"
+                                                >
+                                                    <ImageIcon className="h-5 w-5 mb-1" />
+                                                    Select OG Image
+                                                </div>
+                                            )}
+                                            {watchedOgImage && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-full h-auto py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => setShowOgImagePicker(true)}
+                                                >
+                                                    Replace
+                                                </Button>
+                                            )}
+                                            <p className="text-[10px] text-slate-400">Leave empty to use banner</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content Area (Second on mobile, left on desktop) */}
+                    <div className="order-2 lg:order-1 lg:col-span-2">
                         <FormField
                             control={form.control}
                             name="content"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <QuillEditor
+                                        <RichTextEditor
                                             value={field.value}
                                             onChange={field.onChange}
                                         />
@@ -392,385 +818,6 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
                                 </FormItem>
                             )}
                         />
-                    </div>
-
-                    {/* Sidebar Settings */}
-                    <div className="relative">
-                        <div className="lg:sticky lg:top-[76px] space-y-4">
-                            {/* Post Settings Card */}
-                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                                <h3 className="font-semibold text-sm text-slate-900 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <Settings className="w-4 h-4 text-slate-400" />
-                                    Post Settings
-                                </h3>
-
-                                <div className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="title"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700">Title</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="Enter title..."
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Slug Field */}
-                                    <FormField
-                                        control={form.control}
-                                        name="slug"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700">Slug (URL)</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="post-url-slug"
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500 font-mono text-sm"
-                                                    />
-                                                </FormControl>
-                                                <p className="text-[10px] text-slate-500 mt-1">
-                                                    {mode === "edit" ? "Warning: Changing the slug will change the post URL." : "Leave empty to auto-generate from title."}
-                                                </p>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700">Description</FormLabel>
-                                                <FormControl>
-                                                    <Textarea
-                                                        placeholder="Short summary..."
-                                                        rows={2}
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500 resize-none"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {/* Categories */}
-                                    <div className="space-y-2">
-                                        <Label className="text-slate-700">Categories</Label>
-                                        <p className="text-[10px] text-slate-500">
-                                            First category is the primary URL channel.
-                                        </p>
-
-                                        {watchedCategories.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5 mb-2">
-                                                {watchedCategories.map((cat) => (
-                                                    <Badge key={cat} variant="secondary" className="gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100">
-                                                        {cat}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeCategoryItem(cat)}
-                                                            className="rounded-full hover:bg-blue-200 p-0.5 transition-colors"
-                                                        >
-                                                            <X className="h-3 w-3" />
-                                                        </button>
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="relative" ref={categoryDropdownRef}>
-                                            <div className="relative">
-                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                                                <Input
-                                                    value={categoryInput}
-                                                    onFocus={() => setShowCategoryDropdown(true)}
-                                                    onChange={(e) => {
-                                                        setCategoryInput(e.target.value);
-                                                        setShowCategoryDropdown(true);
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            e.preventDefault();
-                                                            addCategoryItem(categoryInput);
-                                                            setShowCategoryDropdown(false);
-                                                        }
-                                                    }}
-                                                    placeholder="Add category..."
-                                                    className="pl-9 border-slate-200 focus-visible:ring-blue-500"
-                                                />
-                                            </div>
-
-                                            {showCategoryDropdown && (
-                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                                                    {loadingCategories ? (
-                                                        <div className="p-2 text-center text-xs text-slate-500">
-                                                            Loading...
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            {existingCategories
-                                                                .filter(cat =>
-                                                                    !watchedCategories.includes(cat) &&
-                                                                    cat.toLowerCase().includes(categoryInput.toLowerCase())
-                                                                )
-                                                                .map(cat => (
-                                                                    <button
-                                                                        key={cat}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            addCategoryItem(cat);
-                                                                            setShowCategoryDropdown(false);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700"
-                                                                    >
-                                                                        {cat}
-                                                                    </button>
-                                                                ))}
-                                                            {categoryInput && !existingCategories.some(c => c.toLowerCase() === categoryInput.toLowerCase()) && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        addCategoryItem(categoryInput);
-                                                                        setShowCategoryDropdown(false);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 font-medium"
-                                                                >
-                                                                    + Create &quot;{categoryInput}&quot;
-                                                                </button>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <FormField
-                                        control={form.control}
-                                        name="author"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700">Author</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} className="border-slate-200 focus-visible:ring-blue-500" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                <FormField
-                                    control={form.control}
-                                    name="publishedAt"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col mt-4">
-                                            <FormLabel className="text-slate-700">Schedule Publish</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant={"outline"}
-                                                            className={cn(
-                                                                "w-full pl-3 text-left font-normal border-slate-200",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            {field.value ? (
-                                                                format(field.value, "PPP")
-                                                            ) : (
-                                                                <span>Pick a date</span>
-                                                            )}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        disabled={(date) =>
-                                                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                            <p className="text-[10px] text-slate-500">
-                                                If set to a future date, post will be scheduled.
-                                            </p>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            {/* Featured Image Card */}
-                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                                <h3 className="font-semibold text-sm text-slate-900 mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <FileImage className="w-4 h-4 text-slate-400" />
-                                    Featured Image
-                                </h3>
-                                <div className="space-y-2">
-                                    {watchedBanner ? (
-                                        <div className="relative group rounded-lg overflow-hidden border border-slate-200 h-28">
-                                            <Image
-                                                src={watchedBanner}
-                                                alt="Banner"
-                                                fill
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 100vw, 33vw"
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => form.setValue("banner", "")}
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <div
-                                            onClick={() => setShowBannerPicker(true)}
-                                            className="h-28 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-sm hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors bg-slate-50"
-                                        >
-                                            <ImageIcon className="h-6 w-6 mb-1" />
-                                            Select Image
-                                        </div>
-                                    )}
-
-                                    {watchedBanner && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="w-full h-auto py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                            onClick={() => setShowBannerPicker(true)}
-                                        >
-                                            Replace Image
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* SEO Settings Card */}
-                            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                                <h3 className="font-semibold text-sm text-slate-900 mb-3 pb-2 border-b border-slate-100 flex items-center gap-2">
-                                    <Search className="w-4 h-4 text-slate-400" />
-                                    SEO Settings
-                                </h3>
-                                <div className="space-y-3">
-                                    <FormField
-                                        control={form.control}
-                                        name="metaTitle"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700 text-xs">Meta Title</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="Leave empty to use post title"
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500 h-8 text-sm"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="metaDescription"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700 text-xs">Meta Description</FormLabel>
-                                                <FormControl>
-                                                    <Textarea
-                                                        placeholder="Leave empty to use post description"
-                                                        rows={2}
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500 resize-none text-sm"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="metaKeywords"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-slate-700 text-xs">Meta Keywords</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="keyword1, keyword2"
-                                                        {...field}
-                                                        className="border-slate-200 focus-visible:ring-blue-500 h-8 text-sm"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <div className="space-y-1.5">
-                                        <Label className="text-slate-700 text-xs">OG Image</Label>
-                                        {watchedOgImage ? (
-                                            <div className="relative group rounded-lg overflow-hidden border border-slate-200 h-20">
-                                                <Image
-                                                    src={watchedOgImage}
-                                                    alt="OG Image"
-                                                    fill
-                                                    className="object-cover"
-                                                    sizes="(max-width: 768px) 100vw, 33vw"
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    size="icon"
-                                                    className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => form.setValue("ogImage", "")}
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                onClick={() => setShowOgImagePicker(true)}
-                                                className="h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors bg-slate-50"
-                                            >
-                                                <ImageIcon className="h-5 w-5 mb-1" />
-                                                Select OG Image
-                                            </div>
-                                        )}
-                                        {watchedOgImage && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="w-full h-auto py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => setShowOgImagePicker(true)}
-                                            >
-                                                Replace
-                                            </Button>
-                                        )}
-                                        <p className="text-[10px] text-slate-400">Leave empty to use banner</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
