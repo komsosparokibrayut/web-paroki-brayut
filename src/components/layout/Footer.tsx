@@ -67,7 +67,7 @@ export default function Footer() {
                     >
                         <div className="text-left md:text-right">
                             <h3 className="font-serif text-3xl mb-4">Butuh Bantuan?</h3>
-                            <Link href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-2">
+                            <Link href="https://wa.me/628135735199" target="_blank" rel="noopener noreferrer" className="text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-2">
                                 (0274) 860-9221
                             </Link>
                             <p className="text-gray-500">Sekretariat Paroki (Senin - Sabtu)</p>
@@ -142,8 +142,10 @@ export default function Footer() {
                                 <Link href="https://maps.google.com/?q=Gereja+Katholik+St.+Yohanes+Paulus+II+Brayut,+Jogopaten,+Pandowoharjo" target="_blank" rel="noopener noreferrer" className="hover:text-brand-gold transition-colors block">
                                     <p>Jogopaten, Pandowoharjo</p>
                                 </Link>
-                                <p className="text-sm text-gray-300 mt-2">Senin - Jumat: 08.00 - 15.00</p>
-                                <p className="text-sm text-gray-300">Sabtu: 08.00 - 14.00</p>
+                                <p className="text-sm text-gray-300 mt-2">Selasa - Jumat: 09.00 - 17.00</p>
+                                <p className="text-sm text-gray-300">Sabtu: 08.00 - 15.00</p>
+                                <p className="text-sm text-gray-300">Minggu: 09.00 - 15.00</p>
+                                <p className="text-sm text-gray-300 italic">*Senin & Libur Nasional Tutup</p>
                             </address>
                         </div>
                     </div>

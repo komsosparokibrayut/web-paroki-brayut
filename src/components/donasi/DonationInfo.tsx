@@ -108,7 +108,7 @@ export default function DonationInfo({ qrCodeValue }: { qrCodeValue?: string }) 
                 title="Sudah Melakukan Transfer?"
                 description="Terima kasih atas kemurahan hati Anda. Mohon lakukan konfirmasi agar donasi Anda dapat kami catat dan kami sampaikan laporan pertanggungjawabannya."
                 actionLabel="Konfirmasi via WhatsApp"
-                actionLink="https://wa.me/6281234567890?text=Berkah%20Dalem,%20saya%20sudah%20melakukan%20transfer%20donasi%20untuk%20pembangunan%20gereja%20sebesar%20Rp..."
+                actionLink="https://wa.me/628135735199?text=Berkah%20Dalem,%20saya%20sudah%20melakukan%20transfer%20donasi%20untuk%20pembangunan%20gereja%20sebesar%20Rp..."
                 icon={<CheckCircle2 className="h-8 w-8 text-brand-dark" />}
                 className="mt-12"
             />

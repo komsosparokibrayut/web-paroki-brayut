@@ -32,7 +32,7 @@ export default async function UMKMPage() {
                     title="Daftarkan Usaha Anda"
                     description="Dukung perekonomian umat dengan mendaftarkan usaha Anda di direktori UMKM Paroki. Silakan hubungi sekretariat atau ketua lingkungan untuk pendaftaran."
                     actionLabel="Hubungi Sekretariat"
-                    actionLink="https://wa.me/6281234567890"
+                    actionLink="https://wa.me/628135735199"
                     icon={<Store className="h-8 w-8 text-brand-dark" />}
                 />
 

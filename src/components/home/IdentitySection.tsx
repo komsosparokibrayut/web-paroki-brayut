@@ -91,7 +91,7 @@ export default function IdentitySection() {
                     className="text-center"
                 >
                     <Button variant="outline" className="rounded-full px-8 py-6 border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white transition-colors group" asChild>
-                        <Link href="https://wa.me/628123456789">
+                        <Link href="https://wa.me/628135735199">
                             Hubungi Sekretariat <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </Button>

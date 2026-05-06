@@ -16,7 +16,7 @@ export default function WhatsAppWidget() {
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Link
-                        href="https://wa.me/622748609221"
+                        href="https://wa.me/628135735199"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="fixed bottom-6 right-6 z-40"
