@@ -131,7 +131,7 @@ export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }
                             </motion.p>
 
                             {/* Progress Bar in Slide 1 */}
-                            <motion.div
+                            {/* <motion.div
                                 className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-lg mt-8"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
@@ -162,7 +162,7 @@ export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }
                                         {progressPercentage.toFixed(1)}%
                                     </span>
                                 </div>
-                            </motion.div>
+                            </motion.div> */}
                         </div>
                     </div>
                 </div>
