@@ -12,6 +12,7 @@ type ActionResult<T = void> = { success: true; data?: T } | { success: false, er
 
 export interface AdminSettings {
   whatsapp_number?: string;
+  phone_number?: string;
   donation_total?: number;
   donation_target?: number;
   meeting_room_password?: string;

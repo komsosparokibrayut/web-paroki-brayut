@@ -4,11 +4,12 @@ import { InventoryItem } from "@/features/booking/types";
 import { saveInventoryItem, deleteInventoryItem } from "@/features/booking/actions/inventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function InventoryTab({
@@ -18,6 +19,7 @@ export function InventoryTab({
   onRefresh,
   openConfirm,
   borrowingStats = {},
+  wilayahs = [],
 }: {
   inventory: InventoryItem[];
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
@@ -25,6 +27,7 @@ export function InventoryTab({
   onRefresh: () => void;
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
   borrowingStats?: Record<string, { totalHours: number; totalMinutes: number; bookingCount: number }>;
+  wilayahs?: { id: string; name: string; lingkungan?: string[] }[];
 }) {
   const [isAddInventoryOpen, setIsAddInventoryOpen] = useState(false);
   const [newInventoryItem, setNewInventoryItem] = useState<{ id?: string, name: string, totalQuantity: number, description: string, isActive: boolean, wilayah_id?: string }>({ name: "", totalQuantity: 1, description: "", isActive: true, wilayah_id: "" });
@@ -98,6 +101,7 @@ export function InventoryTab({
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{newInventoryItem.id ? "Edit Barang Inventaris" : "Tambah Barang Inventaris"}</DialogTitle>
+                  <DialogDescription>Isi detail barang inventaris.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSaveInventory} className="space-y-4">
                   <div className="space-y-2">
@@ -114,7 +118,17 @@ export function InventoryTab({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="inv-wilayah">Wilayah (Territory)</Label>
-                    <Input id="inv-wilayah" value={newInventoryItem.wilayah_id} onChange={e => setNewInventoryItem({ ...newInventoryItem, wilayah_id: e.target.value })} placeholder="Masukkan wilayah" />
+                    <Select value={newInventoryItem.wilayah_id || ""} onValueChange={(val) => setNewInventoryItem({ ...newInventoryItem, wilayah_id: val })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Wilayah" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tidak Ada</SelectItem>
+                        {wilayahs.map(w => (
+                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full">{newInventoryItem.id ? "Simpan Perubahan" : "Simpan Barang"}</Button>
                 </form>
@@ -149,7 +163,7 @@ export function InventoryTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{item.name}</CardTitle>
-                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span>{item.wilayah_id ? ` • Wilayah: ${item.wilayah_id}` : ""}</CardDescription>
+                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span>{item.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === item.wilayah_id)?.name || item.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>

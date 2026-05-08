@@ -4,11 +4,12 @@ import { MeetingPlace } from "@/features/booking/types";
 import { saveMeetingPlace, deleteMeetingPlace } from "@/features/booking/actions/places";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Pencil, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function PlacesTab({
@@ -17,12 +18,14 @@ export function PlacesTab({
   isRefreshing,
   onRefresh,
   openConfirm,
+  wilayahs = [],
 }: {
   places: MeetingPlace[];
   setPlaces: React.Dispatch<React.SetStateAction<MeetingPlace[]>>;
   isRefreshing: boolean;
   onRefresh: () => void;
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
+  wilayahs?: { id: string; name: string; lingkungan?: string[] }[];
 }) {
   const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
   const [newPlace, setNewPlace] = useState<{ id?: string, name: string, capacity: number, description: string, isActive: boolean, wilayah_id?: string }>({ name: "", capacity: 10, description: "", isActive: true, wilayah_id: "" });
@@ -96,6 +99,7 @@ export function PlacesTab({
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{newPlace.id ? "Edit Ruangan" : "Tambah Ruang Pertemuan"}</DialogTitle>
+                  <DialogDescription>Isi detail ruangan meeting.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSavePlace} className="space-y-4">
                   <div className="space-y-2">
@@ -112,7 +116,17 @@ export function PlacesTab({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wilayah_id">Wilayah (Territory)</Label>
-                    <Input id="wilayah_id" value={newPlace.wilayah_id} onChange={e => setNewPlace({ ...newPlace, wilayah_id: e.target.value })} placeholder="Masukkan wilayah" />
+                    <Select value={newPlace.wilayah_id || ""} onValueChange={(val) => setNewPlace({ ...newPlace, wilayah_id: val })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Wilayah" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tidak Ada</SelectItem>
+                        {wilayahs.map(w => (
+                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full">{newPlace.id ? "Simpan Perubahan" : "Simpan Ruangan"}</Button>
                 </form>
@@ -148,7 +162,7 @@ export function PlacesTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{place.name}</CardTitle>
-                      <CardDescription>Kapasitas: {place.capacity} orang{place.wilayah_id ? ` • Wilayah: ${place.wilayah_id}` : ""}</CardDescription>
+                      <CardDescription>Kapasitas: {place.capacity} orang{place.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === place.wilayah_id)?.name || place.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>

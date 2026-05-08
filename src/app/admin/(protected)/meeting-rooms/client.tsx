@@ -21,12 +21,14 @@ export default function MeetingRoomsClient({
   initialInventory = [],
   isSuperAdmin,
   borrowingStats = {},
+  wilayahs = [],
 }: {
   initialBookings: MeetingBooking[];
   initialPlaces: MeetingPlace[];
   initialInventory?: InventoryItem[];
   isSuperAdmin?: boolean;
   borrowingStats?: Record<string, { totalHours: number; totalMinutes: number; bookingCount: number }>;
+  wilayahs?: { id: string; name: string; lingkungan?: string[] }[];
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [places, setPlaces] = useState(initialPlaces);
@@ -126,7 +128,8 @@ export default function MeetingRoomsClient({
             setPlaces={setPlaces} 
             isRefreshing={isRefreshingPlaces} 
             onRefresh={handleRefreshPlaces} 
-            openConfirm={openConfirm} 
+            openConfirm={openConfirm}
+            wilayahs={wilayahs}
           />
         </TabsContent>
 
@@ -138,6 +141,7 @@ export default function MeetingRoomsClient({
             onRefresh={handleRefreshInventory}
             openConfirm={openConfirm}
             borrowingStats={borrowingStats}
+            wilayahs={wilayahs}
           />
         </TabsContent>
 

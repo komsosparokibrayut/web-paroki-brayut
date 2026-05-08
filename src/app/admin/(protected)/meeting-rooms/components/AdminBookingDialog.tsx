@@ -4,7 +4,7 @@ import { MeetingBooking, MeetingPlace, InventoryItem, DateWithTime, BorrowedItem
 import { submitBooking, updateBooking } from "@/features/booking/actions/bookings";
 import { getInventoryItemsWithAvailability } from "@/features/booking/actions/inventory";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -195,7 +195,7 @@ export function AdminBookingDialog({
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{bookingToEdit ? "Edit Peminjaman" : "Tambah Peminjaman Baru"}</DialogTitle>
-                    <p className="text-sm text-muted-foreground">Data mohon diisi secara lengkap</p>
+                    <DialogDescription>Data mohon diisi secara lengkap</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSaveBooking} className="space-y-4 py-2">
                     <DialogBody className="space-y-4">

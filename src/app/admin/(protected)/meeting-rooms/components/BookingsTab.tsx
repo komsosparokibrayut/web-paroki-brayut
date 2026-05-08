@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, CheckCircle, XCircle, Clock, Pencil, RefreshCw, Search, ChevronLeft, ChevronRight, CalendarDays, Package, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -344,6 +344,7 @@ export function BookingsTab({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Update Status Pengembalian</DialogTitle>
+            <DialogDescription>Perbarui status pengembalian barang.</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-4">
             {selectedBookingForReturn && (

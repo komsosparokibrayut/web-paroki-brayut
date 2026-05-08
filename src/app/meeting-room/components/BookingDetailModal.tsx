@@ -1,5 +1,5 @@
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Clock, MapPin, Package, Building2, User, Phone, Users, FileText, Hash, RotateCcw } from "lucide-react";
 
@@ -30,6 +30,7 @@ export function BookingDetailModal({
                         )}
                         {isInventoryOnly ? 'Peminjaman Inventaris' : place?.name || 'Ruangan Tidak Diketahui'}
                     </DialogTitle>
+                    <DialogDescription>Detail peminjaman ruangan atau inventaris.</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-1">

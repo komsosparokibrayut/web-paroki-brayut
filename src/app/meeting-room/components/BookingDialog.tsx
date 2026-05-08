@@ -8,7 +8,7 @@ import { getInventoryItemsWithAvailability } from "@/features/booking/actions/in
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogBody, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogBody, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
@@ -143,7 +143,7 @@ export function BookingDialog({
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>{bookingType === 'room' ? 'Form Peminjaman Gedung & Ruangan Gereja' : 'Form Peminjaman Inventaris/Barang'}</DialogTitle>
-                        <p className="text-sm text-muted-foreground">Data mohon diisi secara lengkap</p>
+                        <DialogDescription>Data mohon diisi secara lengkap</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleBook} className="space-y-4 py-2">
                         <DialogBody className="space-y-4">

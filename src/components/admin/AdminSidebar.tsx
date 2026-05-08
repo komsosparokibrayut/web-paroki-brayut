@@ -22,6 +22,7 @@ import {
     Church,
     LogOut,
     DoorOpen,
+    Settings,
 } from "lucide-react";
 import {
     Sidebar,
@@ -89,6 +90,12 @@ export function AdminSidebar() {
         {
             title: "Settings",
             items: [
+                {
+                    name: "General",
+                    href: "/admin/settings/general",
+                    icon: Settings,
+                    visible: hasAccess(["data_admin"])
+                },
                 {
                     name: "Categories",
                     href: "/admin/master/categories",
