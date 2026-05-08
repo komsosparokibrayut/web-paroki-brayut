@@ -37,6 +37,7 @@ export function BookingsTab({
 }) {
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
+  const [bookingTypeFilter, setBookingTypeFilter] = useState("all");
   const [bookingPage, setBookingPage] = useState(1);
   const BOOKING_PAGE_SIZE = 9;
 
@@ -123,6 +124,7 @@ export function BookingsTab({
 
     const filteredBookings = bookings
     .filter(b => bookingStatusFilter === "all" || b.status === bookingStatusFilter)
+    .filter(b => bookingTypeFilter === "all" || b.type === bookingTypeFilter)
     .filter(b => {
       const q = bookingSearch.toLowerCase();
       if (!q) return true;
@@ -180,6 +182,17 @@ export function BookingsTab({
               <SelectItem value="rejected">Ditolak</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={bookingTypeFilter} onValueChange={v => { setBookingTypeFilter(v); setBookingPage(1); }}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-white">
+              <SelectValue placeholder="Semua Jenis" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              <SelectItem value="all">Semua Jenis</SelectItem>
+              <SelectItem value="room">Ruangan</SelectItem>
+              <SelectItem value="inventory">Inventaris</SelectItem>
+              <SelectItem value="both">Ruangan + Barang</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -209,6 +222,11 @@ export function BookingsTab({
                   <div className="flex justify-between items-start">
                     <div className="flex-1 mr-4">
                       <CardTitle>{booking.type === 'inventory' ? 'Peminjaman Barang' : getPlaceName(booking.placeId)}</CardTitle>
+                      {booking.type === 'both' && (
+                        <CardDescription className="text-amber-600 font-medium">
+                          + Inventaris (Ruangan + Barang)
+                        </CardDescription>
+                      )}
                       {booking.type === 'inventory' ? (
                         <CardDescription>
                           Tgl Ambil: {booking.date} · Tgl Kembali: {booking.returnDate || '-'}
@@ -248,12 +266,18 @@ export function BookingsTab({
                            Dipindah Jadwal
                          </Badge>
                        )}
-                       {booking.multiDates && booking.multiDates.length > 1 && (
-                         <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 shadow-sm border whitespace-nowrap">
-                           <CalendarDays className="w-3 h-3 mr-1" />
-                           Multi-Hari
-                         </Badge>
-                       )}
+{booking.multiDates && booking.multiDates.length > 1 && (
+                          <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 shadow-sm border whitespace-nowrap">
+                            <CalendarDays className="w-3 h-3 mr-1" />
+                            Multi-Hari
+                          </Badge>
+                        )}
+                        {booking.type === 'both' && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 shadow-sm border whitespace-nowrap">
+                            <Package className="w-3 h-3 mr-1" />
+                            + Barang
+                          </Badge>
+                        )}
                        {(booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
                          <div className="mt-1">
                            {getReturnStatusBadge(booking.returnStatus)}
