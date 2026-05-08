@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
-import { updateBookingStatus, deleteBooking } from "@/features/booking/actions/bookings";
+import { updateBookingStatus, deleteBooking, updateReturnStatus } from "@/features/booking/actions/bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle, XCircle, Clock, Pencil, RefreshCw, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus, Trash2, CheckCircle, XCircle, Clock, Pencil, RefreshCw, Search, ChevronLeft, ChevronRight, CalendarDays, Package, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format, parse } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export function BookingsTab({
   bookings,
@@ -35,6 +39,12 @@ export function BookingsTab({
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingPage, setBookingPage] = useState(1);
   const BOOKING_PAGE_SIZE = 9;
+
+  // Return status modal state
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [selectedBookingForReturn, setSelectedBookingForReturn] = useState<MeetingBooking | null>(null);
+  const [returnStatus, setReturnStatus] = useState<"Masih Dipinjam" | "Sudah Dikembalikan" | "Dikembalikan dengan Kekurangan">("Masih Dipinjam");
+  const [returnNotes, setReturnNotes] = useState("");
 
   const handleApprove = (id: string) => {
     openConfirm("Setujui Peminjaman", "Apakah Anda yakin ingin menyetujui peminjaman ini?", "default", async () => {
@@ -72,13 +82,64 @@ export function BookingsTab({
     });
   };
 
+  const openReturnModal = (booking: MeetingBooking) => {
+    setSelectedBookingForReturn(booking);
+    setReturnStatus(booking.returnStatus || "Masih Dipinjam");
+    setReturnNotes(booking.returnNotes || "");
+    setReturnModalOpen(true);
+  };
+
+  const handleUpdateReturnStatus = async () => {
+    if (!selectedBookingForReturn) return;
+    
+    const res = await updateReturnStatus(selectedBookingForReturn.id!, returnStatus, returnNotes);
+    if (res.success) {
+      setBookings(prev => prev.map(b => 
+        b.id === selectedBookingForReturn.id 
+          ? { ...b, returnStatus, returnNotes } 
+          : b
+      ));
+      toast.success("Status pengembalian diperbarui!");
+      setReturnModalOpen(false);
+      setSelectedBookingForReturn(null);
+    } else {
+      toast.error(res.error || "Gagal memperbarui status pengembalian");
+    }
+  };
+
+  const getReturnStatusBadge = (status?: string) => {
+    switch (status) {
+      case "Sudah Dikembalikan":
+        return <Badge className="bg-green-50 text-green-600 border-green-200">Sudah Dikembalikan</Badge>;
+      case "Dikembalikan dengan Kekurangan":
+        return <Badge className="bg-amber-50 text-amber-600 border-amber-200">Dikembalikan dgn Kekurangan</Badge>;
+      case "Masih Dipinjam":
+      default:
+        return <Badge className="bg-red-50 text-red-600 border-red-200">Masih Dipinjam</Badge>;
+    }
+  };
+
   const getPlaceName = (id?: string) => places.find(p => p.id === id)?.name || "Ruangan / Barang Tidak Diketahui";
 
-  const filteredBookings = bookings
+    const filteredBookings = bookings
     .filter(b => bookingStatusFilter === "all" || b.status === bookingStatusFilter)
     .filter(b => {
       const q = bookingSearch.toLowerCase();
-      return !q || b.userName.toLowerCase().includes(q) || b.userContact.toLowerCase().includes(q) || b.purpose.toLowerCase().includes(q);
+      if (!q) return true;
+      
+      // Search in basic fields
+      const basicMatch = b.userName.toLowerCase().includes(q) 
+        || b.userContact.toLowerCase().includes(q) 
+        || b.purpose.toLowerCase().includes(q);
+      
+      if (basicMatch) return true;
+      
+      // Search in multiDates
+      if (b.multiDates && b.multiDates.length > 0) {
+        return b.multiDates.some(d => d.includes(q));
+      }
+      
+      return false;
     });
   const bookingPageCount = Math.max(1, Math.ceil(filteredBookings.length / BOOKING_PAGE_SIZE));
   const pagedBookings = filteredBookings.slice((bookingPage - 1) * BOOKING_PAGE_SIZE, bookingPage * BOOKING_PAGE_SIZE);
@@ -153,7 +214,21 @@ export function BookingsTab({
                           Tgl Ambil: {booking.date} · Tgl Kembali: {booking.returnDate || '-'}
                         </CardDescription>
                       ) : (
-                        <CardDescription>{booking.date} · {booking.startTime} - {booking.endTime}</CardDescription>
+                        <CardDescription className="flex items-center gap-1 flex-wrap">
+                          {booking.multiDates && booking.multiDates.length > 1 ? (
+                            <>
+                              <CalendarDays className="w-3 h-3" />
+                              {booking.multiDates.length} hari: {booking.multiDates.slice(0, 2).map(d => {
+                                const parsed = parse(d, 'yyyy-MM-dd', new Date());
+                                return parsed ? format(parsed, 'd MMM', { locale: idLocale }) : d;
+                              }).join(', ')}
+                              {booking.multiDates.length > 2 && '...'}
+                              {' · '}{booking.startTime} - {booking.endTime}
+                            </>
+                          ) : (
+                            <>{booking.date} · {booking.startTime} - {booking.endTime}</>
+                          )}
+                        </CardDescription>
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -169,11 +244,22 @@ export function BookingsTab({
                         {booking.status === "pending" ? "Menunggu" : booking.status === "confirmed" ? "Dikonfirmasi" : "Ditolak"}
                       </Badge>
                       {booking.isRescheduled && (
-                        <Badge variant="secondary" className="border-slate-500 text-slate-600 bg-slate-50 shadow-sm border whitespace-nowrap">
-                          Dipindah Jadwal
-                        </Badge>
-                      )}
-                    </div>
+                         <Badge variant="secondary" className="border-slate-500 text-slate-600 bg-slate-50 shadow-sm border whitespace-nowrap">
+                           Dipindah Jadwal
+                         </Badge>
+                       )}
+                       {booking.multiDates && booking.multiDates.length > 1 && (
+                         <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 shadow-sm border whitespace-nowrap">
+                           <CalendarDays className="w-3 h-3 mr-1" />
+                           Multi-Hari
+                         </Badge>
+                       )}
+                       {(booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
+                         <div className="mt-1">
+                           {getReturnStatusBadge(booking.returnStatus)}
+                         </div>
+                       )}
+                     </div>
                   </div>
                   <div className="mt-2">
                     <Badge variant="outline" className="text-xs text-muted-foreground bg-slate-50">
@@ -196,7 +282,13 @@ export function BookingsTab({
                       <span className="font-semibold text-xs text-muted-foreground uppercase">Barang Dipinjam</span>
                       <ul className="list-disc list-inside mt-1 font-medium text-slate-700">
                         {booking.borrowedItems.map((item, idx) => (
-                          <li key={idx}>({item.quantity}x) {item.name}</li>
+                          <li key={item.itemId || idx} className="flex items-center gap-2">
+                            ({item.quantity}x) {item.name}
+                            <span className="text-xs text-muted-foreground font-normal">
+                              (Ambil: {item.dateTake} {item.timeTake} · Kembali: {item.dateReturn} {item.timeReturn})
+                            </span>
+                            {booking.type === 'inventory' || booking.type === 'both' ? getReturnStatusBadge(booking.returnStatus) : null}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -217,6 +309,12 @@ export function BookingsTab({
                     <Button variant="outline" size="sm" onClick={() => handleReject(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
                       <XCircle className="w-4 h-4" />
                       Tolak
+                    </Button>
+                  )}
+                  {(booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
+                    <Button variant="outline" size="sm" onClick={() => openReturnModal(booking)} className="text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700">
+                      <RotateCcw className="w-4 h-4" />
+                      Kembalikan
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => handleDeleteBooking(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-600">
@@ -240,6 +338,55 @@ export function BookingsTab({
           </Button>
         </div>
       )}
+
+      {/* Return Status Modal */}
+      <Dialog open={returnModalOpen} onOpenChange={setReturnModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Update Status Pengembalian</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            {selectedBookingForReturn && (
+              <>
+                <div className="bg-slate-50 p-3 rounded-md space-y-1">
+                  <p className="font-semibold">{selectedBookingForReturn.userName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedBookingForReturn.borrowedItems?.map(item => `(${item.quantity}x) ${item.name}`).join(', ')}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status Pengembalian</Label>
+                  <Select value={returnStatus} onValueChange={(val: any) => setReturnStatus(val)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Masih Dipinjam">Masih Dipinjam</SelectItem>
+                      <SelectItem value="Sudah Dikembalikan">Sudah Dikembalikan</SelectItem>
+                      <SelectItem value="Dikembalikan dengan Kekurangan">Dikembalikan dengan Kekurangan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Catatan Pengembalian (Opsional)</Label>
+                  <Textarea
+                    value={returnNotes}
+                    onChange={(e) => setReturnNotes(e.target.value)}
+                    placeholder="Catatan kondisi barang, kekurangan, kerusakan, dll..."
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnModalOpen(false)}>Batal</Button>
+            <Button onClick={handleUpdateReturnStatus}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

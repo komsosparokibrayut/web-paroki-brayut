@@ -44,6 +44,7 @@ interface SpecialMassForm {
     time: string;
     location: string;
     description: string;
+    date: string;
 }
 
 export default function JadwalMisaAdminClient({ initialData }: { initialData: JadwalMisaData | null }) {
@@ -58,7 +59,7 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
     const [specialModal, setSpecialModal] = useState<{ open: boolean; editing: SpecialMassEvent | null }>({ open: false, editing: null });
     const [deleteTarget, setDeleteTarget] = useState<{ type: "schedule"; churchId: string; index: number } | { type: "special"; id: string } | null>(null);
     const [scheduleForm, setScheduleForm] = useState<ScheduleForm>({ week: 1, day: "Sabtu", time: "", bahasa: "BahasaIndonesia", notes: "", date: "" });
-    const [specialForm, setSpecialForm] = useState<SpecialMassForm>({ name: "", time: "", location: "", description: "" });
+    const [specialForm, setSpecialForm] = useState<SpecialMassForm>({ name: "", time: "", location: "", description: "", date: "" });
     const router = useRouter();
 
     const persistData = useCallback((newData: JadwalMisaData) => {
@@ -168,9 +169,9 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
     const openSpecialModal = (editing: SpecialMassEvent | null = null) => {
         setSpecialModal({ open: true, editing });
         if (editing) {
-            setSpecialForm({ name: editing.name, time: editing.time, location: editing.location, description: editing.description || "" });
+            setSpecialForm({ name: editing.name, time: editing.time, location: editing.location, description: editing.description || "", date: editing.date || "" });
         } else {
-            setSpecialForm({ name: "", time: "", location: "", description: "" });
+            setSpecialForm({ name: "", time: "", location: "", description: "", date: "" });
         }
     };
 
@@ -487,6 +488,12 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                             <Input id="sname" value={specialForm.name} required
                                 onChange={(e) => setSpecialForm({ ...specialForm, name: e.target.value })}
                                 placeholder="Contoh: Misa Jumat Pertama" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="sdate">Tanggal Misa</Label>
+                            <Input id="sdate" type="date" value={specialForm.date}
+                                onChange={(e) => setSpecialForm({ ...specialForm, date: e.target.value })}
+                                placeholder="Pilih tanggal misa" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="stime">Jam & Periode</Label>

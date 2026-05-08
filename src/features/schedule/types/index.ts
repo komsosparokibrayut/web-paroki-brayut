@@ -77,6 +77,7 @@ export interface SpecialMassEvent {
   time: string;
   location: string;
   description: string;
+  date?: string; // YYYY-MM-DD format for date-based filtering
 }
 
 export interface JadwalMisaData {

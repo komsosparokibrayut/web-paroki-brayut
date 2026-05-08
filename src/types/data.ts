@@ -6,8 +6,9 @@ export interface ChurchStatistics {
   lastUpdated: string;
 }
 
-// Re-export ScheduleEvent from feature types for backward compatibility
+// Re-export types from feature types for backward compatibility
 export type { ScheduleEvent } from "@/features/schedule/types";
+export type { SpecialMassEvent } from "@/features/schedule/types";
 
 export interface UMKM {
   id: string;

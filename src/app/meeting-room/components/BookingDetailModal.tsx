@@ -1,7 +1,7 @@
 import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Clock, MapPin, Package, Building2, User, Phone, Users, FileText, Hash } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Package, Building2, User, Phone, Users, FileText, Hash, RotateCcw } from "lucide-react";
 
 export function BookingDetailModal({
     booking,
@@ -48,21 +48,52 @@ export function BookingDetailModal({
                                 Manual
                             </Badge>
                         )}
+                        {b.returnStatus && (b.type === 'inventory' || b.type === 'both') && (
+                            <Badge className={
+                                b.returnStatus === 'Sudah Dikembalikan' 
+                                    ? "bg-green-100 text-green-700 border-green-200"
+                                    : b.returnStatus === 'Dikembalikan dengan Kekurangan'
+                                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                                    : "bg-red-100 text-red-700 border-red-200"
+                            }>
+                                <RotateCcw className="w-3 h-3 mr-1" />
+                                {b.returnStatus}
+                            </Badge>
+                        )}
                     </div>
 
                     {/* Date & Time row */}
                     <div className="rounded-lg border p-3 bg-slate-50 text-slate-800 space-y-1.5">
-                        <div className="flex items-center gap-2 text-sm">
-                            <CalendarIcon className="h-4 w-4 shrink-0 opacity-70" />
-                            <span className="font-semibold">
-                                {new Date(b.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                            </span>
-                        </div>
-                        {!isInventoryOnly && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <Clock className="h-4 w-4 shrink-0 opacity-70" />
-                                <span className="font-semibold">{b.startTime} – {b.endTime}</span>
-                            </div>
+                        {b.multiDatesDetails && b.multiDatesDetails.length > 0 ? (
+                            <>
+                                <div className="flex items-center gap-2 text-sm font-semibold">
+                                    <CalendarIcon className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span>Multi-Hari ({b.multiDatesDetails.length} tanggal)</span>
+                                </div>
+                                {b.multiDatesDetails.map((detail, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 text-sm ml-6">
+                                        <CalendarIcon className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                                        <span>{new Date(detail.date).toLocaleDateString('id-ID', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                        <Clock className="h-3.5 w-3.5 shrink-0 opacity-50 ml-2" />
+                                        <span className="font-medium">{detail.startTime} – {detail.endTime}</span>
+                                    </div>
+                                ))}
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <CalendarIcon className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span className="font-semibold">
+                                        {new Date(b.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </span>
+                                </div>
+                                {!isInventoryOnly && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Clock className="h-4 w-4 shrink-0 opacity-70" />
+                                        <span className="font-semibold">{b.startTime} – {b.endTime}</span>
+                                    </div>
+                                )}
+                            </>
                         )}
                         {isInventoryOnly && (
                             <div className="flex items-center gap-2 text-sm">
@@ -153,6 +184,16 @@ export function BookingDetailModal({
                                             <div key={idx} className="flex items-center gap-2 text-sm bg-slate-50 border rounded p-2">
                                                 <Badge variant="secondary" className="bg-white border-slate-200 text-slate-700">{item.quantity}x</Badge>
                                                 <span className="font-medium text-slate-800">{item.name}</span>
+                                                {(item.dateTake || item.timeTake) && (
+                                                    <span className="text-xs text-muted-foreground ml-auto">
+                                                        Ambil: {item.dateTake} {item.timeTake}
+                                                    </span>
+                                                )}
+                                                {(item.dateReturn || item.timeReturn) && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Kembali: {item.dateReturn} {item.timeReturn}
+                                                    </span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -160,6 +201,39 @@ export function BookingDetailModal({
                                         <div className="text-xs text-slate-500 mt-2 space-y-1 bg-slate-50 p-2 rounded border border-dashed">
                                             <p className="flex justify-between"><span>Tgl Ambil:</span> <span className="font-medium text-slate-700">{b.inventoryDateTake || b.date}</span></p>
                                             <p className="flex justify-between"><span>Tgl Kembali:</span> <span className="font-medium text-slate-700">{b.returnDate || b.date}</span></p>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Return Status Information */}
+                                    {b.returnStatus && (
+                                        <div className="mt-3 pt-3 border-t border-dashed space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                                                <span className="text-xs font-semibold text-muted-foreground uppercase">Status Pengembalian</span>
+                                            </div>
+                                            <Badge className={
+                                                b.returnStatus === 'Sudah Dikembalikan' 
+                                                    ? "bg-green-50 text-green-700 border-green-200"
+                                                    : b.returnStatus === 'Dikembalikan dengan Kekurangan'
+                                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                                    : "bg-red-50 text-red-700 border-red-200"
+                                            }>
+                                                {b.returnStatus}
+                                            </Badge>
+                                            {b.returnNotes && (
+                                                <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border">
+                                                    <span className="font-semibold">Catatan Pengembalian:</span> {b.returnNotes}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Initial Condition Notes */}
+                                    {b.initialConditionNotes && (
+                                        <div className="mt-2 pt-2 border-t border-dashed">
+                                            <p className="text-xs text-slate-600 bg-blue-50 p-2 rounded border border-blue-100">
+                                                <span className="font-semibold">Kondisi Awal:</span> {b.initialConditionNotes}
+                                            </p>
                                         </div>
                                     )}
                                 </div>

@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/firebase/auth";
 import { hasPermission } from "@/lib/roles";
 import { MeetingPlace } from "../types";
 import { revalidatePath } from "next/cache";
+import { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
 const COLLECTION = "meeting_places";
 
@@ -13,7 +14,7 @@ type ActionResult<T = void> = { success: true; data?: T } | { success: false; er
 export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
     const snapshot = await adminDb.collection(COLLECTION).orderBy("name").get();
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as MeetingPlace));
@@ -27,7 +28,7 @@ export async function getActiveMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
     const snapshot = await adminDb.collection(COLLECTION).get();
       
-    const places = snapshot.docs.map(doc => ({
+    const places = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as MeetingPlace));

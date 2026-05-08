@@ -23,6 +23,13 @@ export const PLACE_COLORS = [
     "bg-orange-100 text-orange-800 border-orange-200",
 ];
 
+// Colors for inventory-only bookings (violet/purple theme)
+export const INVENTORY_COLORS = [
+    "bg-violet-100 text-violet-800 border-violet-200",
+    "bg-purple-100 text-purple-800 border-purple-200",
+    "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200",
+];
+
 export function CalendarTab({
     bookings,
     places,
@@ -34,6 +41,10 @@ export function CalendarTab({
 }) {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedPlaceFilter, setSelectedPlaceFilter] = useState<string>("all");
+    const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all");
+
+    // Helper to get color for inventory bookings
+    const getInventoryColor = (index: number) => INVENTORY_COLORS[index % INVENTORY_COLORS.length];
 
     return (
         <Card className="overflow-hidden">
@@ -50,19 +61,34 @@ export function CalendarTab({
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Label className="text-slate-500">Filter Tempat:</Label>
-                        <Select value={selectedPlaceFilter} onValueChange={setSelectedPlaceFilter} modal={false}>
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="Semua Tempat" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white">
-                                <SelectItem className="text-slate-600" value="all">Semua Tempat</SelectItem>
-                                {places.map((p: MeetingPlace) => (
-                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-slate-500 whitespace-nowrap">Tempat:</Label>
+                            <Select value={selectedPlaceFilter} onValueChange={setSelectedPlaceFilter} modal={false}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Semua Tempat" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white">
+                                    <SelectItem className="text-slate-600" value="all">Semua Tempat</SelectItem>
+                                    {places.map((p: MeetingPlace) => (
+                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-slate-500 whitespace-nowrap">Jenis:</Label>
+                            <Select value={selectedTypeFilter} onValueChange={setSelectedTypeFilter} modal={false}>
+                                <SelectTrigger className="w-[160px]">
+                                    <SelectValue placeholder="Semua Jenis" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white">
+                                    <SelectItem className="text-slate-600" value="all">Semua Jenis</SelectItem>
+                                    <SelectItem className="text-slate-600" value="room">Ruangan</SelectItem>
+                                    <SelectItem className="text-slate-600" value="inventory">Inventaris</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
             </CardHeader>
@@ -85,10 +111,39 @@ export function CalendarTab({
                                 const dateFormat = "d";
                                 const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-                                const approvedBookings = bookings.filter(b => b.status === "confirmed" && (selectedPlaceFilter === "all" || b.placeId === selectedPlaceFilter));
+                                // Filter bookings for calendar display
+                                const approvedBookings = bookings.filter(b => {
+                                    // Must be confirmed
+                                    if (b.status !== "confirmed") return false;
+                                    
+                                    // Filter by place (for room bookings)
+                                    if (selectedPlaceFilter !== "all") {
+                                        if (b.type === 'inventory' && !b.placeId) return false;
+                                        if (b.placeId && b.placeId !== selectedPlaceFilter) return false;
+                                    }
+                                    
+                                    // Filter by booking type
+                                    if (selectedTypeFilter !== "all") {
+                                        if (selectedTypeFilter === "room") {
+                                            // Show room and both types
+                                            if (b.type === 'inventory') return false;
+                                        } else if (selectedTypeFilter === "inventory") {
+                                            // Show inventory and both types
+                                            if (b.type === 'room') return false;
+                                        }
+                                    }
+                                    
+                                    return true;
+                                });
 
                                 return days.map((day, i) => {
-                                    const dayBookings = approvedBookings.filter(b => isSameDay(parseISO(b.date), day));
+                                    const dayBookings = approvedBookings.filter(b => {
+                                        // Check multiDatesDetails first, then multiDates, then single date
+                                        const dates = b.multiDatesDetails && b.multiDatesDetails.length > 0 
+                                            ? b.multiDatesDetails.map(d => d.date)
+                                            : (b.multiDates && b.multiDates.length > 0 ? b.multiDates : [b.date]);
+                                        return dates.some(d => isSameDay(parseISO(d), day));
+                                    });
                                     return (
                                         <div
                                             key={day.toISOString()}
@@ -106,25 +161,69 @@ export function CalendarTab({
                                                     const overflowBookings = sorted.slice(MAX_VISIBLE);
                                                     return (
                                                         <>
-                                                            {visible.map((booking) => {
-                                                                const place = places.find(p => p.id === booking.placeId);
-                                                                const placeIndex = places.findIndex(p => p.id === booking.placeId);
-                                                                const colorClass = selectedPlaceFilter !== 'all' ? PLACE_COLORS[0] : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
-                                                                return (
-                                                                    <button
-                                                                        key={booking.id}
-                                                                        type="button"
-                                                                        onClick={() => onSelectBooking(booking)}
-                                                                        className={`w-full text-left text-xs p-1.5 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight hover:brightness-95 active:scale-[0.98] transition-all cursor-pointer overflow-hidden`}
-                                                                    >
-                                                                        <div className="flex justify-between items-start gap-1 w-full">
-                                                                            <span className="font-bold whitespace-nowrap truncate">{booking.startTime}–{booking.endTime}</span>
-                                                                            {booking.isRescheduled && (
-                                                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20 shrink-0">Pindah</Badge>
-                                                                            )}
+{visible.map((booking) => {
+                                                                    const place = places.find(p => p.id === booking.placeId);
+                                                                    const isInventoryOnly = booking.type === 'inventory';
+                                                                    const isRoomBooking = booking.type === 'room' || booking.type === 'both';
+                                                                    
+                                                                    // Get time range for this specific day from multiDatesDetails
+                                                                    let displayStartTime = booking.startTime;
+                                                                    let displayEndTime = booking.endTime;
+                                                                    if (booking.multiDatesDetails && booking.multiDatesDetails.length > 0) {
+                                                                        const dayDetail = booking.multiDatesDetails.find(d => {
+                                                                            const bookingDate = isSameDay(parseISO(d.date), day);
+                                                                            return bookingDate;
+                                                                        });
+                                                                        if (dayDetail) {
+                                                                            displayStartTime = dayDetail.startTime;
+                                                                            displayEndTime = dayDetail.endTime;
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    // Determine color based on booking type
+                                                                    let colorClass: string;
+                                                                    if (isInventoryOnly) {
+                                                                        // Use inventory colors for inventory-only bookings
+                                                                        const invIndex = booking.borrowedItems 
+                                                                            ? bookings.filter(b => b.type === 'inventory').indexOf(booking) % INVENTORY_COLORS.length
+                                                                            : 0;
+                                                                        colorClass = getInventoryColor(Math.max(0, invIndex));
+                                                                    } else {
+                                                                        // Use place colors for room/both bookings
+                                                                        const placeIndex = places.findIndex(p => p.id === booking.placeId);
+                                                                        colorClass = selectedPlaceFilter !== 'all' 
+                                                                            ? PLACE_COLORS[0] 
+                                                                            : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
+                                                                    }
+                                                                    
+                                                                    return (
+                                                                        <button
+                                                                            key={booking.id}
+                                                                            type="button"
+                                                                            onClick={() => onSelectBooking(booking)}
+                                                                            className={`w-full text-left text-xs p-1.5 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight hover:brightness-95 active:scale-[0.98] transition-all cursor-pointer overflow-hidden`}
+                                                                        >
+                                                                            <div className="flex justify-between items-start gap-1 w-full">
+                                                                                <span className="font-bold whitespace-nowrap truncate">{isInventoryOnly ? '' : `${displayStartTime}–${displayEndTime}`}</span>
+                                                                            <div className="flex gap-0.5 shrink-0">
+                                                                                {booking.isRescheduled && (
+                                                                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20">Pindah</Badge>
+                                                                                )}
+                                                                                {isInventoryOnly && (
+                                                                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-violet-300 bg-violet-50 text-violet-700">Barang</Badge>
+                                                                                )}
+                                                                                {booking.type === 'both' && (
+                                                                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-blue-300 bg-blue-50 text-blue-700">Ruangan+Barang</Badge>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                         <span className="font-medium truncate">{booking.purpose}</span>
-                                                                        <span className="opacity-80 truncate text-[10px]">{selectedPlaceFilter === 'all' && place ? place.name : booking.userName}</span>
+                                                                        <span className="opacity-80 truncate text-[10px]">
+                                                                            {isInventoryOnly 
+                                                                                ? booking.userName
+                                                                                : (selectedPlaceFilter === 'all' && place ? place.name : booking.userName)
+                                                                            }
+                                                                        </span>
                                                                     </button>
                                                                 );
                                                             })}
@@ -139,8 +238,37 @@ export function CalendarTab({
                                                                         <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Jadwal lainnya</p>
                                                                         {overflowBookings.map((booking) => {
                                                                             const place = places.find(p => p.id === booking.placeId);
-                                                                            const placeIndex = places.findIndex(p => p.id === booking.placeId);
-                                                                            const colorClass = selectedPlaceFilter !== 'all' ? PLACE_COLORS[0] : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
+                                                                            const isInventoryOnly = booking.type === 'inventory';
+                                                                            
+                                                                            // Get time range for this specific day from multiDatesDetails
+                                                                            let displayStartTime = booking.startTime;
+                                                                            let displayEndTime = booking.endTime;
+                                                                            if (booking.multiDatesDetails && booking.multiDatesDetails.length > 0) {
+                                                                                // Find the detail for the current day being displayed
+                                                                                const dayDetail = booking.multiDatesDetails.find(d => {
+                                                                                    const bookingDate = parseISO(d.date);
+                                                                                    return isSameDay(bookingDate, day);
+                                                                                });
+                                                                                if (dayDetail) {
+                                                                                    displayStartTime = dayDetail.startTime;
+                                                                                    displayEndTime = dayDetail.endTime;
+                                                                                }
+                                                                            }
+                                                                            
+                                                                            // Determine color based on booking type
+                                                                            let colorClass: string;
+                                                                            if (isInventoryOnly) {
+                                                                                const invIndex = booking.borrowedItems 
+                                                                                    ? bookings.filter(b => b.type === 'inventory').indexOf(booking) % INVENTORY_COLORS.length
+                                                                                    : 0;
+                                                                                colorClass = getInventoryColor(Math.max(0, invIndex));
+                                                                            } else {
+                                                                                const placeIndex = places.findIndex(p => p.id === booking.placeId);
+                                                                                colorClass = selectedPlaceFilter !== 'all' 
+                                                                                    ? PLACE_COLORS[0] 
+                                                                                    : PLACE_COLORS[placeIndex % PLACE_COLORS.length] || PLACE_COLORS[0];
+                                                                            }
+                                                                            
                                                                             return (
                                                                                 <button
                                                                                     key={booking.id}
@@ -149,13 +277,26 @@ export function CalendarTab({
                                                                                     className={`w-full text-left text-xs p-2 rounded border ${colorClass} flex flex-col gap-0.5 leading-tight hover:brightness-95 transition-all cursor-pointer overflow-hidden`}
                                                                                 >
                                                                                     <div className="flex justify-between items-start gap-1 w-full">
-                                                                                        <span className="font-bold whitespace-nowrap truncate">{booking.startTime}–{booking.endTime}</span>
-                                                                                        {booking.isRescheduled && (
-                                                                                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20 shrink-0">Pindah</Badge>
-                                                                                        )}
+                                                                                        <span className="font-bold whitespace-nowrap truncate">{isInventoryOnly ? '' : `${displayStartTime}–${displayEndTime}`}</span>
+                                                                                        <div className="flex gap-0.5 shrink-0">
+                                                                                            {booking.isRescheduled && (
+                                                                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-foreground/20">Pindah</Badge>
+                                                                                            )}
+                                                                                            {isInventoryOnly && (
+                                                                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-violet-300 bg-violet-50 text-violet-700">Barang</Badge>
+                                                                                            )}
+                                                                                            {booking.type === 'both' && (
+                                                                                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] flex items-center leading-none border-blue-300 bg-blue-50 text-blue-700">Ruangan+Barang</Badge>
+                                                                                            )}
+                                                                                        </div>
                                                                                     </div>
                                                                                     <span className="font-medium truncate">{booking.purpose}</span>
-                                                                                    <span className="opacity-80 truncate text-[10px]">{place ? place.name : booking.userName}</span>
+                                                                                    <span className="opacity-80 truncate text-[10px]">
+                                                                                        {isInventoryOnly 
+                                                                                            ? booking.userName
+                                                                                            : (place ? place.name : booking.userName)
+                                                                                        }
+                                                                                    </span>
                                                                                 </button>
                                                                             );
                                                                         })}
@@ -174,6 +315,26 @@ export function CalendarTab({
                     </div>
                 </div>
             </CardContent>
+            {/* Legend */}
+            <div className="px-4 py-3 bg-slate-50 border-t flex flex-wrap gap-3 text-xs text-slate-600">
+                <span className="font-semibold">Keterangan:</span>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-red-100 border border-red-200"></div>
+                    <span>Ruangan</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-violet-100 border border-violet-200"></div>
+                    <span>Inventaris</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] border-violet-300 bg-violet-50 text-violet-700">Barang</Badge>
+                    <span>Inventaris Saja</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-[14px] border-blue-300 bg-blue-50 text-blue-700">Ruangan+Barang</Badge>
+                    <span>Keduanya</span>
+                </div>
+            </div>
         </Card>
     );
 }

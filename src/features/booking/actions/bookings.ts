@@ -3,10 +3,11 @@
 import { adminDb } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
 import { hasPermission } from "@/lib/roles";
-import { MeetingBooking } from "../types";
+import { MeetingBooking, DateWithTime } from "../types";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
+import { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
 
 const COLLECTION = "meeting_bookings";
 
@@ -24,11 +25,25 @@ const bookingSchema = z.object({
   isAdminDirectCreate: z.boolean().optional(),
   submissionSource: z.enum(['online', 'manual']).optional(),
   
-  // New Tracking fields
-  borrowedItems: z.array(z.object({ itemId: z.string(), quantity: z.number(), name: z.string() })).optional(),
+  // New Tracking fields - Updated to support per-item times
+  borrowedItems: z.array(z.object({ 
+    itemId: z.string(), 
+    quantity: z.number(), 
+    name: z.string(),
+    dateTake: z.string().optional(),
+    timeTake: z.string().optional(),
+    dateReturn: z.string().optional(),
+    timeReturn: z.string().optional(),
+  })).optional(),
   location: z.string().optional(),
   inventoryDateTake: z.string().optional(),
   returnDate: z.string().optional(),
+  // Multi-date with per-date time ranges
+  multiDatesDetails: z.array(z.object({
+    date: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+  })).optional(),
 }).refine(data => data.endTime > data.startTime, {
   message: "Waktu selesai harus setelah waktu mulai",
 });
@@ -78,7 +93,54 @@ export async function submitBooking(
       }
     }
 
-    // Check for overlap ONLY with confirmed bookings
+    // Handle multiDatesDetails - create separate bookings for each date
+    if (parsed.data.multiDatesDetails && parsed.data.multiDatesDetails.length > 0) {
+      const { isAdminDirectCreate, submissionSource, multiDatesDetails, ...baseData } = parsed.data as any;
+      
+      let targetStatus = "pending";
+      if (isAdminDirectCreate) {
+        const currentUser = await getCurrentUser();
+        if (currentUser && hasPermission(currentUser.role, "manage_data")) {
+          targetStatus = "confirmed";
+        }
+      }
+
+      const bookingPromises = multiDatesDetails.map(async (dateDetail: any) => {
+        const bookingData = {
+          ...baseData,
+          date: dateDetail.date,
+          startTime: dateDetail.startTime,
+          endTime: dateDetail.endTime,
+          multiDatesDetails: multiDatesDetails,
+          submissionSource: submissionSource || (isAdminDirectCreate ? 'manual' : 'online'),
+          status: targetStatus,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        return adminDb.collection(COLLECTION).add(bookingData);
+      });
+
+      const docRefs = await Promise.all(bookingPromises);
+      
+      // Auto-reject overlapping pending bookings for each date
+      if (targetStatus === "confirmed" && baseData.placeId) {
+        for (const dateDetail of multiDatesDetails) {
+          await autoRejectOverlappingPending(
+            baseData.placeId, 
+            dateDetail.date, 
+            dateDetail.startTime, 
+            dateDetail.endTime, 
+            docRefs[0].id
+          );
+        }
+      }
+      
+      revalidatePath("/meeting-room");
+      revalidatePath("/admin/meeting-rooms");
+      return { success: true, data: docRefs[0].id };
+    }
+
+    // Single date booking logic (original)
     if (parsed.data.type === 'room' || parsed.data.type === 'both') {
         const overlaps = await adminDb.collection(COLLECTION)
           .where("placeId", "==", parsed.data.placeId)
@@ -140,8 +202,8 @@ export async function submitBooking(
 export async function getBookings(): Promise<MeetingBooking[]> {
   try {
     const snapshot = await adminDb.collection(COLLECTION).get();
-      
-    const bookings = snapshot.docs.map(doc => ({
+    
+    const bookings = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as MeetingBooking));
@@ -162,7 +224,7 @@ export async function getBookings(): Promise<MeetingBooking[]> {
 /**
  * Automatically reject any overlapping pending room bookings
  */
-async function autoRejectOverlappingPending(placeId: string, date: string, startTime: string, endTime: string, currentBookingId: string) {
+async function autoRejectOverlappingPending(placeId: string, date: string, startTime: string, endTime: string, currentBookingId: string, multiDatesDetails?: DateWithTime[]) {
     const overlaps = await adminDb.collection(COLLECTION)
       .where("placeId", "==", placeId)
       .where("status", "==", "pending")
@@ -171,11 +233,20 @@ async function autoRejectOverlappingPending(placeId: string, date: string, start
     const batch = adminDb.batch();
     let hasUpdates = false;
     
+    // Get all dates to check (from multiDatesDetails or single date)
+    const datesToCheck = multiDatesDetails ? multiDatesDetails.map(d => d.date) : [date];
+    
     overlaps.docs.forEach(doc => {
       if (doc.id === currentBookingId) return;
       const b = doc.data() as MeetingBooking;
       
-      if (b.date === date && startTime < b.endTime && endTime > b.startTime) {
+      // Check if any of our dates overlap with this booking
+      const hasOverlap = datesToCheck.some(checkDate => {
+        if (b.date !== checkDate) return false;
+        return startTime < b.endTime && endTime > b.startTime;
+      });
+      
+      if (hasOverlap) {
         // Only reject if it's a room/both booking, inventory-only don't conflict on room usage
         if (b.type === 'room' || b.type === 'both') {
             batch.update(doc.ref, { 
@@ -194,9 +265,152 @@ async function autoRejectOverlappingPending(placeId: string, date: string, start
 }
 
 /**
+ * Check if a room booking conflicts with Mass Schedule
+ */
+async function checkMassScheduleConflict(
+  placeId: string,
+  date: string,
+  startTime: string,
+  endTime: string
+): Promise<boolean> {
+  try {
+    // Get the place details to check if it's a church/sanctuary
+    const placeDoc = await adminDb.collection("meeting_places").doc(placeId).get();
+    if (!placeDoc.exists) return false;
+    
+    const placeData = placeDoc.data();
+    // Check if this place is used for Mass (you may need to adjust this logic based on your data structure)
+    // Assuming places with certain names or wilayah_id indicate church areas
+    const isChurchArea = placeData?.name?.toLowerCase().includes('gereja') || 
+                         placeData?.name?.toLowerCase().includes('sanctuary') ||
+                         placeData?.name?.toLowerCase().includes('altar');
+    
+    if (!isChurchArea) return false;
+
+    // Check mass schedule for the date
+    const massSnapshot = await adminDb.collection("mass_schedule")
+      .where("date", "==", date)
+      .get();
+
+    return massSnapshot.docs.some(doc => {
+      const mass = doc.data();
+      if (!mass.startTime || !mass.endTime) return false;
+      // Check time overlap
+      return startTime < mass.endTime && endTime > mass.startTime;
+    });
+  } catch (error) {
+    console.error("Error checking mass schedule conflict:", error);
+    return false; // Fail open - don't block on error
+  }
+}
+
+/**
+ * Auto-reject inventory requests when room booking conflict occurs
+ */
+async function autoRejectInventoryOnRoomConflict(
+  placeId: string,
+  dates: string[],
+  startTime: string,
+  endTime: string,
+  currentBookingId: string
+) {
+  try {
+    // Find inventory/both bookings that overlap with the room booking time
+    const inventoryBookings = await adminDb.collection(COLLECTION)
+      .where("status", "==", "pending")
+      .where("type", "in", ["inventory", "both"])
+      .get();
+
+    const batch = adminDb.batch();
+    let hasUpdates = false;
+
+    inventoryBookings.docs.forEach(doc => {
+      if (doc.id === currentBookingId) return;
+      const b = doc.data() as MeetingBooking;
+      
+      // Check if inventory booking dates overlap
+      const bDates = b.multiDates && b.multiDates.length > 0 ? b.multiDates : [b.date];
+      const datesOverlap = dates.some(d => bDates.includes(d));
+      
+      if (!datesOverlap) return;
+      
+      // For 'both' type, also check time overlap with room
+      if (b.type === 'both' && b.placeId === placeId) {
+        if (startTime < b.endTime && endTime > b.startTime) {
+          batch.update(doc.ref, {
+            status: 'rejected',
+            adminNotes: 'Otomatis ditolak karena jadwal ruangan bertabrakan',
+            updatedAt: Date.now()
+          });
+          hasUpdates = true;
+        }
+      }
+    });
+
+    if (hasUpdates) {
+      await batch.commit();
+    }
+  } catch (error) {
+    console.error("Error auto-rejecting inventory on room conflict:", error);
+  }
+}
+
+/**
+ * Handle package booking wilayah approval
+ * Items in a package booking need approval from their respective Admin Wilayah
+ */
+async function handlePackageBookingWilayahApproval(bookingId: string, booking: MeetingBooking) {
+  try {
+    if (!booking.borrowedItems || booking.borrowedItems.length === 0) return;
+
+    // Get all inventory items to check their wilayah_id
+    const itemsSnapshot = await adminDb.collection("inventory_items").get();
+    const itemsMap = new Map<string, any>();
+    itemsSnapshot.docs.forEach(doc => {
+      itemsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    // Group items by wilayah_id
+    const itemsByWilayah = new Map<string, any[]>();
+    for (const borrowedItem of booking.borrowedItems) {
+      const item = itemsMap.get(borrowedItem.itemId);
+      if (item && item.wilayah_id) {
+        if (!itemsByWilayah.has(item.wilayah_id)) {
+          itemsByWilayah.set(item.wilayah_id, []);
+        }
+        itemsByWilayah.get(item.wilayah_id)!.push({
+          ...borrowedItem,
+          wilayah_id: item.wilayah_id
+        });
+      }
+    }
+
+    // Create wilayah approval records
+    const approvalPromises = [];
+    for (const [wilayahId, items] of itemsByWilayah.entries()) {
+      approvalPromises.push(
+        adminDb.collection("wilayah_approvals").add({
+          bookingId,
+          wilayah_id: wilayahId,
+          items,
+          status: "pending",
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        })
+      );
+    }
+
+    await Promise.all(approvalPromises);
+  } catch (error) {
+    console.error("Error handling package booking wilayah approval:", error);
+  }
+}
+
+/**
  * Update the status of a booking (approve/reject).
  * Requires admin privileges.
- */export async function updateBookingStatus(id: string, status: "confirmed" | "rejected"): Promise<ActionResult> {
+ */
+export async function updateBookingStatus(id: string, status: "confirmed" | "rejected"): Promise<ActionResult> {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
@@ -213,15 +427,82 @@ async function autoRejectOverlappingPending(placeId: string, date: string, start
         if (bookingDoc.exists) {
             const b = bookingDoc.data() as MeetingBooking;
             if (b.placeId && (b.type === 'room' || b.type === 'both')) {
-                await autoRejectOverlappingPending(b.placeId, b.date, b.startTime, b.endTime, id);
+                // Handle multiDatesDetails if present
+                const datesToCheck = b.multiDatesDetails || [{ date: b.date, startTime: b.startTime, endTime: b.endTime }];
+                for (const dateDetail of datesToCheck) {
+                    await autoRejectOverlappingPending(b.placeId, dateDetail.date, dateDetail.startTime, dateDetail.endTime, id);
+                }
             }
         }
     }
 
-    revalidatePath("/admin/meeting-rooms");    revalidatePath("/meeting-room");
+    revalidatePath("/admin/meeting-rooms");
+    revalidatePath("/meeting-room");
     return { success: true };
   } catch (error: any) {
     console.error("Error updating booking status:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update return status for inventory bookings.
+ * Requires admin privileges.
+ */
+export async function updateReturnStatus(
+  id: string,
+  returnStatus: "Masih Dipinjam" | "Sudah Dikembalikan" | "Dikembalikan dengan Kekurangan",
+  returnNotes?: string
+): Promise<ActionResult> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    const updateData: any = {
+      returnStatus,
+      updatedAt: Date.now()
+    };
+
+    if (returnNotes !== undefined) {
+      updateData.returnNotes = returnNotes;
+    }
+
+    await adminDb.collection(COLLECTION).doc(id).update(updateData);
+
+    revalidatePath("/admin/meeting-rooms");
+    revalidatePath("/meeting-room");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating return status:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update initial condition notes when confirming inventory bookings.
+ */
+export async function updateInitialConditionNotes(
+  id: string,
+  initialConditionNotes: string
+): Promise<ActionResult> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    await adminDb.collection(COLLECTION).doc(id).update({
+      initialConditionNotes,
+      updatedAt: Date.now()
+    });
+
+    revalidatePath("/admin/meeting-rooms");
+    revalidatePath("/meeting-room");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating initial condition notes:", error);
     return { success: false, error: error.message };
   }
 }
@@ -266,17 +547,73 @@ export async function updateBooking(
           .where("placeId", "==", parsed.data.placeId)
           .where("status", "==", "confirmed")
           .get();
-          
+        
+        // Handle multiDatesDetails if present, otherwise use single date
+        const datesToCheck = parsed.data.multiDatesDetails 
+          ? parsed.data.multiDatesDetails.map(d => d.date)
+          : [parsed.data.date];
+        
         const hasOverlap = overlaps.docs.some(doc => {
           if (doc.id === id) return false; // Ignore current booking
           const b = doc.data() as MeetingBooking;
-          if (b.date !== parsed.data.date) return false;
-          return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+          
+          // Check if any of our dates overlap with this booking
+          return datesToCheck.some(checkDate => {
+            if (b.date !== checkDate) return false;
+            return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+          });
         });
 
         if (hasOverlap) {
           return { success: false, error: "Jadwal sudah disetujui untuk peminjaman lain (waktu sudah terpakai)." };
         }
+
+        // Check Mass Schedule conflict for each date with its specific time
+        for (const dateDetail of parsed.data.multiDatesDetails || []) {
+          const hasMassConflict = await checkMassScheduleConflict(
+            parsed.data.placeId!,
+            dateDetail.date,
+            dateDetail.startTime,
+            dateDetail.endTime
+          );
+
+          if (hasMassConflict) {
+            return { success: false, error: `Waktu bertabrakan dengan Jadwal Misa pada tanggal ${dateDetail.date}.` };
+          }
+        }
+    }
+
+    // Check inventory availability if items are updated
+    if ((parsed.data.type === 'inventory' || parsed.data.type === 'both') && parsed.data.borrowedItems && parsed.data.borrowedItems.length > 0) {
+      const { checkInventoryAvailability, checkInventoryTimeOverlap } = await import("./inventory");
+
+      for (const item of parsed.data.borrowedItems) {
+        const dateTake = item.dateTake || parsed.data.date;
+        const dateReturn = item.dateReturn || parsed.data.date;
+
+        const availabilityResult = await checkInventoryAvailability(
+          dateTake,
+          dateReturn,
+          [{ itemId: item.itemId, quantity: item.quantity }],
+          id
+        );
+
+        if (!availabilityResult.success) {
+          return { success: false, error: availabilityResult.error };
+        }
+
+        const timeOverlapResult = await checkInventoryTimeOverlap(
+          dateTake,
+          item.timeTake || "09:00",
+          item.timeReturn || "17:00",
+          [{ itemId: item.itemId, quantity: item.quantity }],
+          id
+        );
+
+        if (!timeOverlapResult.success) {
+          return { success: false, error: timeOverlapResult.error };
+        }
+      }
     }
 
     const { isAdminDirectCreate, submissionSource, ...bookingDataToSave } = parsed.data as any;

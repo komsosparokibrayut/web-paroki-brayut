@@ -17,15 +17,17 @@ export function InventoryTab({
   isRefreshing,
   onRefresh,
   openConfirm,
+  borrowingStats = {},
 }: {
   inventory: InventoryItem[];
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
   isRefreshing: boolean;
   onRefresh: () => void;
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
+  borrowingStats?: Record<string, { totalHours: number; totalMinutes: number; bookingCount: number }>;
 }) {
   const [isAddInventoryOpen, setIsAddInventoryOpen] = useState(false);
-  const [newInventoryItem, setNewInventoryItem] = useState<{ id?: string, name: string, totalQuantity: number, description: string, isActive: boolean }>({ name: "", totalQuantity: 1, description: "", isActive: true });
+  const [newInventoryItem, setNewInventoryItem] = useState<{ id?: string, name: string, totalQuantity: number, description: string, isActive: boolean, wilayah_id?: string }>({ name: "", totalQuantity: 1, description: "", isActive: true, wilayah_id: "" });
   
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryPage, setInventoryPage] = useState(1);
@@ -110,6 +112,10 @@ export function InventoryTab({
                     <Label htmlFor="inv-desc">Deskripsi (Opsional)</Label>
                     <Textarea id="inv-desc" value={newInventoryItem.description} onChange={e => setNewInventoryItem({ ...newInventoryItem, description: e.target.value })} />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="inv-wilayah">Wilayah (Territory)</Label>
+                    <Input id="inv-wilayah" value={newInventoryItem.wilayah_id} onChange={e => setNewInventoryItem({ ...newInventoryItem, wilayah_id: e.target.value })} placeholder="Masukkan wilayah" />
+                  </div>
                   <Button type="submit" className="w-full">{newInventoryItem.id ? "Simpan Perubahan" : "Simpan Barang"}</Button>
                 </form>
               </DialogContent>
@@ -143,16 +149,24 @@ export function InventoryTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{item.name}</CardTitle>
-                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span></CardDescription>
+                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span>{item.wilayah_id ? ` • Wilayah: ${item.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{item.description || "Tidak ada deskripsi."}</p>
+                  {borrowingStats[item.id] && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs text-muted-foreground mb-1">Total Durasi Dipinjam:</p>
+                      <p className="text-sm font-semibold text-brand-dark">
+                        {borrowingStats[item.id].totalHours} jam ({borrowingStats[item.id].bookingCount} peminjaman)
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
                   <Button variant="outline" size="sm" onClick={() => {
-                    setNewInventoryItem({ id: item.id, name: item.name, totalQuantity: item.totalQuantity, description: item.description || "", isActive: item.isActive });
+                    setNewInventoryItem({ id: item.id, name: item.name, totalQuantity: item.totalQuantity, description: item.description || "", isActive: item.isActive, wilayah_id: item.wilayah_id || "" });
                     setIsAddInventoryOpen(true);
                   }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
                     <Pencil className="w-4 h-4" />

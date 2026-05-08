@@ -25,7 +25,7 @@ export function PlacesTab({
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
 }) {
   const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
-  const [newPlace, setNewPlace] = useState<{ id?: string, name: string, capacity: number, description: string, isActive: boolean }>({ name: "", capacity: 10, description: "", isActive: true });
+  const [newPlace, setNewPlace] = useState<{ id?: string, name: string, capacity: number, description: string, isActive: boolean, wilayah_id?: string }>({ name: "", capacity: 10, description: "", isActive: true, wilayah_id: "" });
   
   const [placeSearch, setPlaceSearch] = useState("");
   const [placePage, setPlacePage] = useState(1);
@@ -110,6 +110,10 @@ export function PlacesTab({
                     <Label htmlFor="description">Deskripsi (Opsional)</Label>
                     <Textarea id="description" value={newPlace.description} onChange={e => setNewPlace({ ...newPlace, description: e.target.value })} />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="wilayah_id">Wilayah (Territory)</Label>
+                    <Input id="wilayah_id" value={newPlace.wilayah_id} onChange={e => setNewPlace({ ...newPlace, wilayah_id: e.target.value })} placeholder="Masukkan wilayah" />
+                  </div>
                   <Button type="submit" className="w-full">{newPlace.id ? "Simpan Perubahan" : "Simpan Ruangan"}</Button>
                 </form>
               </DialogContent>
@@ -144,7 +148,7 @@ export function PlacesTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{place.name}</CardTitle>
-                      <CardDescription>Kapasitas: {place.capacity} orang</CardDescription>
+                      <CardDescription>Kapasitas: {place.capacity} orang{place.wilayah_id ? ` • Wilayah: ${place.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -153,7 +157,7 @@ export function PlacesTab({
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
                   <Button variant="outline" size="sm" onClick={() => {
-                    setNewPlace({ id: place.id, name: place.name, capacity: place.capacity, description: place.description || "", isActive: place.isActive });
+                    setNewPlace({ id: place.id, name: place.name, capacity: place.capacity, description: place.description || "", isActive: place.isActive, wilayah_id: place.wilayah_id || "" });
                     setIsAddPlaceOpen(true);
                   }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
                     <Pencil className="w-4 h-4" />

@@ -59,7 +59,7 @@ const Counter = ({ from, to, duration = 2, className, formatter }: CounterProps)
     return <span ref={nodeRef} className={className}>{formatter ? formatter(from) : from}</span>;
 }
 
-export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }) {
+export default function ImpactDonation({ qrCodeValue, donationTotal, donationTarget }: { qrCodeValue?: string; donationTotal?: number; donationTarget?: number }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const textRef = useRef<HTMLParagraphElement>(null);
     const { scrollYProgress } = useScroll({
@@ -80,8 +80,8 @@ export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
     };
 
-    const targetAmount = 9448100000;
-    const currentAmount = 2613402473;
+    const targetAmount = donationTarget || 9448100000;
+    const currentAmount = donationTotal || 2613402473;
     const progressPercentage = (currentAmount / targetAmount) * 100;
 
     return (
@@ -131,7 +131,7 @@ export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }
                             </motion.p>
 
                             {/* Progress Bar in Slide 1 */}
-                            {/* <motion.div
+                            <motion.div
                                 className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 shadow-lg mt-8"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
@@ -162,7 +162,7 @@ export default function ImpactDonation({ qrCodeValue }: { qrCodeValue?: string }
                                         {progressPercentage.toFixed(1)}%
                                     </span>
                                 </div>
-                            </motion.div> */}
+                            </motion.div>
                         </div>
                     </div>
                 </div>

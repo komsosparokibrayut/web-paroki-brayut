@@ -1,7 +1,8 @@
 import { ChurchStatistics, UMKM } from '@/types/data';
 import { ScheduleEvent } from '@/features/schedule/types';
 import { getFile } from '@/services/github/content';
-import { getScheduleEvents as getScheduleFromService } from '@/services/github/schedule';
+import { getScheduleEvents as getScheduleFromService, getJadwalMisa } from '@/services/github/schedule';
+import { JadwalMisaData } from '@/features/schedule/types';
 
 export async function getChurchStatistics(): Promise<ChurchStatistics | null> {
   try {
@@ -21,5 +22,13 @@ export async function getChurchStatistics(): Promise<ChurchStatistics | null> {
 export async function getScheduleEvents(): Promise<ScheduleEvent[]> {
   // Delegate to service layer - ScheduleEvent is now an alias for JadwalEvent
   return getScheduleFromService();
+}
+
+/**
+ * Fetches the Mass Schedule data (Jadwal Misa) including special masses.
+ * @returns Promise resolving to JadwalMisaData object, or null if not found.
+ */
+export async function getJadwalMisaData(): Promise<JadwalMisaData | null> {
+  return getJadwalMisa();
 }
 

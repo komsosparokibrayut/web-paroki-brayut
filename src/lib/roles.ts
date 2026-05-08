@@ -1,7 +1,8 @@
-export type UserRole = "super_admin" | "news_admin" | "news_reporter" | "data_admin";
+export type UserRole = "super_admin" | "admin_wilayah" | "news_admin" | "news_reporter" | "data_admin";
 
 export const ROLES: Record<string, UserRole> = {
   SUPER_ADMIN: "super_admin",
+  ADMIN_WILAYAH: "admin_wilayah",
   NEWS_ADMIN: "news_admin",
   NEWS_REPORTER: "news_reporter",
   DATA_ADMIN: "data_admin",
@@ -9,6 +10,7 @@ export const ROLES: Record<string, UserRole> = {
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
+  admin_wilayah: "Admin Wilayah",
   news_admin: "News Admin",
   news_reporter: "News Reporter",
   data_admin: "Data Admin",
@@ -25,6 +27,7 @@ export type Permission =
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   super_admin: ["manage_everything", "manage_news", "manage_news_categories", "create_news_draft", "manage_data", "manage_admins"],
+  admin_wilayah: ["manage_data"],
   news_admin: ["manage_news", "manage_news_categories", "create_news_draft"],
   news_reporter: ["create_news_draft"],
   data_admin: ["manage_data", "manage_news_categories"],

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getAllPosts } from "@/features/news/actions/posts";
-import { getChurchStatistics, getScheduleEvents } from "@/lib/data";
+import { getChurchStatistics, getScheduleEvents, getJadwalMisaData } from "@/lib/data";
 import ImmersiveHero from "@/components/home/ImmersiveHero";
 import IdentitySection from "@/components/home/IdentitySection";
 import WorshipInvitation from "@/components/home/WorshipInvitation";
@@ -21,27 +21,33 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 60; // Revalidate every minute for near real-time updates
 
 export default async function HomePage() {
-  const [allPosts, churchStats, upcomingEvents] = await Promise.all([
+  const [allPosts, churchStats, upcomingEvents, jadwalMisaData] = await Promise.all([
     getAllPosts().catch(err => {
       console.error("Failed to fetch posts:", err);
       return [];
     }),
     getChurchStatistics().catch(err => {
       console.error("Failed to fetch stats:", err);
-      return null; // Handle null gracefully in component
+      return null;
     }),
     getScheduleEvents().catch(err => {
       console.error("Failed to fetch events:", err);
       return [];
+    }),
+    getJadwalMisaData().catch(err => {
+      console.error("Failed to fetch jadwal misa:", err);
+      return null;
     })
   ]);
 
   const publishedPosts = allPosts.filter((post) => {
     return post.published && new Date(post.publishedAt) <= new Date();
   });
+
+  const specialMasses = jadwalMisaData?.specialMasses || [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -79,7 +85,7 @@ export default async function HomePage() {
 
       {/* 3. The Invitation: Worship & Schedule */}
       <section id="worship" className="min-h-screen w-full">
-        <WorshipInvitation upcomingEvents={upcomingEvents} />
+        <WorshipInvitation upcomingEvents={upcomingEvents} specialMasses={specialMasses} />
       </section>
 
       {/* 4. The Life: Community Stories (News) */}

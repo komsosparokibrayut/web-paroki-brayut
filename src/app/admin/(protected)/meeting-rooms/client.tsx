@@ -20,11 +20,13 @@ export default function MeetingRoomsClient({
   initialPlaces,
   initialInventory = [],
   isSuperAdmin,
+  borrowingStats = {},
 }: {
   initialBookings: MeetingBooking[];
   initialPlaces: MeetingPlace[];
   initialInventory?: InventoryItem[];
   isSuperAdmin?: boolean;
+  borrowingStats?: Record<string, { totalHours: number; totalMinutes: number; bookingCount: number }>;
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [places, setPlaces] = useState(initialPlaces);
@@ -129,12 +131,13 @@ export default function MeetingRoomsClient({
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-4">
-          <InventoryTab 
-            inventory={inventory} 
-            setInventory={setInventory} 
-            isRefreshing={isRefreshingInventory} 
-            onRefresh={handleRefreshInventory} 
-            openConfirm={openConfirm} 
+          <InventoryTab
+            inventory={inventory}
+            setInventory={setInventory}
+            isRefreshing={isRefreshingInventory}
+            onRefresh={handleRefreshInventory}
+            openConfirm={openConfirm}
+            borrowingStats={borrowingStats}
           />
         </TabsContent>
 

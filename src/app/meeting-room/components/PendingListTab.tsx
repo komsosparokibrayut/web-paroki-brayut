@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Clock, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CalendarDays, Package } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, parseISO } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 const PENDING_PAGE_SIZE = 9;
 
@@ -20,30 +23,56 @@ export function PendingListTab({
 }) {
     const [pendingSearch, setPendingSearch] = useState("");
     const [pendingPage, setPendingPage] = useState(1);
+    const [typeFilter, setTypeFilter] = useState<string>("all");
 
     const allPendingBookings = bookings
         .filter(b => b.status === 'pending')
+        .filter(b => {
+            // Filter by booking type
+            if (typeFilter !== "all") {
+                if (typeFilter === "room") {
+                    // Show room and both types
+                    if (b.type === 'inventory') return false;
+                } else if (typeFilter === "inventory") {
+                    // Show inventory and both types
+                    if (b.type === 'room') return false;
+                }
+            }
+            return true;
+        })
         .filter(b => {
             const q = pendingSearch.toLowerCase();
             if (!q) return true;
             const placeName = places.find(p => p.id === b.placeId)?.name || "";
             return b.userName.toLowerCase().includes(q) || b.purpose.toLowerCase().includes(q) || placeName.toLowerCase().includes(q);
         })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const pendingPageCount = Math.max(1, Math.ceil(allPendingBookings.length / PENDING_PAGE_SIZE));
     const pagedPendingBookings = allPendingBookings.slice((pendingPage - 1) * PENDING_PAGE_SIZE, pendingPage * PENDING_PAGE_SIZE);
 
     return (
         <div className="space-y-4">
-            <div className="relative mb-4">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Cari nama peminjam, keperluan, atau tempat..."
-                    value={pendingSearch}
-                    onChange={e => { setPendingSearch(e.target.value); setPendingPage(1); }}
-                    className="pl-10 bg-white"
-                />
+            <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Cari nama peminjam, keperluan, atau tempat..."
+                        value={pendingSearch}
+                        onChange={e => { setPendingSearch(e.target.value); setPendingPage(1); }}
+                        className="pl-10 bg-white"
+                    />
+                </div>
+                <Select value={typeFilter} onValueChange={(val) => { setTypeFilter(val); setPendingPage(1); }} modal={false}>
+                    <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                        <SelectValue placeholder="Semua Jenis" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                        <SelectItem className="text-slate-600" value="all">Semua Jenis</SelectItem>
+                        <SelectItem className="text-slate-600" value="room">Ruangan</SelectItem>
+                        <SelectItem className="text-slate-600" value="inventory">Inventaris</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
             {isRefreshing ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -73,14 +102,43 @@ export function PendingListTab({
                             const place = places.find(p => p.id === booking.placeId);
                             return (
                                 <Card key={booking.id} className="overflow-hidden border-t-4 border-t-amber-500 relative">
-                                    {booking.isRescheduled && (
-                                        <Badge variant="secondary" className="absolute top-2 right-2 border-amber-500 text-amber-500 bg-amber-50">Dipindah Jadwal</Badge>
-                                    )}
+                                    <div className="absolute top-2 right-2 flex gap-1 flex-wrap justify-end max-w-[50%]">
+                                        {booking.type === 'inventory' && (
+                                            <Badge variant="outline" className="border-violet-500 text-violet-600 bg-violet-50 shrink-0">
+                                                <Package className="w-3 h-3 mr-1" />
+                                                Barang
+                                            </Badge>
+                                        )}
+                                        {booking.type === 'both' && (
+                                            <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50 shrink-0">
+                                                <CalendarDays className="w-3 h-3 mr-1" />
+                                                Ruangan+Barang
+                                            </Badge>
+                                        )}
+                                        {booking.isRescheduled && (
+                                            <Badge variant="secondary" className="border-amber-500 text-amber-500 bg-amber-50 shrink-0">Dipindah Jadwal</Badge>
+                                        )}
+                                        {booking.multiDates && booking.multiDates.length > 1 && (
+                                            <Badge variant="outline" className="border-blue-500 text-blue-500 bg-blue-50 shrink-0">
+                                                <CalendarDays className="w-3 h-3 mr-1" />
+                                                Multi-Hari
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <CardHeader className="pb-3 bg-white">
                                         <CardTitle className="text-lg pr-24">{booking.type === 'inventory' ? 'Peminjaman Barang' : place?.name || "Ruangan Tidak Diketahui"}</CardTitle>
                                         <CardDescription className="flex items-center text-sm font-medium pt-1">
                                             <CalendarIcon className="w-4 h-4 mr-2" />
-                                            {new Date(booking.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                            {booking.multiDates && booking.multiDates.length > 1 ? (
+                                                <span>
+                                                    {booking.multiDates.length} hari: {booking.multiDates.slice(0, 2).map(d => 
+                                                        format(parseISO(d), 'd MMM', { locale: idLocale })
+                                                    ).join(', ')}
+                                                    {booking.multiDates.length > 2 && '...'}
+                                                </span>
+                                            ) : (
+                                                new Date(booking.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                                            )}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-3 pt-3 bg-slate-50/50">

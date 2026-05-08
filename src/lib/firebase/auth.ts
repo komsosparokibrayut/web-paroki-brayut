@@ -14,6 +14,7 @@ export interface SessionUser {
   name: string;
   picture: string;
   role: UserRole;
+  wilayah_id?: string;
 }
 
 /**
