@@ -48,6 +48,48 @@ export function MultiDateWithTimePicker({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const isDateToday = (d: Date) => d.getTime() === today.getTime();
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  const getStartTimeOptions = (dateStr: string) => {
+    const isTodaySelected = isDateToday(parse(dateStr, "yyyy-MM-dd", new Date()) || new Date(0));
+    return Array.from({ length: 17 }).map((_, i) => {
+      const hour = i + 6;
+      if (disablePast && isTodaySelected && hour < currentHour) return null;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+    }).filter(Boolean);
+  };
+
+  const getEndTimeOptions = (dateStr: string, startTime: string) => {
+    const startHour = parseInt(startTime.split(':')[0]);
+    const isTodaySelected = isDateToday(parse(dateStr, "yyyy-MM-dd", new Date()) || new Date(0));
+    return Array.from({ length: 17 }).map((_, i) => {
+      const hour = i + 7;
+      if (hour <= startHour) return null;
+      if (disablePast && isTodaySelected && hour < currentHour) return null;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+    }).filter(Boolean);
+  };
+
+  const getAddDateStartOptions = () => {
+    return Array.from({ length: 17 }).map((_, i) => {
+      const hour = i + 6;
+      if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+    }).filter(Boolean);
+  };
+
+  const getAddDateEndOptions = () => {
+    const startHour = parseInt(startTime.split(':')[0]);
+    return Array.from({ length: 17 }).map((_, i) => {
+      const hour = i + 7;
+      if (hour <= startHour) return null;
+      if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+    }).filter(Boolean);
+  };
+
   const handleAddDate = () => {
     if (!selectedDate) return;
     
@@ -103,36 +145,30 @@ export function MultiDateWithTimePicker({
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-xs font-medium">Waktu Mulai</label>
-                      <Select value={startTime} onValueChange={setStartTime}>
-                        <SelectTrigger className="bg-white h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          {Array.from({ length: 17 }).map((_, i) => {
-                            const hour = i + 6;
-                            const time = `${hour.toString().padStart(2, '0')}:00`;
-                            return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                          })}
-                        </SelectContent>
-                      </Select>
+<label className="text-xs font-medium">Waktu Mulai</label>
+                                              <Select value={startTime} onValueChange={setStartTime}>
+                                                <SelectTrigger className="bg-white h-8">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white">
+                                                  {getAddDateStartOptions().map((opt) => (
+                                                    <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium">Waktu Selesai</label>
-                      <Select value={endTime} onValueChange={setEndTime}>
-                        <SelectTrigger className="bg-white h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          {Array.from({ length: 17 }).map((_, i) => {
-                            const hour = i + 7;
-                            const startHour = parseInt(startTime.split(':')[0]);
-                            if (hour <= startHour) return null;
-                            const time = `${hour.toString().padStart(2, '0')}:00`;
-                            return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                          })}
-                        </SelectContent>
-                      </Select>
+<label className="text-xs font-medium">Waktu Selesai</label>
+                                              <Select value={endTime} onValueChange={setEndTime}>
+                                                <SelectTrigger className="bg-white h-8">
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white">
+                                                  {getAddDateEndOptions().map((opt) => (
+                                                    <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
                     </div>
                   </div>
                   <Button type="button" onClick={handleAddDate} size="sm" className="w-full">
@@ -166,11 +202,9 @@ export function MultiDateWithTimePicker({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      {Array.from({ length: 17 }).map((_, i) => {
-                        const hour = i + 6;
-                        const time = `${hour.toString().padStart(2, '0')}:00`;
-                        return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                      })}
+                      {getStartTimeOptions(item.date).map((opt) => (
+                        <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <span className="text-xs text-muted-foreground">-</span>
@@ -182,13 +216,9 @@ export function MultiDateWithTimePicker({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      {Array.from({ length: 17 }).map((_, i) => {
-                        const hour = i + 7;
-                        const startHour = parseInt(item.startTime.split(':')[0]);
-                        if (hour <= startHour) return null;
-                        const time = `${hour.toString().padStart(2, '0')}:00`;
-                        return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                      })}
+                      {getEndTimeOptions(item.date, item.startTime).map((opt) => (
+                        <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

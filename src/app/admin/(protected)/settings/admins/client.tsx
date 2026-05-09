@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { inviteAdmin, revokeInvitation, updateUserRole, removeAdmin, resetAdminPassword } from "@/features/admin/actions/users";
+import { inviteAdmin, revokeInvitation, removeAdmin, resetAdminPassword, updateAdminProfile } from "@/features/admin/actions/users";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, KeyRound, Clock } from "lucide-react";
+import { Loader2, Mail, Trash2, UserPlus, Users, Pencil, Check, X, KeyRound, Clock, Phone } from "lucide-react";
 import Image from "next/image";
 import {
     Select,
@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { PasswordInputWithValidation } from "@/components/ui/password-input-with-validation";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
     Dialog,
     DialogContent,
@@ -46,24 +47,38 @@ interface Props {
         imageUrl: string;
         lastSignInAt: number | null;
         role?: UserRole;
+        phone?: string;
+        wilayah_id?: string;
+    }>;
+    wilayahList: Array<{
+        id: string;
+        name: string;
     }>;
 }
 
-export default function AdminsClient({ invitations, users }: Props) {
+export default function AdminsClient({ invitations, users, wilayahList }: Props) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [phone, setPhone] = useState("");
+    const [wilayahId, setWilayahId] = useState("");
     const [role, setRole] = useState<UserRole>("news_reporter");
     const [isPending, startTransition] = useTransition();
 
     const handleInvite = () => {
         if (!email) return;
+        if (wilayahId && !phone) {
+            toast.error("Nomor telepon wajib diisi jika wilayah dipilih");
+            return;
+        }
 
         startTransition(async () => {
-            const result = await inviteAdmin(email, role, password || undefined);
+            const result = await inviteAdmin(email, role, password || undefined, phone || undefined, wilayahId === "none" ? undefined : wilayahId);
             if (result.success) {
                 toast.success("Admin berhasil ditambahkan");
                 setEmail("");
                 setPassword("");
+                setPhone("");
+                setWilayahId("");
                 setRole("news_reporter");
             } else {
                 toast.error(result.error || "Gagal menambahkan admin");
@@ -125,6 +140,34 @@ export default function AdminsClient({ invitations, users }: Props) {
                                 minLength={12}
                             />
                             <p className="text-xs text-slate-400">Jika dikosongkan, admin hanya bisa login lewat Google.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="invite-phone">Nomor Telepon <span className="text-slate-400 font-normal">(opsional)</span></Label>
+                            <PhoneInput
+                                id="invite-phone"
+                                placeholder="+62 ____ ____ ____"
+                                value={phone}
+                                onChange={setPhone}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="invite-wilayah">Wilayah <span className="text-slate-400 font-normal">(opsional)</span></Label>
+                            <Select value={wilayahId} onValueChange={setWilayahId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih wilayah" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Tidak ada</SelectItem>
+                                    {wilayahList.map((w) => (
+                                        <SelectItem key={w.id} value={w.id}>
+                                            {w.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {wilayahId && (
+                                <p className="text-xs text-amber-600">Nomor telepon wajib diisi jika wilayah dipilih</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label>Role</Label>
@@ -205,7 +248,7 @@ export default function AdminsClient({ invitations, users }: Props) {
                         <CardContent className="p-0">
                             <div className="divide-y divide-slate-100">
                                 {users.map((user) => (
-                                    <UserCard key={user.id} user={user} />
+                                    <UserCard key={user.id} user={user} wilayahList={wilayahList} />
                                 ))}
                             </div>
                         </CardContent>
@@ -216,24 +259,14 @@ export default function AdminsClient({ invitations, users }: Props) {
     );
 }
 
-function UserCard({ user }: { user: Props['users'][0] }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [role, setRole] = useState<UserRole>(user.role || "news_reporter");
+function UserCard({ user, wilayahList }: { user: Props['users'][0]; wilayahList: Props['wilayahList'] }) {
     const [isPending, startTransition] = useTransition();
     const [newPassword, setNewPassword] = useState("");
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-
-    const handleSaveRole = () => {
-        startTransition(async () => {
-            const result = await updateUserRole(user.id, role);
-            if (result.success) {
-                toast.success("Role updated successfully");
-                setIsEditing(false);
-            } else {
-                toast.error(result.error || "Failed to update role");
-            }
-        });
-    };
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [role, setRole] = useState<UserRole>(user.role || "news_reporter");
+    const [phone, setPhone] = useState(user.phone || "");
+    const [wilayahId, setWilayahId] = useState(user.wilayah_id || "");
 
     const handleRemoveUser = () => {
         startTransition(async () => {
@@ -280,10 +313,122 @@ function UserCard({ user }: { user: Props['users'][0] }) {
                 <div className="flex-1 min-w-0">
                     <div className="font-medium text-slate-900 text-sm truncate">{user.name}</div>
                     <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"} className="text-xs">
+                            {ROLE_LABELS[user.role || "news_reporter"]}
+                        </Badge>
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString("id-ID") : "Never"}
+                        </span>
+                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {user.phone || "-"}
+                        </span>
+                        {user.wilayah_id && (
+                            <Badge variant="outline" className="text-xs text-blue-600 border-blue-200 bg-blue-50">
+                                {wilayahList.find(w => w.id === user.wilayah_id)?.name || user.wilayah_id}
+                            </Badge>
+                        )}
+                    </div>
                 </div>
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Edit Admin */}
+                    <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setRole(user.role || "news_reporter"); setPhone(user.phone || ""); setWilayahId(user.wilayah_id || ""); } }}>
+                        <DialogTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                title="Edit Admin"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit Admin</DialogTitle>
+                                <DialogDescription>
+                                    Ubah role, wilayah, atau nomor telepon untuk <strong>{user.name}</strong> ({user.email}).
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edit-role-${user.id}`}>Role</Label>
+                                    <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                                        <SelectTrigger id={`edit-role-${user.id}`}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                                <SelectItem key={value} value={value}>
+                                                    {label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edit-wilayah-${user.id}`}>Wilayah</Label>
+                                    <Select value={wilayahId} onValueChange={setWilayahId}>
+                                        <SelectTrigger id={`edit-wilayah-${user.id}`}>
+                                            <SelectValue placeholder="Pilih wilayah" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Tidak ada</SelectItem>
+                                            {wilayahList.map((w) => (
+                                                <SelectItem key={w.id} value={w.id}>
+                                                    {w.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`edit-phone-${user.id}`}>Nomor Telepon</Label>
+                                    <PhoneInput
+                                        id={`edit-phone-${user.id}`}
+                                        placeholder="+62 ____ ____ ____"
+                                        value={phone}
+                                        onChange={setPhone}
+                                    />
+                                    {wilayahId && (
+                                        <p className="text-xs text-amber-600">Nomor telepon wajib diisi jika wilayah dipilih</p>
+                                    )}
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline">Batal</Button>
+                                </DialogClose>
+                                <Button
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => {
+                                        if (wilayahId && !phone) {
+                                            toast.error("Nomor telepon wajib diisi jika wilayah dipilih");
+                                            return;
+                                        }
+                                        startTransition(async () => {
+                                            const result = await updateAdminProfile(user.id, { role, phone, wilayah_id: wilayahId === "none" ? undefined : wilayahId });
+                                            if (result.success) {
+                                                toast.success("Admin berhasil diperbarui");
+                                                setEditDialogOpen(false);
+                                            } else {
+                                                toast.error(result.error || "Gagal memperbarui admin");
+                                            }
+                                        });
+                                    }}
+                                    disabled={isPending}
+                                >
+                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                                    Simpan
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
                     {/* Reset Password */}
                     <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setNewPassword(""); }}>
                         <DialogTrigger asChild>
@@ -365,45 +510,6 @@ function UserCard({ user }: { user: Props['users'][0] }) {
                         </DialogContent>
                     </Dialog>
                 </div>
-            </div>
-
-            {/* Bottom row: Role badge + last active + edit */}
-            <div className="mt-3 ml-12 flex items-center gap-2 flex-wrap">
-                {isEditing ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
-                            <SelectTrigger className="h-8 w-[160px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                                    <SelectItem key={value} value={value}>
-                                        {label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleSaveRole} disabled={isPending}>
-                            <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400" onClick={() => setIsEditing(false)} disabled={isPending}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"} className="text-xs">
-                            {ROLE_LABELS[user.role || "news_reporter"]}
-                        </Badge>
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-blue-600" onClick={() => setIsEditing(true)}>
-                            <Pencil className="h-3 w-3" />
-                        </Button>
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString("id-ID") : "Never"}
-                        </span>
-                    </div>
-                )}
             </div>
         </div>
     );

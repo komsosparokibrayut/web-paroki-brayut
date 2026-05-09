@@ -20,11 +20,13 @@ export default function MeetingRoomClient({
     initialBookings,
     places,
     inventoryItems,
+    wilayahs = [],
 }: {
     isAuthenticated: boolean;
     initialBookings: MeetingBooking[];
     places: MeetingPlace[];
     inventoryItems: InventoryItem[];
+    wilayahs?: { id: string; name: string }[];
 }) {
     const [isAuth, setIsAuth] = useState(isAuthenticated);
     const [bookings, setBookings] = useState(initialBookings);
@@ -91,6 +93,7 @@ export default function MeetingRoomClient({
                             places={places}
                             inventoryItems={inventoryItems}
                             bookings={bookings}
+                            wilayahs={wilayahs}
                             onSuccess={handleRefresh}
                         />
                     </div>

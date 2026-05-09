@@ -118,12 +118,12 @@ export function InventoryTab({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="inv-wilayah">Wilayah (Territory)</Label>
-                    <Select value={newInventoryItem.wilayah_id || ""} onValueChange={(val) => setNewInventoryItem({ ...newInventoryItem, wilayah_id: val })}>
+                    <Select value={newInventoryItem.wilayah_id || ""} onValueChange={(val) => setNewInventoryItem({ ...newInventoryItem, wilayah_id: val === "none" ? "" : val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih Wilayah" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tidak Ada</SelectItem>
+                        <SelectItem value="none">Tidak Ada</SelectItem>
                         {wilayahs.map(w => (
                           <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                         ))}
@@ -163,20 +163,22 @@ export function InventoryTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{item.name}</CardTitle>
-                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span>{item.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === item.wilayah_id)?.name || item.wilayah_id}` : ""}</CardDescription>
+                      <CardDescription>Stok: <span className="font-bold text-foreground">{item.totalQuantity}</span>{item.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === item.wilayah_id)?.name.replace(/^Wilayah\s+/i, '') || item.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{item.description || "Tidak ada deskripsi."}</p>
-                  {borrowingStats[item.id] && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-xs text-muted-foreground mb-1">Total Durasi Dipinjam:</p>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-muted-foreground mb-1">Total Durasi Peminjaman:</p>
+                    {borrowingStats[item.id] && borrowingStats[item.id].totalHours > 0 ? (
                       <p className="text-sm font-semibold text-brand-dark">
                         {borrowingStats[item.id].totalHours} jam ({borrowingStats[item.id].bookingCount} peminjaman)
                       </p>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-sm font-semibold text-muted-foreground">Belum Ada Data Peminjaman</p>
+                    )}
+                  </div>
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
                   <Button variant="outline" size="sm" onClick={() => {

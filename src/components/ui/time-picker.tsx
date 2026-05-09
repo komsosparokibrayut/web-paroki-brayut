@@ -18,24 +18,45 @@ interface TimePickerProps {
   id?: string;
   required?: boolean;
   placeholder?: string;
+  disablePast?: boolean;
+  date?: string; // Format "yyyy-MM-DD" - if today, past times will be disabled
 }
 
-export function TimePicker({ value, onChange, placeholder = "Pilih Waktu", required }: TimePickerProps) {
+export function TimePicker({ value, onChange, placeholder = "Pilih Waktu", required, disablePast = false, date: dateString }: TimePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Parse value "HH:mm" to a Date object (dummy date)
-  const date = React.useMemo(() => {
+  const timeDate = React.useMemo(() => {
     if (!value) return null;
     const parsed = parse(value, "HH:mm", new Date());
     return isValid(parsed) ? parsed : null;
   }, [value]);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const minutes = Array.from({ length: 12 }, (_, i) => i * 5); // 5-minute increments
+  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isToday = dateString ? (() => {
+    const d = parse(dateString, "yyyy-MM-dd", new Date());
+    return isValid(d) && d.getTime() === today.getTime();
+  })() : false;
+
+  const isPastHour = (hour: number) => disablePast && isToday && hour < currentHour;
+  const isPastMinute = (minute: number, hour: number) => {
+    if (disablePast && isToday && hour === currentHour) return minute <= currentMinute;
+    return false;
+  }; // 5-minute increments
 
   const handleTimeChange = (type: "hour" | "minute", val: number) => {
-    const newDate = date ? new Date(date) : new Date();
-    if (!date) {
+    const newDate = timeDate ? new Date() : new Date();
+    if (timeDate) {
+        newDate.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    } else {
         newDate.setHours(0, 0, 0, 0);
     }
     
@@ -70,9 +91,10 @@ export function TimePicker({ value, onChange, placeholder = "Pilih Waktu", requi
                 <Button
                   key={hour}
                   size="icon"
-                  variant={date && date.getHours() === hour ? "default" : "ghost"}
+                  variant={timeDate && timeDate.getHours() === hour ? "default" : "ghost"}
                   className="sm:w-full shrink-0 aspect-square"
                   onClick={() => handleTimeChange("hour", hour)}
+                  disabled={isPastHour(hour)}
                 >
                   {hour.toString().padStart(2, '0')}
                 </Button>
@@ -86,9 +108,10 @@ export function TimePicker({ value, onChange, placeholder = "Pilih Waktu", requi
                 <Button
                   key={minute}
                   size="icon"
-                  variant={date && date.getMinutes() === minute ? "default" : "ghost"}
+                  variant={timeDate && timeDate.getMinutes() === minute ? "default" : "ghost"}
                   className="sm:w-full shrink-0 aspect-square"
                   onClick={() => handleTimeChange("minute", minute)}
+                  disabled={isPastMinute(minute, timeDate?.getHours() ?? currentHour)}
                 >
                   {minute.toString().padStart(2, '0')}
                 </Button>

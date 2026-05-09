@@ -116,12 +116,12 @@ export function PlacesTab({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="wilayah_id">Wilayah (Territory)</Label>
-                    <Select value={newPlace.wilayah_id || ""} onValueChange={(val) => setNewPlace({ ...newPlace, wilayah_id: val })}>
+                    <Select value={newPlace.wilayah_id || ""} onValueChange={(val) => setNewPlace({ ...newPlace, wilayah_id: val === "none" ? "" : val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih Wilayah" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tidak Ada</SelectItem>
+                        <SelectItem value="none">Tidak Ada</SelectItem>
                         {wilayahs.map(w => (
                           <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
                         ))}
@@ -162,7 +162,7 @@ export function PlacesTab({
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle>{place.name}</CardTitle>
-                      <CardDescription>Kapasitas: {place.capacity} orang{place.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === place.wilayah_id)?.name || place.wilayah_id}` : ""}</CardDescription>
+                      <CardDescription>Kapasitas: {place.capacity} orang{place.wilayah_id ? ` • Wilayah: ${wilayahs.find(w => w.id === place.wilayah_id)?.name.replace(/^Wilayah\s+/i, '') || place.wilayah_id}` : ""}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>

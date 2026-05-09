@@ -161,6 +161,7 @@ export default function MeetingRoomsClient({
         bookingToEdit={bookingToEdit}
         places={places}
         inventory={inventory}
+        wilayahs={wilayahs}
         onSuccess={handleRefreshBookings}
         setConflictError={setConflictError}
       />

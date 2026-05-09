@@ -18,10 +18,12 @@ export async function getAdminUsers() {
             imageUrl: user.photoURL || "",
             lastSignInAt: user.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).getTime() : null,
             role: (user.customClaims?.role as UserRole) || "news_reporter",
+            phone: (user.customClaims?.phone as string) || "",
+            wilayah_id: (user.customClaims?.wilayah_id as string) || "",
         }));
 }
 
-export async function inviteAdmin(email: string, role: UserRole, password?: string) {
+export async function inviteAdmin(email: string, role: UserRole, password?: string, phone?: string, wilayah_id?: string) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
@@ -54,8 +56,11 @@ export async function inviteAdmin(email: string, role: UserRole, password?: stri
             uid = newUser.uid;
         }
 
-        // Set role via custom claims
-        await adminAuth.setCustomUserClaims(uid, { role });
+        // Set role, phone, and wilayah_id via custom claims
+        const claims: Record<string, unknown> = { role };
+        if (phone) claims.phone = phone;
+        if (wilayah_id) claims.wilayah_id = wilayah_id;
+        await adminAuth.setCustomUserClaims(uid, claims);
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
@@ -65,22 +70,29 @@ export async function inviteAdmin(email: string, role: UserRole, password?: stri
     }
 }
 
-export async function updateUserRole(targetUserId: string, newRole: UserRole) {
+export async function updateAdminProfile(targetUserId: string, data: { role?: UserRole; phone?: string; wilayah_id?: string }) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
-        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can change roles");
+        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can update admin profile");
 
         if (currentUser.uid === targetUserId) {
-            throw new Error("You cannot change your own role");
+            throw new Error("You cannot change your own profile");
         }
 
-        await adminAuth.setCustomUserClaims(targetUserId, { role: newRole });
+        const user = await adminAuth.getUser(targetUserId);
+        const currentRole = user.customClaims?.role as UserRole;
+
+        await adminAuth.setCustomUserClaims(targetUserId, {
+            role: data.role ?? currentRole,
+            ...(data.phone !== undefined ? { phone: data.phone } : {}),
+            ...(data.wilayah_id !== undefined ? { wilayah_id: data.wilayah_id } : {}),
+        });
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
     } catch (error: any) {
-        return { success: false, error: error.message || "Failed to update role" };
+        return { success: false, error: error.message || "Failed to update admin profile" };
     }
 }
 

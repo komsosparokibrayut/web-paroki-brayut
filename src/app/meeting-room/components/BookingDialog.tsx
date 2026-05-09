@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { format, parse, isValid } from "date-fns";
 import { MeetingBooking, MeetingPlace, InventoryItem, DateWithTime, BorrowedItemWithDetails } from "@/features/booking/types";
 import { submitBooking } from "@/features/booking/actions/bookings";
 import { getInventoryItemsWithAvailability } from "@/features/booking/actions/inventory";
@@ -24,6 +25,7 @@ export function BookingDialog({
     places,
     inventoryItems,
     bookings,
+    wilayahs = [],
     onSuccess
 }: {
     open: boolean;
@@ -32,10 +34,30 @@ export function BookingDialog({
     places: MeetingPlace[];
     inventoryItems: InventoryItem[];
     bookings: MeetingBooking[];
+    wilayahs?: { id: string; name: string }[];
     onSuccess: () => void;
 }) {
     const [conflictError, setConflictError] = useState<string | null>(null);
     const [bookingType, setBookingType] = useState<"room" | "inventory">(defaultBookingType);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    const isToday = (dateStr: string) => {
+        const d = parse(dateStr, "yyyy-MM-dd", new Date());
+        return isValid(d) && d.getTime() === today.getTime();
+    };
+
+    const getTimeOptions = (dateStr: string, startHour: number = 6) => {
+        const isTodayDate = isToday(dateStr);
+        return Array.from({ length: 17 }).map((_, i) => {
+            const hour = i + startHour;
+            if (isTodayDate && hour < currentHour) return null;
+            return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+        }).filter(Boolean) as { hour: number; time: string }[];
+    };
 
     const initialBookingState = {
         placeId: "",
@@ -66,7 +88,7 @@ export function BookingDialog({
             setBookingType(defaultBookingType);
             setNewBooking(initialBookingState);
         }
-    }, [open, defaultBookingType, initialBookingState]);
+    }, [open, defaultBookingType]);
 
     useEffect(() => {
         if (open) {
@@ -84,6 +106,14 @@ export function BookingDialog({
             });
         }
     }, [open, newBooking.date, newBooking.multiDatesDetails, newBooking.startTime, newBooking.endTime]);
+
+    const getRemainingStock = (itemId: string, excludeIndex: number) => {
+        const serverAvailable = availableStock[itemId] ?? inventoryItemsFull.find(i => i.id === itemId)?.totalQuantity ?? 0;
+        const usedInForm = newBooking.borrowedItems
+            .filter((item, idx) => item.itemId === itemId && idx !== excludeIndex)
+            .reduce((sum, item) => sum + item.quantity, 0);
+        return Math.max(0, serverAvailable - usedInForm);
+    };
 
     const handleBook = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -277,15 +307,16 @@ export function BookingDialog({
                                                             newItems[index] = { ...item, itemId: val, name: selectedItem?.name || '' };
                                                             setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                         }}>
-                                                            <SelectTrigger>
+                                                            <SelectTrigger className="text-foreground">
                                                                 <SelectValue placeholder="Pilih Barang" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {inventoryItems.map(inv => {
-                                                                    const available = availableStock[inv.id] ?? inv.totalQuantity;
+                                                                {inventoryItemsFull.map(inv => {
+                                                                    const remaining = getRemainingStock(inv.id, index);
+                                                                    const wilayahName = wilayahs.find(w => w.id === inv.wilayah_id)?.name;
                                                                     return (
-                                                                        <SelectItem key={inv.id} value={inv.id} disabled={available <= 0}>
-                                                                            {inv.name} (Tersisa: {available})
+                                                                        <SelectItem key={inv.id} value={inv.id} disabled={remaining <= 0} description={`Stock: ${remaining}${wilayahName ? ` | ${wilayahName}` : ''}`}>
+                                                                            {inv.name}
                                                                         </SelectItem>
                                                                     );
                                                                 })}
@@ -294,9 +325,9 @@ export function BookingDialog({
                                                     </div>
                                                     <div className="w-24 space-y-1">
                                                         <Label className="text-xs">Jumlah</Label>
-                                                        <Input className="bg-white" type="number" min="1" max={availableStock[item.itemId] || 1} value={item.quantity} onChange={(e) => {
+                                                        <Input className="bg-white" type="number" min="1" max={getRemainingStock(item.itemId, index)} value={item.quantity} onChange={(e) => {
                                                             const newItems = [...newBooking.borrowedItems];
-                                                            const max = availableStock[item.itemId] ?? 1;
+                                                            const max = getRemainingStock(item.itemId, index);
                                                             newItems[index].quantity = Math.max(1, Math.min(max, parseInt(e.target.value) || 1));
                                                             setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                         }} />
@@ -308,60 +339,54 @@ export function BookingDialog({
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                <div className="space-y-3">
                                                     <div className="space-y-1">
-                                                        <Label className="text-xs">Tgl Ambil</Label>
-                                                        <DatePicker value={item.dateTake || newBooking.dateTake} onChange={(val) => {
-                                                            const newItems = [...newBooking.borrowedItems];
-                                                            newItems[index] = { ...item, dateTake: val };
-                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                        }} disablePast />
+                                                        <Label className="text-xs">Ambil</Label>
+                                                        <div className="flex gap-2">
+                                                            <DatePicker value={item.dateTake || newBooking.dateTake} onChange={(val) => {
+                                                                const newItems = [...newBooking.borrowedItems];
+                                                                newItems[index] = { ...item, dateTake: val };
+                                                                setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                            }} disablePast />
+                                                            <Select value={item.timeTake || "08:00"} onValueChange={(val) => {
+                                                                const newItems = [...newBooking.borrowedItems];
+                                                                newItems[index] = { ...item, timeTake: val };
+                                                                setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                            }}>
+                                                                <SelectTrigger className="bg-white h-10 w-[80px]">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="bg-white">
+                                                                    {getTimeOptions(item.dateTake || newBooking.dateTake || "").map((opt) => (
+                                                                        <SelectItem key={opt.time} value={opt.time}>{opt.time}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label className="text-xs">Jam Ambil</Label>
-                                                        <Select value={item.timeTake || "08:00"} onValueChange={(val) => {
-                                                            const newItems = [...newBooking.borrowedItems];
-                                                            newItems[index] = { ...item, timeTake: val };
-                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                        }}>
-                                                            <SelectTrigger className="bg-white h-8">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="bg-white">
-                                                                {Array.from({ length: 17 }).map((_, i) => {
-                                                                    const hour = i + 6;
-                                                                    const time = `${hour.toString().padStart(2, '0')}:00`;
-                                                                    return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                                                                })}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-xs">Tgl Kembali</Label>
-                                                        <DatePicker value={item.dateReturn || newBooking.dateReturn} onChange={(val) => {
-                                                            const newItems = [...newBooking.borrowedItems];
-                                                            newItems[index] = { ...item, dateReturn: val };
-                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                        }} disablePast />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-xs">Jam Kembali</Label>
-                                                        <Select value={item.timeReturn || "09:00"} onValueChange={(val) => {
-                                                            const newItems = [...newBooking.borrowedItems];
-                                                            newItems[index] = { ...item, timeReturn: val };
-                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                        }}>
-                                                            <SelectTrigger className="bg-white h-8">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="bg-white">
-                                                                {Array.from({ length: 17 }).map((_, i) => {
-                                                                    const hour = i + 7;
-                                                                    const time = `${hour.toString().padStart(2, '0')}:00`;
-                                                                    return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                                                                })}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Label className="text-xs">Kembali</Label>
+                                                        <div className="flex gap-2">
+                                                            <DatePicker value={item.dateReturn || newBooking.dateReturn} onChange={(val) => {
+                                                                const newItems = [...newBooking.borrowedItems];
+                                                                newItems[index] = { ...item, dateReturn: val };
+                                                                setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                            }} disablePast />
+                                                            <Select value={item.timeReturn || "09:00"} onValueChange={(val) => {
+                                                                const newItems = [...newBooking.borrowedItems];
+                                                                newItems[index] = { ...item, timeReturn: val };
+                                                                setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                            }}>
+                                                                <SelectTrigger className="bg-white h-10 w-[80px]">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="bg-white">
+                                                                    {getTimeOptions(item.dateReturn || newBooking.dateReturn || "", 7).map((opt) => (
+                                                                        <SelectItem key={opt.time} value={opt.time}>{opt.time}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -391,15 +416,16 @@ export function BookingDialog({
                                                         newItems[index] = { ...item, itemId: val, name: selectedItem?.name || '' };
                                                         setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                     }}>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="text-foreground">
                                                             <SelectValue placeholder="Pilih Barang" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            {inventoryItems.map(inv => {
-                                                                const available = availableStock[inv.id] ?? inv.totalQuantity;
+                                                            {inventoryItemsFull.map(inv => {
+                                                                const remaining = getRemainingStock(inv.id, index);
+                                                                const wilayahName = wilayahs.find(w => w.id === inv.wilayah_id)?.name;
                                                                 return (
-                                                                    <SelectItem key={inv.id} value={inv.id} disabled={available <= 0}>
-                                                                        {inv.name} (Tersisa: {available})
+                                                                    <SelectItem key={inv.id} value={inv.id} disabled={remaining <= 0} description={`Stock: ${remaining}${wilayahName ? ` | ${wilayahName}` : ''}`}>
+                                                                        {inv.name}
                                                                     </SelectItem>
                                                                 );
                                                             })}
@@ -408,9 +434,9 @@ export function BookingDialog({
                                                 </div>
                                                 <div className="w-24 space-y-1">
                                                     <Label className="text-xs">Jumlah</Label>
-                                                    <Input type="number" min="1" max={availableStock[item.itemId] || 1} value={item.quantity} onChange={(e) => {
+                                                    <Input type="number" min="1" max={getRemainingStock(item.itemId, index)} value={item.quantity} onChange={(e) => {
                                                         const newItems = [...newBooking.borrowedItems];
-                                                        const max = availableStock[item.itemId] ?? 1;
+                                                        const max = getRemainingStock(item.itemId, index);
                                                         newItems[index].quantity = Math.max(1, Math.min(max, parseInt(e.target.value) || 1));
                                                         setNewBooking({ ...newBooking, borrowedItems: newItems });
                                                     }} />
@@ -422,60 +448,54 @@ export function BookingDialog({
                                                     X
                                                 </Button>
                                             </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                            <div className="space-y-3">
                                                 <div className="space-y-1">
-                                                    <Label className="text-xs">Tgl Ambil</Label>
-                                                    <DatePicker value={item.dateTake || newBooking.dateTake} onChange={(val) => {
-                                                        const newItems = [...newBooking.borrowedItems];
-                                                        newItems[index] = { ...item, dateTake: val };
-                                                        setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                    }} disablePast />
+                                                    <Label className="text-xs">Ambil</Label>
+                                                    <div className="flex gap-2">
+                                                        <DatePicker value={item.dateTake || newBooking.dateTake} onChange={(val) => {
+                                                            const newItems = [...newBooking.borrowedItems];
+                                                            newItems[index] = { ...item, dateTake: val };
+                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                        }} disablePast />
+                                                        <Select value={item.timeTake || "08:00"} onValueChange={(val) => {
+                                                            const newItems = [...newBooking.borrowedItems];
+                                                            newItems[index] = { ...item, timeTake: val };
+                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                        }}>
+                                                            <SelectTrigger className="bg-white h-10 w-[80px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {getTimeOptions(item.dateTake || newBooking.dateTake || "").map((opt) => (
+                                                                    <SelectItem key={opt.time} value={opt.time}>{opt.time}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <Label className="text-xs">Jam Ambil</Label>
-                                                    <Select value={item.timeTake || "08:00"} onValueChange={(val) => {
-                                                        const newItems = [...newBooking.borrowedItems];
-                                                        newItems[index] = { ...item, timeTake: val };
-                                                        setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                    }}>
-                                                        <SelectTrigger className="bg-white h-8">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-white">
-                                                            {Array.from({ length: 17 }).map((_, i) => {
-                                                                const hour = i + 6;
-                                                                const time = `${hour.toString().padStart(2, '0')}:00`;
-                                                                return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                                                            })}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Tgl Kembali</Label>
-                                                    <DatePicker value={item.dateReturn || newBooking.dateReturn} onChange={(val) => {
-                                                        const newItems = [...newBooking.borrowedItems];
-                                                        newItems[index] = { ...item, dateReturn: val };
-                                                        setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                    }} disablePast />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Jam Kembali</Label>
-                                                    <Select value={item.timeReturn || "09:00"} onValueChange={(val) => {
-                                                        const newItems = [...newBooking.borrowedItems];
-                                                        newItems[index] = { ...item, timeReturn: val };
-                                                        setNewBooking({ ...newBooking, borrowedItems: newItems });
-                                                    }}>
-                                                        <SelectTrigger className="bg-white h-8">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-white">
-                                                            {Array.from({ length: 17 }).map((_, i) => {
-                                                                const hour = i + 7;
-                                                                const time = `${hour.toString().padStart(2, '0')}:00`;
-                                                                return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                                                            })}
-                                                        </SelectContent>
-                                                    </Select>
+                                                    <Label className="text-xs">Kembali</Label>
+                                                    <div className="flex gap-2">
+                                                        <DatePicker value={item.dateReturn || newBooking.dateReturn} onChange={(val) => {
+                                                            const newItems = [...newBooking.borrowedItems];
+                                                            newItems[index] = { ...item, dateReturn: val };
+                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                        }} disablePast />
+                                                        <Select value={item.timeReturn || "09:00"} onValueChange={(val) => {
+                                                            const newItems = [...newBooking.borrowedItems];
+                                                            newItems[index] = { ...item, timeReturn: val };
+                                                            setNewBooking({ ...newBooking, borrowedItems: newItems });
+                                                        }}>
+                                                            <SelectTrigger className="bg-white h-10 w-[80px]">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {getTimeOptions(item.dateReturn || newBooking.dateReturn || "", 7).map((opt) => (
+                                                                    <SelectItem key={opt.time} value={opt.time}>{opt.time}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
