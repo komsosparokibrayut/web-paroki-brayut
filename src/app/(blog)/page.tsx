@@ -47,8 +47,6 @@ export default async function HomePage() {
     return post.published && new Date(post.publishedAt) <= new Date();
   });
 
-  const specialMasses = jadwalMisaData?.specialMasses || [];
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CatholicChurch",
@@ -85,7 +83,7 @@ export default async function HomePage() {
 
       {/* 3. The Invitation: Worship & Schedule */}
       <section id="worship" className="min-h-screen w-full">
-        <WorshipInvitation upcomingEvents={upcomingEvents} specialMasses={specialMasses} />
+        <WorshipInvitation upcomingEvents={upcomingEvents} jadwalMisaData={jadwalMisaData} />
       </section>
 
       {/* 4. The Life: Community Stories (News) */}
