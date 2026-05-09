@@ -14,19 +14,21 @@ import { InventoryTab } from "./components/InventoryTab";
 import { PlacesTab } from "./components/PlacesTab";
 import { BookingsTab } from "./components/BookingsTab";
 import { AdminBookingDialog } from "./components/AdminBookingDialog";
+import { canSeeSecuritySettings } from "@/lib/roles";
+import { SessionUser } from "@/lib/firebase/auth";
 
 export default function MeetingRoomsClient({
   initialBookings,
   initialPlaces,
   initialInventory = [],
-  isSuperAdmin,
+  user,
   borrowingStats = {},
   wilayahs = [],
 }: {
   initialBookings: MeetingBooking[];
   initialPlaces: MeetingPlace[];
   initialInventory?: InventoryItem[];
-  isSuperAdmin?: boolean;
+  user?: SessionUser;
   borrowingStats?: Record<string, { totalHours: number; totalMinutes: number; bookingCount: number }>;
   wilayahs?: { id: string; name: string; lingkungan?: string[] }[];
 }) {
@@ -106,7 +108,7 @@ export default function MeetingRoomsClient({
           <TabsTrigger value="bookings">Peminjaman</TabsTrigger>
           <TabsTrigger value="places">Ruang Pertemuan</TabsTrigger>
           <TabsTrigger value="inventory">Inventaris / Barang</TabsTrigger>
-          {isSuperAdmin && <TabsTrigger value="settings">Pengaturan</TabsTrigger>}
+          {canSeeSecuritySettings(user) && <TabsTrigger value="settings">Pengaturan</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="bookings" className="space-y-4">
@@ -145,7 +147,7 @@ export default function MeetingRoomsClient({
           />
         </TabsContent>
 
-        {isSuperAdmin && (
+        {canSeeSecuritySettings(user) && (
           <TabsContent value="settings" className="space-y-4">
             <AdminSettingsTab />
           </TabsContent>

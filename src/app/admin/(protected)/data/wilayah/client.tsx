@@ -333,6 +333,12 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                             <span>Koord: {wilayah.coordinator}</span>
                                             <span className="mx-1">•</span>
                                             <span>{wilayah.lingkungan.length} Lingkungan</span>
+                                            {wilayah.lastEditedBy && (
+                                                <>
+                                                    <span className="mx-1">•</span>
+                                                    <span className="text-slate-400">Diedit: {wilayah.lastEditedBy}</span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -376,6 +382,12 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                                         <p className="font-medium text-slate-800 text-sm">{lingkungan.name}</p>
                                                         {lingkungan.chief && (
                                                             <p className="text-xs text-slate-500">Ketua: {lingkungan.chief}</p>
+                                                        )}
+                                                        {lingkungan.lastEditedBy && (
+                                                            <p className="text-xs text-slate-400">
+                                                                Diedit: {lingkungan.lastEditedBy}
+                                                                {lingkungan.lastEditedAt && ` (${new Date(lingkungan.lastEditedAt).toLocaleDateString('id-ID')})`}
+                                                            </p>
                                                         )}
                                                     </div>
                                                     <div className="flex gap-1">

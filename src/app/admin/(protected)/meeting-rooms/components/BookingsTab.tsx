@@ -15,6 +15,8 @@ import { Plus, Trash2, CheckCircle, XCircle, Clock, Pencil, RefreshCw, Search, C
 import { cn } from "@/lib/utils";
 import { format, parse } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
+import { canManageBooking, canManageWilayahApproval, getBookingWilayahId } from "@/lib/roles";
 
 export function BookingsTab({
   bookings,
@@ -35,6 +37,7 @@ export function BookingsTab({
   openAddBooking: () => void;
   openEditBooking: (booking: MeetingBooking) => void;
 }) {
+  const { user } = useAdminRole();
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingTypeFilter, setBookingTypeFilter] = useState("all");
@@ -319,32 +322,36 @@ export function BookingsTab({
                   )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                  {(booking.status === "pending" || booking.status === "rejected") && (
+                  {user && (canManageBooking(user, booking) || canManageWilayahApproval(user, getBookingWilayahId(booking) || '')) && (booking.status === "pending" || booking.status === "rejected") && (
                     <Button variant="outline" size="sm" onClick={() => handleApprove(booking.id!)} className="text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700 ">
                       <CheckCircle className="w-4 h-4" />
                       Setujui
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => openEditBooking(booking)} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
-                    <Pencil className="w-4 h-4" />
-                    Ubah
-                  </Button>
-                  {(booking.status === "pending" || booking.status === "confirmed") && (
+                  {user && canManageBooking(user, booking) && (
+                    <Button variant="outline" size="sm" onClick={() => openEditBooking(booking)} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
+                      <Pencil className="w-4 h-4" />
+                      Ubah
+                    </Button>
+                  )}
+                  {user && (canManageBooking(user, booking) || canManageWilayahApproval(user, getBookingWilayahId(booking) || '')) && (booking.status === "pending" || booking.status === "confirmed") && (
                     <Button variant="outline" size="sm" onClick={() => handleReject(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
                       <XCircle className="w-4 h-4" />
                       Tolak
                     </Button>
                   )}
-                  {(booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
+                  {user && canManageBooking(user, booking) && (booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
                     <Button variant="outline" size="sm" onClick={() => openReturnModal(booking)} className="text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700">
                       <RotateCcw className="w-4 h-4" />
                       Kembalikan
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteBooking(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                    Hapus
-                  </Button>
+                  {user && canManageBooking(user, booking) && (
+                    <Button variant="outline" size="sm" onClick={() => handleDeleteBooking(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                      Hapus
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))

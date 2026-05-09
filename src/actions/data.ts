@@ -107,6 +107,8 @@ export interface Lingkungan {
   address: string;
   email?: string;
   phone?: string;
+  lastEditedBy?: string;
+  lastEditedAt?: string;
 }
 
 export interface Wilayah {
@@ -117,6 +119,8 @@ export interface Wilayah {
   email?: string;
   phone?: string;
   lingkungan: Lingkungan[];
+  lastEditedBy?: string;
+  lastEditedAt?: string;
 }
 
 export interface Pastor {
@@ -182,8 +186,23 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
+
+    const timestamp = new Date().toISOString();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+
+    const auditedData = data.map(wilayah => ({
+      ...wilayah,
+      lastEditedBy: userIdentifier,
+      lastEditedAt: timestamp,
+      lingkungan: wilayah.lingkungan.map(lingkungan => ({
+        ...lingkungan,
+        lastEditedBy: userIdentifier,
+        lastEditedAt: timestamp,
+      }))
+    }));
+
     await commitFiles(
-      [{ path: WILAYAH_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: WILAYAH_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update wilayah & lingkungan data`
     );
     revalidatePath("/profil/wilayah");

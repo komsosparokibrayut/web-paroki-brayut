@@ -2,6 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { InventoryItem } from "@/features/booking/types";
 import { saveInventoryItem, deleteInventoryItem } from "@/features/booking/actions/inventory";
+import { canManageInventoryItem } from "@/lib/roles";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -35,6 +37,7 @@ export function InventoryTab({
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryPage, setInventoryPage] = useState(1);
   const INV_PAGE_SIZE = 9;
+  const { user } = useAdminRole();
 
   const handleSaveInventory = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,17 +184,23 @@ export function InventoryTab({
                   </div>
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setNewInventoryItem({ id: item.id, name: item.name, totalQuantity: item.totalQuantity, description: item.description || "", isActive: item.isActive, wilayah_id: item.wilayah_id || "" });
-                    setIsAddInventoryOpen(true);
-                  }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
-                    <Pencil className="w-4 h-4" />
-                    Ubah
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteInventory(item.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" />
-                    Hapus
-                  </Button>
+                  {canManageInventoryItem(user, item) ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setNewInventoryItem({ id: item.id, name: item.name, totalQuantity: item.totalQuantity, description: item.description || "", isActive: item.isActive, wilayah_id: item.wilayah_id || "" });
+                        setIsAddInventoryOpen(true);
+                      }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
+                        <Pencil className="w-4 h-4" />
+                        Ubah
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteInventory(item.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                        Hapus
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Hanya bisa diedit oleh admin wilayah terkait</p>
+                  )}
                 </CardFooter>
               </Card>
             ))

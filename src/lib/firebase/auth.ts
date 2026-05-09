@@ -31,6 +31,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     const userRecord = await adminAuth.getUser(decoded.uid);
     const role = (userRecord.customClaims?.role as UserRole) || null;
+    const wilayah_id = userRecord.customClaims?.wilayah_id as string | undefined;
 
     if (!role) return null; // no role means not authorized
 
@@ -40,6 +41,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       name: decoded.name || decoded.email || "Admin",
       picture: decoded.picture || "",
       role,
+      wilayah_id,
     };
   } catch {
     return null;

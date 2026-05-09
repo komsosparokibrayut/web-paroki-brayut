@@ -2,6 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MeetingPlace } from "@/features/booking/types";
 import { saveMeetingPlace, deleteMeetingPlace } from "@/features/booking/actions/places";
+import { canManagePlace } from "@/lib/roles";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -27,6 +29,7 @@ export function PlacesTab({
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
   wilayahs?: { id: string; name: string; lingkungan?: string[] }[];
 }) {
+  const { user } = useAdminRole();
   const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
   const [newPlace, setNewPlace] = useState<{ id?: string, name: string, capacity: number, description: string, isActive: boolean, wilayah_id?: string }>({ name: "", capacity: 10, description: "", isActive: true, wilayah_id: "" });
   
@@ -170,17 +173,23 @@ export function PlacesTab({
                   <p className="text-sm text-muted-foreground">{place.description || "Tidak ada deskripsi."}</p>
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setNewPlace({ id: place.id, name: place.name, capacity: place.capacity, description: place.description || "", isActive: place.isActive, wilayah_id: place.wilayah_id || "" });
-                    setIsAddPlaceOpen(true);
-                  }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
-                    <Pencil className="w-4 h-4" />
-                    Ubah
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeletePlace(place.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" />
-                    Hapus
-                  </Button>
+                  {canManagePlace(user, place) ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setNewPlace({ id: place.id, name: place.name, capacity: place.capacity, description: place.description || "", isActive: place.isActive, wilayah_id: place.wilayah_id || "" });
+                        setIsAddPlaceOpen(true);
+                      }} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
+                        <Pencil className="w-4 h-4" />
+                        Ubah
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDeletePlace(place.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                        Hapus
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Tidak memiliki akses mengelola ruangan ini</p>
+                  )}
                 </CardFooter>
               </Card>
             ))

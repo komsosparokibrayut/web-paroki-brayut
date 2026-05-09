@@ -36,7 +36,7 @@ export default async function AdminMeetingRoomsPage() {
             initialBookings={bookings}
             initialPlaces={places}
             initialInventory={inventoryItems}
-            isSuperAdmin={isSuperAdmin}
+            user={user ?? undefined}
             borrowingStats={borrowingStatsObj}
             wilayahs={wilayahList}
         />
