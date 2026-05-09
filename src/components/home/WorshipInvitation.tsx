@@ -4,7 +4,11 @@ import { motion } from "framer-motion";
 import { Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ScheduleEvent, WeeklySchedule, ChurchUnit } from "@/features/schedule/types";
+import {
+  ScheduleEvent,
+  WeeklySchedule,
+  ChurchUnit,
+} from "@/features/schedule/types";
 import { useMemo } from "react";
 
 interface WorshipInvitationProps {
@@ -23,15 +27,30 @@ interface WorshipInvitationProps {
 }
 
 const formatTimeList = (times: string[]): string => {
-  if (times.length === 0) return '';
-  const formatted = times.map(t => t.replace(/(\d{2})\.(\d{2})/, '$1.$2'));
-  if (formatted.length === 1) return formatted[0] + ' WIB';
-  return formatted.slice(0, -1).join(', ') + ', ' + formatted[formatted.length - 1] + ' WIB';
+  if (times.length === 0) return "";
+  const formatted = times.map((t) => t.replace(/(\d{2})\.(\d{2})/, "$1.$2"));
+  if (formatted.length === 1) return formatted[0] + " WIB";
+  return (
+    formatted.slice(0, -1).join(", ") +
+    ", " +
+    formatted[formatted.length - 1] +
+    " WIB"
+  );
 };
 
 const MONTH_NAMES = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
 const getWeekOfMonth = (date: Date): number => {
@@ -44,16 +63,19 @@ export default function WorshipInvitation({
   upcomingEvents = [],
   jadwalMisaData,
 }: WorshipInvitationProps) {
-  const churches = useMemo(() => jadwalMisaData?.churches || [], [jadwalMisaData?.churches]);
+  const churches = useMemo(
+    () => jadwalMisaData?.churches || [],
+    [jadwalMisaData?.churches],
+  );
 
   const scheduleMap = useMemo(() => {
     const map = new Map<string, string[]>();
-    churches.forEach(church => {
+    churches.forEach((church) => {
       church.weeklySchedules.forEach((ws: WeeklySchedule) => {
         if (!map.has(ws.day)) {
           map.set(ws.day, []);
         }
-        const timeStr = ws.time.replace(/(\d{2})\.(\d{2})/, '$1.$2');
+        const timeStr = ws.time.replace(/(\d{2})\.(\d{2})/, "$1.$2");
         if (!map.get(ws.day)!.includes(timeStr)) {
           map.get(ws.day)!.push(timeStr);
         }
@@ -68,18 +90,18 @@ export default function WorshipInvitation({
 
   const getDaySchedule = (dayName: string): string => {
     const times = scheduleMap.get(dayName);
-    return times ? formatTimeList(times) : '';
+    return times ? formatTimeList(times) : "";
   };
 
-  const mingguSchedule = getDaySchedule('Minggu');
-  const sabtuSchedule = getDaySchedule('Sabtu');
+  const mingguSchedule = getDaySchedule("Minggu");
+  const sabtuSchedule = getDaySchedule("Sabtu");
   const harianSchedule = useMemo(() => {
-    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
+    const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
     const allTimes: string[] = [];
-    days.forEach(day => {
+    days.forEach((day) => {
       const times = scheduleMap.get(day);
       if (times) {
-        times.forEach(t => {
+        times.forEach((t) => {
           if (!allTimes.includes(t)) allTimes.push(t);
         });
       }
@@ -123,11 +145,15 @@ export default function WorshipInvitation({
         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-4'>
           {/* Harian (Senin-Jumat) - from database */}
           <motion.div
-            key="harian"
+            key='harian'
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{
+              duration: 0.7,
+              delay: 0,
+              ease: [0.21, 0.47, 0.32, 0.98],
+            }}
             className='bg-brand-warm p-6 rounded-2xl text-center group transition-colors duration-300'
           >
             <div className='w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-sm transition-colors'>
@@ -137,7 +163,7 @@ export default function WorshipInvitation({
               Senin - Jumat
             </h3>
             <p className='font-serif text-xl mb-2 transition-colors'>
-              {harianSchedule || '06.00 WIB'}
+              {harianSchedule || "06.00 WIB"}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
               Misa Harian
@@ -146,11 +172,15 @@ export default function WorshipInvitation({
 
           {/* Sabtu - from database */}
           <motion.div
-            key="sabtu"
+            key='sabtu'
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{
+              duration: 0.7,
+              delay: 0.1,
+              ease: [0.21, 0.47, 0.32, 0.98],
+            }}
             className='bg-brand-warm p-6 rounded-2xl text-center group transition-colors duration-300'
           >
             <div className='w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-sm transition-colors'>
@@ -160,20 +190,24 @@ export default function WorshipInvitation({
               Sabtu
             </h3>
             <p className='font-serif text-xl mb-2 transition-colors'>
-              {sabtuSchedule || '-'}
+              {sabtuSchedule || "-"}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
-              Misa Vigili
+              Misa Mingguan
             </p>
           </motion.div>
 
           {/* Minggu - from database */}
           <motion.div
-            key="minggu"
+            key='minggu'
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{
+              duration: 0.7,
+              delay: 0.2,
+              ease: [0.21, 0.47, 0.32, 0.98],
+            }}
             className='bg-brand-warm p-6 rounded-2xl text-center group transition-colors duration-300'
           >
             <div className='w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-sm transition-colors'>
@@ -183,7 +217,7 @@ export default function WorshipInvitation({
               Minggu
             </h3>
             <p className='font-serif text-xl mb-2 transition-colors'>
-              {mingguSchedule || '-'}
+              {mingguSchedule || "-"}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
               Misa Mingguan
@@ -192,11 +226,15 @@ export default function WorshipInvitation({
 
           {/* Jumat Pertama - hardcoded */}
           <motion.div
-            key="khusus"
+            key='khusus'
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
+            transition={{
+              duration: 0.7,
+              delay: 0.3,
+              ease: [0.21, 0.47, 0.32, 0.98],
+            }}
             className='bg-brand-warm p-6 rounded-2xl text-center group transition-colors duration-300'
           >
             <div className='w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-sm transition-colors'>
