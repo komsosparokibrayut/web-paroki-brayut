@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserRole, ROLE_LABELS } from "@/lib/roles";
 import { validatePassword } from "@/lib/password-validation";
+import { SessionUser } from "@/lib/firebase/auth";
 
 interface Props {
     invitations: Array<{
@@ -54,9 +55,11 @@ interface Props {
         id: string;
         name: string;
     }>;
+    currentUser: SessionUser;
 }
 
-export default function AdminsClient({ invitations, users, wilayahList }: Props) {
+export default function AdminsClient({ invitations, users, wilayahList, currentUser }: Props) {
+    const isSuperAdmin = currentUser.role === "super_admin";
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phone, setPhone] = useState("");
@@ -248,7 +251,7 @@ export default function AdminsClient({ invitations, users, wilayahList }: Props)
                         <CardContent className="p-0">
                             <div className="divide-y divide-slate-100">
                                 {users.map((user) => (
-                                    <UserCard key={user.id} user={user} wilayahList={wilayahList} />
+                                    <UserCard key={user.id} user={user} wilayahList={wilayahList} currentUser={currentUser} />
                                 ))}
                             </div>
                         </CardContent>
@@ -259,7 +262,13 @@ export default function AdminsClient({ invitations, users, wilayahList }: Props)
     );
 }
 
-function UserCard({ user, wilayahList }: { user: Props['users'][0]; wilayahList: Props['wilayahList'] }) {
+function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0]; wilayahList: Props['wilayahList']; currentUser: Props['currentUser'] }) {
+    const isSuperAdmin = currentUser.role === "super_admin";
+    const isSelf = currentUser.email === user.email;
+
+    const canEdit = isSuperAdmin || isSelf;
+    const canResetPassword = isSuperAdmin;
+    const canRemove = isSuperAdmin && !isSelf;
     const [isPending, startTransition] = useTransition();
     const [newPassword, setNewPassword] = useState("");
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -336,179 +345,205 @@ function UserCard({ user, wilayahList }: { user: Props['users'][0]; wilayahList:
                 {/* Action buttons */}
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {/* Edit Admin */}
-                    <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setRole(user.role || "news_reporter"); setPhone(user.phone || ""); setWilayahId(user.wilayah_id || ""); } }}>
-                        <DialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                title="Edit Admin"
-                            >
-                                <Pencil className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Edit Admin</DialogTitle>
-                                <DialogDescription>
-                                    Ubah role, wilayah, atau nomor telepon untuk <strong>{user.name}</strong> ({user.email}).
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor={`edit-role-${user.id}`}>Role</Label>
-                                    <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
-                                        <SelectTrigger id={`edit-role-${user.id}`}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                                                <SelectItem key={value} value={value}>
-                                                    {label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor={`edit-wilayah-${user.id}`}>Wilayah</Label>
-                                    <Select value={wilayahId} onValueChange={setWilayahId}>
-                                        <SelectTrigger id={`edit-wilayah-${user.id}`}>
-                                            <SelectValue placeholder="Pilih wilayah" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">Tidak ada</SelectItem>
-                                            {wilayahList.map((w) => (
-                                                <SelectItem key={w.id} value={w.id}>
-                                                    {w.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor={`edit-phone-${user.id}`}>Nomor Telepon</Label>
-                                    <PhoneInput
-                                        id={`edit-phone-${user.id}`}
-                                        placeholder="+62 ____ ____ ____"
-                                        value={phone}
-                                        onChange={setPhone}
-                                    />
-                                    {wilayahId && (
-                                        <p className="text-xs text-amber-600">Nomor telepon wajib diisi jika wilayah dipilih</p>
+                    {canEdit && (
+                        <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setRole(user.role || "news_reporter"); setPhone(user.phone || ""); setWilayahId(user.wilayah_id || ""); } }}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                    title={isSelf ? "Edit Profile" : "Edit Admin"}
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>{isSelf ? "Edit Profile" : "Edit Admin"}</DialogTitle>
+                                    <DialogDescription>
+                                        {isSelf
+                                            ? `Ubah profile Anda. Anda tidak dapat mengubah role sendiri.`
+                                            : `Ubah role, wilayah, atau nomor telepon untuk ${user.name} (${user.email}).`
+                                        }
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    {isSuperAdmin && !isSelf && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`edit-role-${user.id}`}>Role</Label>
+                                            <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                                                <SelectTrigger id={`edit-role-${user.id}`}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                                        <SelectItem key={value} value={value}>
+                                                            {label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    {isSelf && (
+                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                            <p className="text-sm text-blue-700">
+                                                Anda login sebagai <strong>{currentUser.role === "super_admin" ? "Super Admin" : ROLE_LABELS[currentUser.role!]}</strong>. Hubungi Super Admin lain untuk mengubah role Anda.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {!isSelf && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`edit-wilayah-${user.id}`}>Wilayah</Label>
+                                                <Select value={wilayahId} onValueChange={setWilayahId}>
+                                                    <SelectTrigger id={`edit-wilayah-${user.id}`}>
+                                                        <SelectValue placeholder="Pilih wilayah" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">Tidak ada</SelectItem>
+                                                        {wilayahList.map((w) => (
+                                                            <SelectItem key={w.id} value={w.id}>
+                                                                {w.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`edit-phone-${user.id}`}>Nomor Telepon</Label>
+                                                <PhoneInput
+                                                    id={`edit-phone-${user.id}`}
+                                                    placeholder="+62 ____ ____ ____"
+                                                    value={phone}
+                                                    onChange={setPhone}
+                                                />
+                                                {wilayahId && (
+                                                    <p className="text-xs text-amber-600">Nomor telepon wajib diisi jika wilayah dipilih</p>
+                                                )}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Batal</Button>
-                                </DialogClose>
-                                <Button
-                                    className="bg-blue-600 hover:bg-blue-700"
-                                    onClick={() => {
-                                        if (wilayahId && !phone) {
-                                            toast.error("Nomor telepon wajib diisi jika wilayah dipilih");
-                                            return;
-                                        }
-                                        startTransition(async () => {
-                                            const result = await updateAdminProfile(user.id, { role, phone, wilayah_id: wilayahId === "none" ? undefined : wilayahId });
-                                            if (result.success) {
-                                                toast.success("Admin berhasil diperbarui");
-                                                setEditDialogOpen(false);
-                                            } else {
-                                                toast.error(result.error || "Gagal memperbarui admin");
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Batal</Button>
+                                    </DialogClose>
+                                    <Button
+                                        className="bg-blue-600 hover:bg-blue-700"
+                                        onClick={() => {
+                                            if (wilayahId && !phone && !isSelf) {
+                                                toast.error("Nomor telepon wajib diisi jika wilayah dipilih");
+                                                return;
                                             }
-                                        });
-                                    }}
-                                    disabled={isPending}
-                                >
-                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
-                                    Simpan
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                            startTransition(async () => {
+                                                const result = await updateAdminProfile(user.id, {
+                                                    role: isSelf ? undefined : role,
+                                                    phone,
+                                                    wilayah_id: isSelf ? undefined : (wilayahId === "none" ? undefined : wilayahId)
+                                                });
+                                                if (result.success) {
+                                                    toast.success(isSelf ? "Profile berhasil diperbarui" : "Admin berhasil diperbarui");
+                                                    setEditDialogOpen(false);
+                                                } else {
+                                                    toast.error(result.error || "Gagal memperbarui");
+                                                }
+                                            });
+                                        }}
+                                        disabled={isPending}
+                                    >
+                                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                                        Simpan
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
 
                     {/* Reset Password */}
-                    <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setNewPassword(""); }}>
-                        <DialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-                                title="Reset Password"
-                            >
-                                <KeyRound className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Reset Password</DialogTitle>
-                                <DialogDescription>
-                                    Masukkan password baru untuk <strong>{user.name}</strong> ({user.email}).
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor={`reset-pw-${user.id}`}>Password Baru</Label>
-                                    <PasswordInputWithValidation
-                                        id={`reset-pw-${user.id}`}
-                                        placeholder="Min. 12 karakter"
-                                        value={newPassword}
-                                        onChange={setNewPassword}
-                                        minLength={12}
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Batal</Button>
-                                </DialogClose>
+                    {canResetPassword && (
+                        <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setNewPassword(""); }}>
+                            <DialogTrigger asChild>
                                 <Button
-                                    className="bg-amber-600 hover:bg-amber-700"
-                                    onClick={handleResetPassword}
-                                    disabled={isPending || !newPassword}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                    title="Reset Password"
                                 >
-                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-                                    Reset Password
+                                    <KeyRound className="h-4 w-4" />
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Reset Password</DialogTitle>
+                                    <DialogDescription>
+                                        Masukkan password baru untuk <strong>{user.name}</strong> ({user.email}).
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`reset-pw-${user.id}`}>Password Baru</Label>
+                                        <PasswordInputWithValidation
+                                            id={`reset-pw-${user.id}`}
+                                            placeholder="Min. 12 karakter"
+                                            value={newPassword}
+                                            onChange={setNewPassword}
+                                            minLength={12}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Batal</Button>
+                                    </DialogClose>
+                                    <Button
+                                        className="bg-amber-600 hover:bg-amber-700"
+                                        onClick={handleResetPassword}
+                                        disabled={isPending || !newPassword}
+                                    >
+                                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                                        Reset Password
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
 
                     {/* Remove Admin */}
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Remove Admin?</DialogTitle>
-                                <DialogDescription>
-                                    Are you sure you want to remove <strong>{user.name}</strong> from admins? This action cannot be undone.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
+                    {canRemove && (
+                        <Dialog>
+                            <DialogTrigger asChild>
                                 <Button
-                                    variant="destructive"
-                                    onClick={handleRemoveUser}
-                                    disabled={isPending}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                                 >
-                                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                    Remove Admin
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Remove Admin?</DialogTitle>
+                                    <DialogDescription>
+                                        Are you sure you want to remove <strong>{user.name}</strong> from admins? This action cannot be undone.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleRemoveUser}
+                                        disabled={isPending}
+                                    >
+                                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                        Remove Admin
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
             </div>
         </div>

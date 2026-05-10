@@ -44,9 +44,18 @@ const bookingSchema = z.object({
     startTime: z.string(),
     endTime: z.string(),
   })).optional(),
-}).refine(data => data.endTime > data.startTime, {
-  message: "Waktu selesai harus setelah waktu mulai",
-});
+}).refine(data => {
+    // Only validate single date bookings (multiDatesDetails has its own validation per date)
+    if (data.multiDatesDetails && data.multiDatesDetails.length > 0) return true;
+    // Compare times as minutes from midnight for proper chronological comparison
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    return toMinutes(data.endTime) > toMinutes(data.startTime);
+  }, {
+    message: "Waktu selesai harus setelah waktu mulai",
+  });
 
 export async function submitBooking(
   booking: Omit<MeetingBooking, "id" | "status" | "createdAt" | "updatedAt"> & { isAdminDirectCreate?: boolean }
@@ -126,15 +135,18 @@ export async function submitBooking(
       if (targetStatus === "confirmed" && baseData.placeId) {
         for (const dateDetail of multiDatesDetails) {
           await autoRejectOverlappingPending(
-            baseData.placeId, 
-            dateDetail.date, 
-            dateDetail.startTime, 
-            dateDetail.endTime, 
+            baseData.placeId,
+            dateDetail.date,
+            dateDetail.startTime,
+            dateDetail.endTime,
             docRefs[0].id
           );
         }
       }
-      
+
+      // Create wilayah approvals for each inventory item (Admin Wilayah individual tracking)
+      await handlePackageBookingWilayahApproval(docRefs[0].id, baseData as MeetingBooking);
+
       revalidatePath("/meeting-room");
       revalidatePath("/admin/meeting-rooms");
       return { success: true, data: docRefs[0].id };
@@ -190,6 +202,9 @@ export async function submitBooking(
          );
     }
     
+    // Create wilayah approvals for each inventory item (Admin Wilayah individual tracking)
+    await handlePackageBookingWilayahApproval(docRef.id, bookingDataToSave as MeetingBooking);
+
     revalidatePath("/meeting-room");
     revalidatePath("/admin/meeting-rooms");
     return { success: true, data: docRef.id };
@@ -329,7 +344,11 @@ async function autoRejectInventoryOnRoomConflict(
       const b = doc.data() as MeetingBooking;
       
       // Check if inventory booking dates overlap
-      const bDates = b.multiDates && b.multiDates.length > 0 ? b.multiDates : [b.date];
+      const bDates = b.multiDates && b.multiDates.length > 0
+        ? b.multiDates
+        : (b.multiDatesDetails && b.multiDatesDetails.length > 0
+            ? b.multiDatesDetails.map((d: { date: string }) => d.date)
+            : [b.date]);
       const datesOverlap = dates.some(d => bDates.includes(d));
       
       if (!datesOverlap) return;
@@ -357,7 +376,8 @@ async function autoRejectInventoryOnRoomConflict(
 
 /**
  * Handle package booking wilayah approval
- * Items in a package booking need approval from their respective Admin Wilayah
+ * Creates ONE approval record PER ITEM for individual tracking.
+ * Items in a booking need approval from their respective Admin Wilayah.
  */
 async function handlePackageBookingWilayahApproval(bookingId: string, booking: MeetingBooking) {
   try {
@@ -370,34 +390,29 @@ async function handlePackageBookingWilayahApproval(bookingId: string, booking: M
       itemsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
 
-    // Group items by wilayah_id
-    const itemsByWilayah = new Map<string, any[]>();
+    // Create ONE approval record PER ITEM
+    const approvalPromises = [];
     for (const borrowedItem of booking.borrowedItems) {
       const item = itemsMap.get(borrowedItem.itemId);
       if (item && item.wilayah_id) {
-        if (!itemsByWilayah.has(item.wilayah_id)) {
-          itemsByWilayah.set(item.wilayah_id, []);
-        }
-        itemsByWilayah.get(item.wilayah_id)!.push({
-          ...borrowedItem,
-          wilayah_id: item.wilayah_id
-        });
+        // Create individual approval for each item
+        approvalPromises.push(
+          adminDb.collection("wilayah_approvals").add({
+            bookingId,
+            wilayah_id: item.wilayah_id,
+            itemId: borrowedItem.itemId,
+            itemName: borrowedItem.name || item.name || "Unknown Item",
+            quantity: borrowedItem.quantity,
+            status: "pending",
+            dateTake: (borrowedItem as any).dateTake || null,
+            timeTake: (borrowedItem as any).timeTake || null,
+            dateReturn: (borrowedItem as any).dateReturn || null,
+            timeReturn: (borrowedItem as any).timeReturn || null,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          })
+        );
       }
-    }
-
-    // Create wilayah approval records
-    const approvalPromises = [];
-    for (const [wilayahId, items] of itemsByWilayah.entries()) {
-      approvalPromises.push(
-        adminDb.collection("wilayah_approvals").add({
-          bookingId,
-          wilayah_id: wilayahId,
-          items,
-          status: "pending",
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        })
-      );
     }
 
     await Promise.all(approvalPromises);

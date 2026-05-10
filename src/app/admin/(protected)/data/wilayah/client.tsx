@@ -336,7 +336,10 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                             {wilayah.lastEditedBy && (
                                                 <>
                                                     <span className="mx-1">•</span>
-                                                    <span className="text-slate-400">Diedit: {wilayah.lastEditedBy}</span>
+                                                    <span className="text-slate-400">
+                                                        Diedit: {wilayah.lastEditedBy}
+                                                        {wilayah.lastEditedAt && ` (${new Date(wilayah.lastEditedAt).toLocaleDateString('id-ID')})`}
+                                                    </span>
                                                 </>
                                             )}
                                         </div>
@@ -386,7 +389,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                                         {lingkungan.lastEditedBy && (
                                                             <p className="text-xs text-slate-400">
                                                                 Diedit: {lingkungan.lastEditedBy}
-                                                                {lingkungan.lastEditedAt && ` (${new Date(lingkungan.lastEditedAt).toLocaleDateString('id-ID')})`}
+                                                                {lingkungan.lastEditedAt && lingkungan.lastEditedAt !== "" && ` (${new Date(lingkungan.lastEditedAt).toLocaleDateString('id-ID')})`}
                                                             </p>
                                                         )}
                                                     </div>

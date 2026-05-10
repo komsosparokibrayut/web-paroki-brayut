@@ -88,7 +88,7 @@ export function BookingDialog({
             setBookingType(defaultBookingType);
             setNewBooking(initialBookingState);
         }
-    }, [open, defaultBookingType]);
+    }, [open, defaultBookingType, initialBookingState]);
 
     useEffect(() => {
         if (open) {

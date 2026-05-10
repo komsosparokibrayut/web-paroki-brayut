@@ -70,23 +70,38 @@ export async function inviteAdmin(email: string, role: UserRole, password?: stri
     }
 }
 
-export async function updateAdminProfile(targetUserId: string, data: { role?: UserRole; phone?: string; wilayah_id?: string }) {
+export async function updateAdminProfile(targetUserId: string, data: { role?: UserRole; phone?: string; wilayah_id?: string; name?: string }) {
     try {
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
-        if (currentUser.role !== "super_admin") throw new Error("Only Super Admins can update admin profile");
 
-        if (currentUser.uid === targetUserId) {
-            throw new Error("You cannot change your own profile");
+        const isSelf = currentUser.uid === targetUserId;
+        const isSuperAdmin = currentUser.role === "super_admin";
+
+        // Only super_admin can change role or wilayah
+        if ((data.role !== undefined || data.wilayah_id !== undefined) && !isSuperAdmin) {
+            throw new Error("Only Super Admins can change role or wilayah");
+        }
+
+        // Self-edit is allowed for phone and name only (not role or wilayah)
+        if (isSelf && (data.role !== undefined || data.wilayah_id !== undefined)) {
+            throw new Error("You cannot change your own role or wilayah");
         }
 
         const user = await adminAuth.getUser(targetUserId);
         const currentRole = user.customClaims?.role as UserRole;
 
+        const updates: Record<string, unknown> = {};
+        if (data.role !== undefined) updates.role = data.role;
+        if (data.phone !== undefined) updates.phone = data.phone;
+        if (data.wilayah_id !== undefined) updates.wilayah_id = data.wilayah_id;
+        if (data.name !== undefined) updates.name = data.name;
+
         await adminAuth.setCustomUserClaims(targetUserId, {
-            role: data.role ?? currentRole,
-            ...(data.phone !== undefined ? { phone: data.phone } : {}),
-            ...(data.wilayah_id !== undefined ? { wilayah_id: data.wilayah_id } : {}),
+            role: updates.role ?? currentRole,
+            ...(updates.phone !== undefined ? { phone: updates.phone } : {}),
+            ...(updates.wilayah_id !== undefined ? { wilayah_id: updates.wilayah_id } : {}),
+            ...(updates.name !== undefined ? { name: updates.name } : {}),
         });
 
         revalidatePath("/admin/settings/admins");

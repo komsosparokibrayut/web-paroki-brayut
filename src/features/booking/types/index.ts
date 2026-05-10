@@ -92,10 +92,16 @@ export interface WilayahApproval {
   id: string;
   bookingId: string;
   wilayah_id: string;
-  items: { itemId: string; quantity: number; name: string }[];
+  itemId: string;
+  itemName: string;
+  quantity: number;
   status: 'pending' | 'approved' | 'rejected';
   approvedBy?: string;
   notes?: string;
+  dateTake?: string;
+  timeTake?: string;
+  dateReturn?: string;
+  timeReturn?: string;
   createdAt: number;
   updatedAt: number;
 }

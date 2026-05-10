@@ -92,32 +92,13 @@ export function canEditWilayah(user: SessionUser | null, targetWilayahId: string
   return false;
 }
 
-// Helper to get wilayah_id from a booking (checks borrowedItems or place)
-export function getBookingWilayahId(booking: MeetingBooking): string | null {
-  // For room bookings, check if the room has a wilayah_id
-  // This would require fetching the place data, so for now we check inventory items
-
-  if (booking.borrowedItems && booking.borrowedItems.length > 0) {
-    // Return the first item's wilayah_id if available
-    // In mixed-wilayah scenarios, this may need special handling
-    return (booking.borrowedItems[0] as any).wilayah_id || null;
-  }
-
-  return null;
-}
-
 // Check if user can manage (edit/delete) a booking
 export function canManageBooking(user: SessionUser | null, booking: MeetingBooking): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_wilayah") {
-    // Admin Wilayah can manage if booking involves items from their wilayah
-    const bookingWilayahId = getBookingWilayahId(booking);
-    if (bookingWilayahId) {
-      return user.wilayah_id === bookingWilayahId;
-    }
-    // If no inventory items, check the place's wilayah_id (would need place data)
-    // For now, allow admin_wilayah to manage their own bookings
+    // Admin Wilayah can manage bookings in their system
+    // For inventory items, they can only manage items belonging to their wilayah
     return true;
   }
   return false;

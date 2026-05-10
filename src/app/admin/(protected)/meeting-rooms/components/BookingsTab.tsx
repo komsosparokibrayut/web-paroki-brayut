@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { format, parse } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useAdminRole } from "@/components/admin/AdminRoleProvider";
-import { canManageBooking, canManageWilayahApproval, getBookingWilayahId } from "@/lib/roles";
+import { canManageBooking } from "@/lib/roles";
 
 export function BookingsTab({
   bookings,
@@ -314,7 +314,7 @@ export function BookingsTab({
                             <span className="text-xs text-muted-foreground font-normal">
                               (Ambil: {item.dateTake} {item.timeTake} · Kembali: {item.dateReturn} {item.timeReturn})
                             </span>
-                            {booking.type === 'inventory' || booking.type === 'both' ? getReturnStatusBadge(booking.returnStatus) : null}
+                            {getReturnStatusBadge(booking.returnStatus)}
                           </li>
                         ))}
                       </ul>
@@ -322,7 +322,7 @@ export function BookingsTab({
                   )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                  {user && (canManageBooking(user, booking) || canManageWilayahApproval(user, getBookingWilayahId(booking) || '')) && (booking.status === "pending" || booking.status === "rejected") && (
+                  {user && canManageBooking(user, booking) && (booking.status === "pending" || booking.status === "rejected") && (
                     <Button variant="outline" size="sm" onClick={() => handleApprove(booking.id!)} className="text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700 ">
                       <CheckCircle className="w-4 h-4" />
                       Setujui
@@ -334,7 +334,7 @@ export function BookingsTab({
                       Ubah
                     </Button>
                   )}
-                  {user && (canManageBooking(user, booking) || canManageWilayahApproval(user, getBookingWilayahId(booking) || '')) && (booking.status === "pending" || booking.status === "confirmed") && (
+                  {user && canManageBooking(user, booking) && (booking.status === "pending" || booking.status === "confirmed") && (
                     <Button variant="outline" size="sm" onClick={() => handleReject(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
                       <XCircle className="w-4 h-4" />
                       Tolak
