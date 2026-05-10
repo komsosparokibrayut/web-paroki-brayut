@@ -368,32 +368,42 @@ function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0];
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
-                                    {isSuperAdmin && !isSelf && (
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`edit-role-${user.id}`}>Role</Label>
-                                            <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
-                                                <SelectTrigger id={`edit-role-${user.id}`}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                                                        <SelectItem key={value} value={value}>
-                                                            {label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-                                    {isSelf && (
-                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                            <p className="text-sm text-blue-700">
-                                                Anda login sebagai <strong>{currentUser.role === "super_admin" ? "Super Admin" : ROLE_LABELS[currentUser.role!]}</strong>. Hubungi Super Admin lain untuk mengubah role Anda.
-                                            </p>
-                                        </div>
-                                    )}
-                                    {!isSelf && (
+                                    {isSelf ? (
                                         <>
+                                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <p className="text-sm text-blue-700">
+                                                    Anda login sebagai <strong>{currentUser.role === "super_admin" ? "Super Admin" : ROLE_LABELS[currentUser.role!]}</strong>. Hubungi Super Admin lain untuk mengubah role Anda.
+                                                </p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`edit-phone-${user.id}`}>Nomor Telepon</Label>
+                                                <PhoneInput
+                                                    id={`edit-phone-${user.id}`}
+                                                    placeholder="+62 ____ ____ ____"
+                                                    value={phone}
+                                                    onChange={setPhone}
+                                                />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isSuperAdmin && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`edit-role-${user.id}`}>Role</Label>
+                                                    <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+                                                        <SelectTrigger id={`edit-role-${user.id}`}>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                                                                <SelectItem key={value} value={value}>
+                                                                    {label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
                                             <div className="space-y-2">
                                                 <Label htmlFor={`edit-wilayah-${user.id}`}>Wilayah</Label>
                                                 <Select value={wilayahId} onValueChange={setWilayahId}>
