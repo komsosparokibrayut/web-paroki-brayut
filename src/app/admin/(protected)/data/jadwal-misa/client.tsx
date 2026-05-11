@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -359,6 +360,7 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                         <th className="px-6 py-3 text-left">Jam</th>
                                         <th className="px-6 py-3 text-left">Lokasi</th>
                                         <th className="px-6 py-3 text-left">Keterangan</th>
+                                        <th className="px-6 py-3 text-left">Dibuat/Diubah</th>
                                         <th className="px-6 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
@@ -369,6 +371,13 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                             <td className="px-6 py-3 text-brand-blue font-semibold">{m.time}</td>
                                             <td className="px-6 py-3 text-slate-600">{m.location}</td>
                                             <td className="px-6 py-3 text-slate-500 line-clamp-1">{m.description}</td>
+                                            <td className="px-6 py-3">
+                                                <div className="text-xs text-slate-500">
+                                                    {m.created_by && <div>dibuat: {m.created_by}</div>}
+                                                    {m.modified_by && <div>diubah: {m.modified_by}</div>}
+                                                    {m.modified_at && <div className="text-slate-400">{formatAuditDate(m.modified_at)}</div>}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-3 text-right">
                                                 <div className="flex items-center justify-end gap-1">
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600"
@@ -384,7 +393,7 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-400">Belum ada misa khusus</td>
+                                            <td colSpan={6} className="px-6 py-12 text-center text-slate-400">Belum ada misa khusus</td>
                                         </tr>
                                     )}
                                 </tbody>

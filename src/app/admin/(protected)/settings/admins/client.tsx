@@ -309,41 +309,48 @@ function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0];
 
     return (
         <div className="px-4 py-4 sm:px-6">
-            {/* Top row: Avatar + Name/Email + Action buttons */}
+            {/* Avatar + Name/Email + Meta row */}
             <div className="flex items-start gap-3">
                 {/* Avatar */}
-                <div className="h-9 w-9 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative mt-0.5">
+                <div className="h-10 w-10 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 relative mt-0.5">
                     {user.imageUrl && (
                         <Image src={user.imageUrl} alt={user.name} fill className="object-cover" />
                     )}
                 </div>
 
-                {/* Name + email */}
+                {/* Name/Email */}
                 <div className="flex-1 min-w-0">
                     <div className="font-medium text-slate-900 text-sm truncate">{user.name}</div>
                     <div className="text-xs text-slate-500 truncate">{user.email}</div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge variant={user.role === "super_admin" ? "default" : "secondary"} className="text-xs">
-                            {ROLE_LABELS[user.role || "news_reporter"]}
-                        </Badge>
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString("id-ID") : "Never"}
-                        </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {user.phone || "-"}
-                        </span>
-                        {user.wilayah_id && (
-                            <Badge variant="outline" className="text-xs text-blue-600 border-blue-200 bg-blue-50">
-                                {wilayahList.find(w => w.id === user.wilayah_id)?.name || user.wilayah_id}
-                            </Badge>
-                        )}
-                    </div>
                 </div>
+            </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Info row: Role, Wilayah, Phone, Last Login */}
+            <div className="flex items-center gap-4 mt-2 ml-[52px] flex-wrap">
+                <div className="flex items-center gap-1.5">
+                    <Badge variant={user.role === "super_admin" ? "default" : "secondary"} className="text-xs">
+                        {ROLE_LABELS[user.role || "news_reporter"]}
+                    </Badge>
+                </div>
+                {user.wilayah_id && (
+                    <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-xs text-blue-600 border-blue-200 bg-blue-50">
+                            {wilayahList.find(w => w.id === user.wilayah_id)?.name || user.wilayah_id}
+                        </Badge>
+                    </div>
+                )}
+                <div className="flex items-center gap-1 text-xs text-slate-500">
+                    <Phone className="h-3 w-3" />
+                    {user.phone || "-"}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-slate-400">
+                    <Clock className="h-3 w-3" />
+                    {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString("id-ID") : "Never"}
+                </div>
+            </div>
+
+            {/* Actions row */}
+            <div className="flex items-center justify-end gap-1 mt-2 ml-[52px]">
                     {/* Edit Admin */}
                     {canEdit && (
                         <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setRole(user.role || "news_reporter"); setPhone(user.phone || ""); setWilayahId(user.wilayah_id || ""); } }}>
@@ -375,6 +382,24 @@ function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0];
                                                     Anda login sebagai <strong>{currentUser.role === "super_admin" ? "Super Admin" : ROLE_LABELS[currentUser.role!]}</strong>. Hubungi Super Admin lain untuk mengubah role Anda.
                                                 </p>
                                             </div>
+                                            {isSuperAdmin && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`edit-wilayah-${user.id}`}>Wilayah</Label>
+                                                    <Select value={wilayahId} onValueChange={setWilayahId}>
+                                                        <SelectTrigger id={`edit-wilayah-${user.id}`}>
+                                                            <SelectValue placeholder="Pilih wilayah" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none">Tidak ada</SelectItem>
+                                                            {wilayahList.map((w) => (
+                                                                <SelectItem key={w.id} value={w.id}>
+                                                                    {w.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
                                             <div className="space-y-2">
                                                 <Label htmlFor={`edit-phone-${user.id}`}>Nomor Telepon</Label>
                                                 <PhoneInput
@@ -442,7 +467,7 @@ function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0];
                                     <Button
                                         className="bg-blue-600 hover:bg-blue-700"
                                         onClick={() => {
-                                            if (wilayahId && !phone && !isSelf) {
+                                            if (wilayahId && !phone) {
                                                 toast.error("Nomor telepon wajib diisi jika wilayah dipilih");
                                                 return;
                                             }
@@ -555,7 +580,6 @@ function UserCard({ user, wilayahList, currentUser }: { user: Props['users'][0];
                         </Dialog>
                     )}
                 </div>
-            </div>
         </div>
     );
 }

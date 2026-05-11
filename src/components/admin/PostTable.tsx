@@ -39,6 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 
 interface PostTableProps {
   posts: PostMetadata[];
@@ -55,6 +56,8 @@ function truncateTitle(title: string, maxLength: number = 60): string {
 export default function PostTable({ posts, hidePagination = false, showCreateButton = false }: PostTableProps) {
   const { startTransition } = useLoading();
   const router = useRouter();
+  const { user, role } = useAdminRole();
+  const isAdminWilayah = role === "admin_wilayah";
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<{ slug: string; title: string } | null>(null);
@@ -272,23 +275,44 @@ export default function PostTable({ posts, hidePagination = false, showCreateBut
                   <TableCell className="py-3 px-4">
                     {/* Inline action buttons instead of dropdown */}
                     <div className="flex items-center justify-end gap-1">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                              asChild
-                            >
-                              <Link href={`/admin/posts/${post.slug}/edit`}>
-                                <Pencil className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {!isAdminWilayah && (
+                        <>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                  asChild
+                                >
+                                  <Link href={`/admin/posts/${post.slug}/edit`}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => openDeleteModal(post.slug, post.title)}
+                                  disabled={isDeleting === post.slug}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </>
+                      )}
 
                       <TooltipProvider>
                         <Tooltip>
@@ -308,23 +332,6 @@ export default function PostTable({ posts, hidePagination = false, showCreateBut
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>View Live</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => openDeleteModal(post.slug, post.title)}
-                              disabled={isDeleting === post.slug}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>

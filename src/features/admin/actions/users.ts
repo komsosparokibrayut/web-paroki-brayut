@@ -75,17 +75,43 @@ export async function updateAdminProfile(targetUserId: string, data: { role?: Us
         const currentUser = await getCurrentUser();
         if (!currentUser) throw new Error("Unauthorized");
 
-        const isSelf = currentUser.uid === targetUserId;
+const isSelf = currentUser.uid === targetUserId;
         const isSuperAdmin = currentUser.role === "super_admin";
 
-        // Only super_admin can change role or wilayah
-        if ((data.role !== undefined || data.wilayah_id !== undefined) && !isSuperAdmin) {
-            throw new Error("Only Super Admins can change role or wilayah");
+        // Self rules (any role):
+        // - Can change phone only
+        // - Super Admin self can also change their own wilayah (but not role)
+        // - Other roles self cannot change role or wilayah
+        if (isSelf) {
+            if (data.role !== undefined) {
+                throw new Error("You cannot change your own role");
+            }
+            if (data.wilayah_id !== undefined && !isSuperAdmin) {
+                throw new Error("You cannot change your own wilayah");
+            }
+        } else {
+            // Others (non-self): only super_admin can change role or wilayah
+            if ((data.role !== undefined || data.wilayah_id !== undefined) && !isSuperAdmin) {
+                throw new Error("Only Super Admins can change role or wilayah for other users");
+            }
         }
 
-        // Self-edit is allowed for phone and name only (not role or wilayah)
-        if (isSelf && (data.role !== undefined || data.wilayah_id !== undefined)) {
-            throw new Error("You cannot change your own role or wilayah");
+        // Super Admin can manage others (role and wilayah)
+        // Self can only change phone (not role or wilayah)
+        
+        if (isSelf) {
+            // Self can only change phone
+            if (data.role !== undefined) {
+                throw new Error("You cannot change your own role");
+            }
+            if (data.wilayah_id !== undefined) {
+                throw new Error("You cannot change your own wilayah");
+            }
+        } else {
+            // For non-self (others), only super_admin can change role or wilayah
+            if ((data.role !== undefined || data.wilayah_id !== undefined) && !isSuperAdmin) {
+                throw new Error("Only Super Admins can change role or wilayah for other users");
+            }
         }
 
         const user = await adminAuth.getUser(targetUserId);

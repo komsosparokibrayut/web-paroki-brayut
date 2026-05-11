@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -333,12 +334,12 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                             <span>Koord: {wilayah.coordinator}</span>
                                             <span className="mx-1">•</span>
                                             <span>{wilayah.lingkungan.length} Lingkungan</span>
-                                            {wilayah.lastEditedBy && (
+                                            {wilayah.modified_by && (
                                                 <>
                                                     <span className="mx-1">•</span>
                                                     <span className="text-slate-400">
-                                                        Diedit: {wilayah.lastEditedBy}
-                                                        {wilayah.lastEditedAt && ` (${new Date(wilayah.lastEditedAt).toLocaleDateString('id-ID')})`}
+                                                        Diedit: {wilayah.modified_by}
+                                                        {wilayah.modified_at && ` (${formatAuditDate(wilayah.modified_at)})`}
                                                     </span>
                                                 </>
                                             )}
@@ -386,10 +387,10 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                                         {lingkungan.chief && (
                                                             <p className="text-xs text-slate-500">Ketua: {lingkungan.chief}</p>
                                                         )}
-                                                        {lingkungan.lastEditedBy && (
+                                                        {lingkungan.modified_by && (
                                                             <p className="text-xs text-slate-400">
-                                                                Diedit: {lingkungan.lastEditedBy}
-                                                                {lingkungan.lastEditedAt && lingkungan.lastEditedAt !== "" && ` (${new Date(lingkungan.lastEditedAt).toLocaleDateString('id-ID')})`}
+                                                                Diedit: {lingkungan.modified_by}
+                                                                {lingkungan.modified_at && ` (${formatAuditDate(lingkungan.modified_at)})`}
                                                             </p>
                                                         )}
                                                     </div>

@@ -32,6 +32,7 @@ interface MultiDateWithTimePickerProps {
   onChange: (values: DateWithTime[]) => void;
   disablePast?: boolean;
   maxDates?: number;
+  takenSlots?: Record<string, Array<{ startTime: string; endTime: string }>>;
 }
 
 export function MultiDateWithTimePicker({
@@ -39,6 +40,7 @@ export function MultiDateWithTimePicker({
   onChange,
   disablePast = false,
   maxDates = 30,
+  takenSlots = {},
 }: MultiDateWithTimePickerProps) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -52,11 +54,22 @@ export function MultiDateWithTimePicker({
   const now = new Date();
   const currentHour = now.getHours();
 
+  const isSlotTaken = (dateStr: string, hour: number) => {
+    const slots = takenSlots[dateStr];
+    if (!slots || slots.length === 0) return false;
+    return slots.some(slot => {
+      const slotStart = parseInt(slot.startTime.split(':')[0]);
+      const slotEnd = parseInt(slot.endTime.split(':')[0]);
+      return hour >= slotStart && hour <= slotEnd;
+    });
+  };
+
   const getStartTimeOptions = (dateStr: string) => {
     const isTodaySelected = isDateToday(parse(dateStr, "yyyy-MM-dd", new Date()) || new Date(0));
     return Array.from({ length: 17 }).map((_, i) => {
       const hour = i + 6;
       if (disablePast && isTodaySelected && hour < currentHour) return null;
+      if (isSlotTaken(dateStr, hour)) return null;
       return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
     }).filter(Boolean);
   };
@@ -68,24 +81,29 @@ export function MultiDateWithTimePicker({
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isTodaySelected && hour < currentHour) return null;
+      if (isSlotTaken(dateStr, hour)) return null;
       return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
     }).filter(Boolean);
   };
 
   const getAddDateStartOptions = () => {
+    const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
     return Array.from({ length: 17 }).map((_, i) => {
       const hour = i + 6;
       if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
+      if (dateStr && isSlotTaken(dateStr, hour)) return null;
       return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
     }).filter(Boolean);
   };
 
   const getAddDateEndOptions = () => {
+    const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
     const startHour = parseInt(startTime.split(':')[0]);
     return Array.from({ length: 17 }).map((_, i) => {
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
+      if (dateStr && isSlotTaken(dateStr, hour)) return null;
       return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
     }).filter(Boolean);
   };

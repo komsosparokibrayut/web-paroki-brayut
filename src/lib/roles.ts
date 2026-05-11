@@ -1,5 +1,7 @@
 import { SessionUser } from "@/lib/firebase/auth";
 import { MeetingBooking, InventoryItem, MeetingPlace, BorrowedItemWithDetails } from "@/features/booking/types";
+import { GerejaUnit } from "@/features/schedule/types";
+import { Lingkungan, Wilayah } from "@/actions/data";
 
 export type UserRole = "super_admin" | "admin_wilayah" | "news_admin" | "news_reporter" | "data_admin";
 
@@ -93,14 +95,25 @@ export function canEditWilayah(user: SessionUser | null, targetWilayahId: string
 }
 
 // Check if user can manage (edit/delete) a booking
-export function canManageBooking(user: SessionUser | null, booking: MeetingBooking): boolean {
+// Set itemWilayahIds if you have the inventory item wilayah_ids to determine ownership
+export function canManageBooking(user: SessionUser | null, booking: MeetingBooking, itemWilayahIds?: string[]): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_wilayah") {
-    // Admin Wilayah can manage bookings in their system
-    // For inventory items, they can only manage items belonging to their wilayah
-    return true;
+    // Admin Wilayah can only manage bookings where ALL items belong to their own wilayah
+    // Items with no wilayah_id are "global/paroki" - admin_wilayah cannot manage those
+    if (itemWilayahIds && itemWilayahIds.length > 0) {
+      const allGlobal = itemWilayahIds.every(id => !id);
+      if (allGlobal) return false; // Cannot manage global/paroki bookings
+
+      // ALL items must belong to user's wilayah
+      const allItemsInOwnWilayah = itemWilayahIds.every(id => id === user.wilayah_id);
+      return allItemsInOwnWilayah;
+    }
+    // Without item info, deny management (conservative - safer default)
+    return false;
   }
+  if (user.role === "data_admin") return true;
   return false;
 }
 
@@ -108,7 +121,10 @@ export function canManageBooking(user: SessionUser | null, booking: MeetingBooki
 export function canManageInventoryItem(user: SessionUser | null, item: InventoryItem): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
-  if (user.role === "admin_wilayah") return user.wilayah_id === item.wilayah_id;
+  if (user.role === "admin_wilayah") {
+    if (!item.wilayah_id) return false;
+    return user.wilayah_id === item.wilayah_id;
+  }
   return false;
 }
 
@@ -116,7 +132,10 @@ export function canManageInventoryItem(user: SessionUser | null, item: Inventory
 export function canManagePlace(user: SessionUser | null, place: MeetingPlace): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
-  if (user.role === "admin_wilayah") return user.wilayah_id === place.wilayah_id;
+  if (user.role === "admin_wilayah") {
+    if (!place.wilayah_id) return false;
+    return user.wilayah_id === place.wilayah_id;
+  }
   return false;
 }
 
@@ -132,4 +151,38 @@ export function canManageWilayahApproval(user: SessionUser | null, approvalWilay
 export function canSeeSecuritySettings(user: SessionUser | null | undefined): boolean {
   if (!user) return false;
   return user.role === "super_admin";
+}
+
+// Check if user can manage a gereja
+export function canManageGereja(user: SessionUser | null, gereja: GerejaUnit): boolean {
+  if (!user) return false;
+  if (user.role === "super_admin") return true;
+  if (user.role === "admin_wilayah") {
+    if (!gereja.wilayah_id) return false;
+    return gereja.wilayah_id === user.wilayah_id;
+  }
+  if (user.role === "data_admin") return true;
+  return false;
+}
+
+// Check if user can manage a wilayah
+export function canManageWilayah(user: SessionUser | null, wilayah: Wilayah): boolean {
+  if (!user) return false;
+  if (user.role === "super_admin") return true;
+  if (user.role === "admin_wilayah") return wilayah.id === user.wilayah_id;
+  if (user.role === "data_admin") return true;
+  return false;
+}
+
+// Check if user can manage a lingkungan
+export function canManageLingkungan(user: SessionUser | null, lingkungan: Lingkungan, allWilayah: Wilayah[]): boolean {
+  if (!user) return false;
+  if (user.role === "super_admin") return true;
+  if (user.role === "admin_wilayah") {
+    const parentWilayah = allWilayah.find(w => w.lingkungan.some(l => l.id === lingkungan.id));
+    if (!parentWilayah) return false;
+    return parentWilayah.id === user.wilayah_id;
+  }
+  if (user.role === "data_admin") return true;
+  return false;
 }

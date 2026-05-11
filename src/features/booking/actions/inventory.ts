@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
-import { hasPermission } from "@/lib/roles";
+import { hasPermission, canManageInventoryItem } from "@/lib/roles";
 import { InventoryItem, MeetingBooking } from "../types";
 import { revalidatePath } from "next/cache";
 import { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
@@ -47,10 +47,19 @@ export async function saveInventoryItem(item: Omit<InventoryItem, "id" | "create
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
-      return { success: false, error: "Tidak memiliki otorisasi" };
+      return { success: false, error: "Tidak memiliki otoritas" };
+    }
+
+    if (item.id) {
+      const existingItem = await adminDb.collection(COLLECTION).doc(item.id).get();
+      if (!existingItem.exists) return { success: false, error: "Item tidak ditemukan" };
+      if (!canManageInventoryItem(currentUser, existingItem.data() as InventoryItem)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk mengubah item ini" };
+      }
     }
 
     const now = Date.now();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
     const collectionRef = adminDb.collection(COLLECTION);
     let savedId = item.id;
     if (item.id) {
@@ -58,14 +67,17 @@ export async function saveInventoryItem(item: Omit<InventoryItem, "id" | "create
       const { id, ...updateData } = item;
       await collectionRef.doc(id).update({
         ...updateData,
-        updatedAt: now,
+        modified_by: userIdentifier,
+        modified_at: now,
       });
     } else {
       // Create
       const docRef = await collectionRef.add({
         ...item,
-        createdAt: now,
-        updatedAt: now,
+        created_by: userIdentifier,
+        created_at: now,
+        modified_by: userIdentifier,
+        modified_at: now,
       });
       savedId = docRef.id;
     }
@@ -84,6 +96,12 @@ export async function deleteInventoryItem(id: string): Promise<ActionResult> {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    const existingItem = await adminDb.collection(COLLECTION).doc(id).get();
+    if (!existingItem.exists) return { success: false, error: "Item tidak ditemukan" };
+    if (!canManageInventoryItem(currentUser, existingItem.data() as InventoryItem)) {
+      return { success: false, error: "Tidak memiliki otorisasi untuk menghapus item ini" };
     }
 
     await adminDb.collection(COLLECTION).doc(id).delete();
@@ -181,6 +199,7 @@ export async function getInventoryBorrowingStats(): Promise<Map<string, { totalH
     snapshot.docs.forEach(doc => {
       const booking = doc.data() as MeetingBooking;
       if (!booking.borrowedItems || booking.borrowedItems.length === 0) return;
+      if (!booking.startTime || !booking.endTime) return;
 
       // Calculate duration in minutes
       const startMinutes = timeToMinutes(booking.startTime);

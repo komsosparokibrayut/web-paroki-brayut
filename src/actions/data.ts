@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getFile, commitFiles } from "@/services/github/content";
 import { getCurrentUser } from "@/lib/firebase/auth";
-import { hasPermission } from "@/lib/roles";
+import { hasPermission, canManageWilayah, canManageLingkungan } from "@/lib/roles";
 
 const UMKM_FILE = "umkm.json";
 const STATISTIK_FILE = "statistik.json";
@@ -18,6 +18,10 @@ export interface UMKMData {
   description: string;
   image?: string;
   mapsLink?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface StatistikData {
@@ -27,6 +31,10 @@ export interface StatistikData {
   families: number;
   parishioners: number;
   lastUpdated?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 // UMKM Actions
 export async function getUMKM(): Promise<UMKMData[]> {
@@ -46,8 +54,28 @@ export async function saveUMKM(data: UMKMData[]) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
+    const timestamp = new Date().toISOString();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+
+    const auditedData = data.map(umkm => {
+      if (!umkm.created_by) {
+        return {
+          ...umkm,
+          created_by: userIdentifier,
+          created_at: timestamp,
+          modified_by: userIdentifier,
+          modified_at: timestamp,
+        };
+      }
+      return {
+        ...umkm,
+        modified_by: userIdentifier,
+        modified_at: timestamp,
+      };
+    });
+
     await commitFiles(
-      [{ path: UMKM_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: UMKM_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update UMKM data (${data.length} entries)`
     );
     revalidatePath("/data/umkm");
@@ -76,12 +104,18 @@ export async function saveStatistik(data: StatistikData) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
-    const dataWithDate = {
-        ...data,
-        lastUpdated: new Date().toISOString()
+    const timestamp = new Date().toISOString();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+    const dataWithAudit = {
+      ...data,
+      lastUpdated: new Date().toISOString(),
+      created_by: data.created_by || userIdentifier,
+      created_at: data.created_at || timestamp,
+      modified_by: userIdentifier,
+      modified_at: timestamp,
     };
     await commitFiles(
-      [{ path: STATISTIK_FILE, content: JSON.stringify(dataWithDate, null, 2) }],
+      [{ path: STATISTIK_FILE, content: JSON.stringify(dataWithAudit, null, 2) }],
       "Update statistik data"
     );
     revalidatePath("/data/statistik");
@@ -109,6 +143,10 @@ export interface Lingkungan {
   phone?: string;
   lastEditedBy?: string;
   lastEditedAt?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface Wilayah {
@@ -121,6 +159,10 @@ export interface Wilayah {
   lingkungan: Lingkungan[];
   lastEditedBy?: string;
   lastEditedAt?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface Pastor {
@@ -132,6 +174,10 @@ export interface Pastor {
   quote?: string;
   email?: string;
   phone?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface AnggotaTimKerja {
@@ -140,6 +186,10 @@ export interface AnggotaTimKerja {
   role?: string;     // e.g. "Ketua Bidang", "Koordinator"
   phone?: string;
   quote?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 // A group (e.g. "Tim Pelayanan Prodiakon") within a section
@@ -147,6 +197,10 @@ export interface TimPelayanan {
   id: string;
   name: string;
   members: AnggotaTimKerja[];
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 // A top-level section (e.g. "DEWAN HARIAN", "BIDANG 1. LITURGI", "Adhok")
@@ -154,6 +208,10 @@ export interface SeksiOrganisasi {
   id: string;
   name: string;
   groups: TimPelayanan[];
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface PastorTimKerjaData {
@@ -167,6 +225,10 @@ export interface Formulir {
   url: string; // Link to PDF or Google Form
   description?: string;
   category: "liturgi" | "pelayanan" | "lainnya";
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 // Wilayah & Lingkungan Actions
@@ -187,6 +249,17 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
       return { success: false, error: "Unauthorized" };
     }
 
+    for (const wilayah of data) {
+      if (!canManageWilayah(currentUser, wilayah)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Wilayah/Lingkungan ini" };
+      }
+      for (const lingkungan of wilayah.lingkungan) {
+        if (!canManageLingkungan(currentUser, lingkungan, data)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Wilayah/Lingkungan ini" };
+        }
+      }
+    }
+
     const timestamp = new Date().toISOString();
     const userIdentifier = currentUser.name || currentUser.email || "Unknown";
 
@@ -194,10 +267,18 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
       ...wilayah,
       lastEditedBy: userIdentifier,
       lastEditedAt: timestamp,
+      created_by: wilayah.created_by || userIdentifier,
+      created_at: wilayah.created_at || timestamp,
+      modified_by: userIdentifier,
+      modified_at: timestamp,
       lingkungan: wilayah.lingkungan.map(lingkungan => ({
         ...lingkungan,
         lastEditedBy: userIdentifier,
         lastEditedAt: timestamp,
+        created_by: lingkungan.created_by || userIdentifier,
+        created_at: lingkungan.created_at || timestamp,
+        modified_by: userIdentifier,
+        modified_at: timestamp,
       }))
     }));
 
@@ -230,8 +311,40 @@ export async function savePastorTimKerja(data: PastorTimKerjaData) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
+    const timestamp = new Date().toISOString();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+    const auditedData = {
+      pastor: data.pastor.map(item => ({
+        ...item,
+        created_by: item.created_by || userIdentifier,
+        created_at: item.created_at || timestamp,
+        modified_by: userIdentifier,
+        modified_at: timestamp,
+      })),
+      seksi: data.seksi.map(seksi => ({
+        ...seksi,
+        created_by: seksi.created_by || userIdentifier,
+        created_at: seksi.created_at || timestamp,
+        modified_by: userIdentifier,
+        modified_at: timestamp,
+        groups: seksi.groups.map(group => ({
+          ...group,
+          created_by: group.created_by || userIdentifier,
+          created_at: group.created_at || timestamp,
+          modified_by: userIdentifier,
+          modified_at: timestamp,
+          members: group.members.map(member => ({
+            ...member,
+            created_by: member.created_by || userIdentifier,
+            created_at: member.created_at || timestamp,
+            modified_by: userIdentifier,
+            modified_at: timestamp,
+          })),
+        })),
+      })),
+    };
     await commitFiles(
-      [{ path: PASTOR_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: PASTOR_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update pastor & tim kerja data`
     );
     revalidatePath("/profil/pastor-tim"); 
@@ -259,8 +372,17 @@ export async function saveFormulir(data: Formulir[]) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
+    const timestamp = new Date().toISOString();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+    const auditedData = data.map(item => ({
+      ...item,
+      created_by: item.created_by || userIdentifier,
+      created_at: item.created_at || timestamp,
+      modified_by: userIdentifier,
+      modified_at: timestamp,
+    }));
     await commitFiles(
-      [{ path: FORMULIR_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: FORMULIR_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update formulir data`
     );
     revalidatePath("/data/formulir"); 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
 import { MeetingBooking, MeetingPlace, InventoryItem, DateWithTime, BorrowedItemWithDetails } from "@/features/booking/types";
@@ -21,6 +21,7 @@ export function AdminBookingDialog({
     defaultBookingType = "room",
     places,
     inventory,
+    bookings,
     wilayahs = [],
     onSuccess,
     setConflictError
@@ -31,6 +32,7 @@ export function AdminBookingDialog({
     defaultBookingType?: "room" | "inventory";
     places: MeetingPlace[];
     inventory: InventoryItem[];
+    bookings: MeetingBooking[];
     wilayahs?: { id: string; name: string }[];
     onSuccess: () => void;
     setConflictError: (msg: string | null) => void;
@@ -72,6 +74,7 @@ export function AdminBookingDialog({
         dateReturn: "",
         event: "",
         location: "",
+        locationType: "room" as "room" | "other",
         multiDatesDetails: [] as DateWithTime[],
         borrowedItems: [] as BorrowedItemWithDetails[],
         submissionSource: "manual" as "online" | "manual"
@@ -80,6 +83,19 @@ export function AdminBookingDialog({
     const [newBooking, setNewBooking] = useState(getInitialBookingState());
     const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
     const [inventoryItemsFull, setInventoryItemsFull] = useState<InventoryItem[]>([]);
+
+    const takenSlots = useMemo(() => {
+        if (!newBooking.placeId || bookingType !== 'room') return {};
+        const confirmedBookings = bookings.filter(
+            b => b.placeId === newBooking.placeId && b.status === 'confirmed'
+        );
+        const slotsByDate: Record<string, Array<{ startTime: string; endTime: string }>> = {};
+        confirmedBookings.forEach(b => {
+            if (!slotsByDate[b.date]) slotsByDate[b.date] = [];
+            slotsByDate[b.date].push({ startTime: b.startTime || '', endTime: b.endTime || '' });
+        });
+        return slotsByDate;
+    }, [bookings, newBooking.placeId, bookingType]);
 
     useEffect(() => {
         if (isOpen) {
@@ -147,6 +163,7 @@ export function AdminBookingDialog({
                     dateReturn: bookingToEdit.returnDate || "",
                     event: bookingToEdit.type === 'inventory' ? cleanPurpose : "",
                     location: bookingToEdit.location || "",
+                    locationType: "room" as "room" | "other",
                     multiDatesDetails: bookingToEdit.multiDatesDetails || [],
                     borrowedItems: borrowedItemsWithDetails,
                     submissionSource: bookingToEdit.submissionSource || "online"
@@ -179,9 +196,13 @@ export function AdminBookingDialog({
             };
         } else {
             const inventoryDates = multiDatesDetails.length > 0 ? multiDatesDetails : undefined;
+            const firstItem = borrowedItems.length > 0 ? borrowedItems[0] : undefined;
+            const firstItemDateTake = firstItem?.dateTake;
+            const todayDate = new Date().toISOString().split('T')[0];
+            const inventoryDate = inventoryDates ? inventoryDates[0].date : (firstItemDateTake || commonBooking.date || todayDate);
             payload = {
                 ...payload,
-                date: inventoryDates ? inventoryDates[0].date : (dateTake || commonBooking.date),
+                date: inventoryDate || todayDate,
                 multiDatesDetails: inventoryDates,
                 userName: commonBooking.userName,
                 userContact: commonBooking.userContact,
@@ -275,6 +296,7 @@ export function AdminBookingDialog({
                                             }));
                                         }}
                                         disablePast={true}
+                                        takenSlots={takenSlots}
                                     />
                                 </div>
                             </>
@@ -287,33 +309,40 @@ export function AdminBookingDialog({
                                     <Input id="event" value={newBooking.event} onChange={e => setNewBooking({ ...newBooking, event: e.target.value })} required placeholder="Misa Mingguan, Rapat Panitia, dll" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="location">Tempat Pakai Barang</Label>
-                                    <Select value={newBooking.location} onValueChange={(val) => setNewBooking({ ...newBooking, location: val })} required>
-                                        <SelectTrigger className="bg-white">
-                                            <SelectValue placeholder="Pilih Ruangan" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white">
-                                            {places.map(p => (
-                                                <SelectItem key={p.id} value={p.name}>{p.name} {p.capacity ? `(Kap: ${p.capacity})` : ''}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                    <Label>Tanggal & Waktu Pengambilan/Pengembalian</Label>
-                                    <MultiDateWithTimePicker
-                                        values={newBooking.multiDatesDetails || []}
-                                        onChange={(vals) => {
-                                            setNewBooking(prev => ({
-                                                ...prev,
-                                                multiDatesDetails: vals,
-                                                dateTake: vals.length > 0 ? vals[0].date : '',
-                                                returnDate: vals.length > 0 ? vals[vals.length - 1].date : ''
-                                            }));
-                                        }}
-                                        disablePast={true}
-                                    />
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="location">Tempat Pakai Barang</Label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewBooking(prev => ({ 
+                                                ...prev, 
+                                                locationType: prev.locationType === "room" ? "other" : "room",
+                                                location: ""
+                                            }))}
+                                            className="text-sm text-brand-dark hover:text-brand-dark/80 underline"
+                                        >
+                                            {newBooking.locationType === "room" ? "Isi Lokasi lain" : "Pilih Ruangan"}
+                                        </button>
+                                    </div>
+                                    {newBooking.locationType === "room" ? (
+                                        <Select value={newBooking.location} onValueChange={(val) => setNewBooking({ ...newBooking, location: val })} required>
+                                            <SelectTrigger className="bg-white">
+                                                <SelectValue placeholder="Pilih Ruangan" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-white">
+                                                {places.map(p => (
+                                                    <SelectItem key={p.id} value={p.name}>{p.name} {p.capacity ? `(Kap: ${p.capacity})` : ''}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Input
+                                            id="location"
+                                            value={newBooking.location}
+                                            onChange={e => setNewBooking({ ...newBooking, location: e.target.value })}
+                                            required
+                                            placeholder="Ketik lokasi manual"
+                                        />
+                                    )}
                                 </div>
                             </>
                         )}

@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
-import { hasPermission } from "@/lib/roles";
+import { hasPermission, canManageBooking } from "@/lib/roles";
 import { MeetingBooking, DateWithTime } from "../types";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -17,18 +17,18 @@ const bookingSchema = z.object({
   type: z.enum(['room', 'inventory', 'both']),
   placeId: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid"),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid").optional(),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "Format waktu tidak valid").optional(),
   userName: z.string().min(2, "Nama minimal 2 karakter").max(100, "Nama terlalu panjang"),
   userContact: z.string().min(5, "Kontak minimal 5 karakter").max(100, "Kontak terlalu panjang"),
   purpose: z.string().min(3, "Keperluan minimal 3 karakter").max(500, "Keperluan terlalu panjang"),
   isAdminDirectCreate: z.boolean().optional(),
   submissionSource: z.enum(['online', 'manual']).optional(),
-  
+
   // New Tracking fields - Updated to support per-item times
-  borrowedItems: z.array(z.object({ 
-    itemId: z.string(), 
-    quantity: z.number(), 
+  borrowedItems: z.array(z.object({
+    itemId: z.string(),
+    quantity: z.number(),
     name: z.string(),
     dateTake: z.string().optional(),
     timeTake: z.string().optional(),
@@ -45,6 +45,8 @@ const bookingSchema = z.object({
     endTime: z.string(),
   })).optional(),
 }).refine(data => {
+    // Only validate time for room/both types
+    if (data.type === 'inventory') return true;
     // Only validate single date bookings (multiDatesDetails has its own validation per date)
     if (data.multiDatesDetails && data.multiDatesDetails.length > 0) return true;
     // Compare times as minutes from midnight for proper chronological comparison
@@ -52,7 +54,7 @@ const bookingSchema = z.object({
       const [h, m] = t.split(':').map(Number);
       return h * 60 + m;
     };
-    return toMinutes(data.endTime) > toMinutes(data.startTime);
+    return toMinutes(data.endTime || "00:00") > toMinutes(data.startTime || "00:00");
   }, {
     message: "Waktu selesai harus setelah waktu mulai",
   });
@@ -105,15 +107,30 @@ export async function submitBooking(
     // Handle multiDatesDetails - create separate bookings for each date
     if (parsed.data.multiDatesDetails && parsed.data.multiDatesDetails.length > 0) {
       const { isAdminDirectCreate, submissionSource, multiDatesDetails, ...baseData } = parsed.data as any;
-      
-      let targetStatus = "pending";
-      if (isAdminDirectCreate) {
-        const currentUser = await getCurrentUser();
-        if (currentUser && hasPermission(currentUser.role, "manage_data")) {
-          targetStatus = "confirmed";
+
+      // Check for overlaps against confirmed bookings (only for room bookings)
+      if (baseData.type === 'room' || baseData.type === 'both') {
+        for (const dateDetail of multiDatesDetails) {
+          const overlaps = await adminDb.collection(COLLECTION)
+            .where("placeId", "==", baseData.placeId)
+            .where("status", "==", "confirmed")
+            .get();
+          
+          const hasOverlap = overlaps.docs.some((doc: any) => {
+            const b = doc.data() as MeetingBooking;
+            if (b.date !== dateDetail.date) return false;
+            return dateDetail.startTime < b.endTime && dateDetail.endTime > b.startTime;
+          });
+
+          if (hasOverlap) {
+            return { success: false, error: `Jadwal sudah disetujui untuk ${dateDetail.date} (waktu sudah terpakai).` };
+          }
         }
       }
 
+      const now = Date.now();
+      const currentUser = isAdminDirectCreate ? await getCurrentUser() : null;
+      const userIdentifier = currentUser ? (currentUser.name || currentUser.email || "Admin") : "Public";
       const bookingPromises = multiDatesDetails.map(async (dateDetail: any) => {
         const bookingData = {
           ...baseData,
@@ -122,27 +139,16 @@ export async function submitBooking(
           endTime: dateDetail.endTime,
           multiDatesDetails: multiDatesDetails,
           submissionSource: submissionSource || (isAdminDirectCreate ? 'manual' : 'online'),
-          status: targetStatus,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          status: "pending",
+          created_by: userIdentifier,
+          created_at: now,
+          modified_by: userIdentifier,
+          modified_at: now,
         };
         return adminDb.collection(COLLECTION).add(bookingData);
       });
 
       const docRefs = await Promise.all(bookingPromises);
-      
-      // Auto-reject overlapping pending bookings for each date
-      if (targetStatus === "confirmed" && baseData.placeId) {
-        for (const dateDetail of multiDatesDetails) {
-          await autoRejectOverlappingPending(
-            baseData.placeId,
-            dateDetail.date,
-            dateDetail.startTime,
-            dateDetail.endTime,
-            docRefs[0].id
-          );
-        }
-      }
 
       // Create wilayah approvals for each inventory item (Admin Wilayah individual tracking)
       await handlePackageBookingWilayahApproval(docRefs[0].id, baseData as MeetingBooking);
@@ -158,11 +164,13 @@ export async function submitBooking(
           .where("placeId", "==", parsed.data.placeId)
           .where("status", "==", "confirmed")
           .get();
-          
+
         const hasOverlap = overlaps.docs.some(doc => {
           const b = doc.data() as MeetingBooking;
           if (b.date !== parsed.data.date) return false;
-          return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+          const startTime = parsed.data.startTime!;
+          const endTime = parsed.data.endTime!;
+          return startTime < b.endTime && endTime > b.startTime;
         });
 
         if (hasOverlap) {
@@ -170,37 +178,22 @@ export async function submitBooking(
         }
     }
 
-    let targetStatus = "pending";
-    if (parsed.data.isAdminDirectCreate) {
-      const currentUser = await getCurrentUser();
-      if (currentUser && hasPermission(currentUser.role, "manage_data")) {
-        targetStatus = "confirmed";
-      }
-    }
-
     const { isAdminDirectCreate, submissionSource, ...bookingDataToSave } = parsed.data as any;
-    
+
     // Assign Submission Source
     bookingDataToSave.submissionSource = submissionSource || (isAdminDirectCreate ? 'manual' : 'online');
 
     const now = Date.now();
+    const currentUser = isAdminDirectCreate ? await getCurrentUser() : null;
+    const userIdentifier = currentUser ? (currentUser.name || currentUser.email || "Unknown") : "Public";
     const docRef = await adminDb.collection(COLLECTION).add({
       ...bookingDataToSave,
-      status: targetStatus,
-      createdAt: now,
-      updatedAt: now,
+      status: "pending",
+      created_by: userIdentifier,
+      created_at: now,
+      modified_by: userIdentifier,
+      modified_at: now,
     });
-    
-    // If admin bypasses directly to confirmed, trigger auto-reject for other pending ones
-    if (targetStatus === "confirmed" && bookingDataToSave.placeId) {
-         await autoRejectOverlappingPending(
-             bookingDataToSave.placeId, 
-             bookingDataToSave.date, 
-             bookingDataToSave.startTime, 
-             bookingDataToSave.endTime, 
-             docRef.id
-         );
-    }
     
     // Create wilayah approvals for each inventory item (Admin Wilayah individual tracking)
     await handlePackageBookingWilayahApproval(docRef.id, bookingDataToSave as MeetingBooking);
@@ -226,9 +219,9 @@ export async function getBookings(): Promise<MeetingBooking[]> {
     // Sort by date DESC, then startTime ASC
     return bookings.sort((a, b) => {
       if (a.date !== b.date) {
-         return b.date.localeCompare(a.date);
+         return (b.date || "").localeCompare(a.date || "");
       }
-      return a.startTime.localeCompare(b.startTime);
+      return (a.startTime || "").localeCompare(b.startTime || "");
     });
   } catch (error) {
     console.error("Error fetching bookings:", error);
@@ -432,9 +425,29 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
+    if (currentUser.role === "admin_wilayah") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const bookingData = bookingDoc.data() as MeetingBooking;
+      const itemWilayahIds: string[] = [];
+      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+        const itemsSnapshot = await adminDb.collection("inventory_items").get();
+        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+        for (const item of bookingData.borrowedItems) {
+          const itemData = itemsMap.get(item.itemId);
+          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        }
+      }
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+      }
+    }
+
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
     await adminDb.collection(COLLECTION).doc(id).update({
       status,
-      updatedAt: Date.now()
+      modified_by: userIdentifier,
+      modified_at: Date.now()
     });
     
     if (status === "confirmed") {
@@ -475,9 +488,28 @@ export async function updateReturnStatus(
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
+    if (currentUser.role === "admin_wilayah") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const bookingData = bookingDoc.data() as MeetingBooking;
+      const itemWilayahIds: string[] = [];
+      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+        const itemsSnapshot = await adminDb.collection("inventory_items").get();
+        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+        for (const item of bookingData.borrowedItems) {
+          const itemData = itemsMap.get(item.itemId);
+          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        }
+      }
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+      }
+    }
+
     const updateData: any = {
       returnStatus,
-      updatedAt: Date.now()
+      modified_by: currentUser.name || currentUser.email || "Unknown",
+      modified_at: Date.now()
     };
 
     if (returnNotes !== undefined) {
@@ -508,9 +540,28 @@ export async function updateInitialConditionNotes(
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
+    if (currentUser.role === "admin_wilayah") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const bookingData = bookingDoc.data() as MeetingBooking;
+      const itemWilayahIds: string[] = [];
+      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+        const itemsSnapshot = await adminDb.collection("inventory_items").get();
+        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+        for (const item of bookingData.borrowedItems) {
+          const itemData = itemsMap.get(item.itemId);
+          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        }
+      }
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+      }
+    }
+
     await adminDb.collection(COLLECTION).doc(id).update({
       initialConditionNotes,
-      updatedAt: Date.now()
+      modified_by: currentUser.name || currentUser.email || "Unknown",
+      modified_at: Date.now()
     });
 
     revalidatePath("/admin/meeting-rooms");
@@ -527,6 +578,24 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    if (currentUser.role === "admin_wilayah") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const bookingData = bookingDoc.data() as MeetingBooking;
+      const itemWilayahIds: string[] = [];
+      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+        const itemsSnapshot = await adminDb.collection("inventory_items").get();
+        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+        for (const item of bookingData.borrowedItems) {
+          const itemData = itemsMap.get(item.itemId);
+          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        }
+      }
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+      }
     }
 
     await adminDb.collection(COLLECTION).doc(id).delete();
@@ -548,6 +617,24 @@ export async function updateBooking(
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    if (currentUser.role === "admin_wilayah") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const bookingData = bookingDoc.data() as MeetingBooking;
+      const itemWilayahIds: string[] = [];
+      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+        const itemsSnapshot = await adminDb.collection("inventory_items").get();
+        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+        for (const item of bookingData.borrowedItems) {
+          const itemData = itemsMap.get(item.itemId);
+          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        }
+      }
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+      }
     }
 
     // Server-side input validation
@@ -575,7 +662,9 @@ export async function updateBooking(
           // Check if any of our dates overlap with this booking
           return datesToCheck.some(checkDate => {
             if (b.date !== checkDate) return false;
-            return parsed.data.startTime < b.endTime && parsed.data.endTime > b.startTime;
+            const startTime = parsed.data.startTime!;
+            const endTime = parsed.data.endTime!;
+            return startTime < b.endTime && endTime > b.startTime;
           });
         });
 
@@ -640,7 +729,8 @@ export async function updateBooking(
     }
     await adminDb.collection(COLLECTION).doc(id).update({
       ...bookingDataToSave,
-      updatedAt: Date.now()
+      modified_by: currentUser.name || currentUser.email || "Unknown",
+      modified_at: Date.now()
     });
 
     revalidatePath("/admin/meeting-rooms");

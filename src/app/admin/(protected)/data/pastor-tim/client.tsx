@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -336,6 +337,7 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                 <tr>
                                     <th className="px-4 py-3">Nama</th>
                                     <th className="px-4 py-3">Jabatan</th>
+                                    <th className="px-4 py-3">Dibuat/Diubah</th>
                                     <th className="px-4 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
@@ -345,6 +347,13 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                         <tr key={p.id} className="hover:bg-slate-50">
                                             <td className="px-4 py-3 font-medium text-slate-900">{p.name}</td>
                                             <td className="px-4 py-3 text-slate-600">{p.role}</td>
+                                            <td className="px-4 py-3">
+                                                <div className="text-xs text-slate-500">
+                                                    {p.created_by && <div>dibuat: {p.created_by}</div>}
+                                                    {p.modified_by && <div>diubah: {p.modified_by}</div>}
+                                                    {p.modified_at && <div className="text-slate-400">{formatAuditDate(p.modified_at)}</div>}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex justify-end gap-1">
                                                     <Button variant="ghost" size="icon"
@@ -362,7 +371,7 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                         </tr>
                                     ))
                                 ) : (
-                                    <tr><td colSpan={3} className="text-center py-8 text-slate-500">Belum ada data Pastor</td></tr>
+                                    <tr><td colSpan={4} className="text-center py-8 text-slate-500">Belum ada data Pastor</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -402,7 +411,12 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                         </button>
                                         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleSection(section.id)}>
                                             <h3 className="font-semibold text-slate-800 text-sm truncate">{section.name}</h3>
-                                            <p className="text-xs text-slate-400">{section.groups.length} grup &middot; {section.groups.reduce((s, g) => s + g.members.length, 0)} anggota</p>
+                                            <p className="text-xs text-slate-400">{section.groups.length} grup · {section.groups.reduce((s, g) => s + g.members.length, 0)} anggota</p>
+                                            {section.modified_by && (
+                                                <p className="text-xs text-slate-400">
+                                                    Diedit: {section.modified_by}{section.modified_at && ` (${formatAuditDate(section.modified_at)})`}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-600"
@@ -455,6 +469,11 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleGroup(group.id)}>
                                                                     <span className="text-sm font-medium text-slate-700">{group.name}</span>
                                                                     <span className="text-xs text-slate-400 ml-2">({group.members.length})</span>
+                                                                    {group.modified_by && (
+                                                                        <span className="text-xs text-slate-400 ml-2">
+                                                                            · Diedit: {group.modified_by}{group.modified_at && ` (${formatAuditDate(group.modified_at)})`}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 <div className="flex items-center gap-0.5">
                                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
@@ -477,6 +496,7 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                                 <th className="px-3 py-2 text-left">Nama</th>
                                                                                 <th className="px-3 py-2 text-left">Peran</th>
                                                                                 <th className="px-3 py-2 text-left">Telepon</th>
+                                                                                <th className="px-3 py-2 text-left">Diubah</th>
                                                                                 <th className="px-3 py-2 text-right">Aksi</th>
                                                                             </tr>
                                                                         </thead>
@@ -486,6 +506,12 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                                     <td className="px-3 py-2 font-medium text-slate-800">{m.name}</td>
                                                                                     <td className="px-3 py-2 text-slate-500">{m.role || "—"}</td>
                                                                                     <td className="px-3 py-2 text-slate-500">{m.phone || "—"}</td>
+                                                                                    <td className="px-3 py-2">
+                                                                                        <div className="text-xs text-slate-400">
+                                                                                            {m.modified_by && <div>diubah: {m.modified_by}</div>}
+                                                                                            {m.modified_at && <div>{formatAuditDate(m.modified_at)}</div>}
+                                                                                        </div>
+                                                                                    </td>
                                                                                     <td className="px-3 py-2 text-right">
                                                                                         <div className="flex justify-end gap-0.5">
                                                                                             <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
@@ -501,7 +527,7 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                                 </tr>
                                                                             ))}
                                                                             {group.members.length === 0 && (
-                                                                                <tr><td colSpan={4} className="text-center py-4 text-slate-400 text-xs">Belum ada anggota</td></tr>
+                                                                                <tr><td colSpan={5} className="text-center py-4 text-slate-400 text-xs">Belum ada anggota</td></tr>
                                                                             )}
                                                                         </tbody>
                                                                     </table>

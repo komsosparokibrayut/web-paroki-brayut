@@ -9,6 +9,11 @@ export interface GerejaUnit {
   kategori: 'Gereja Paroki' | 'Gereja Wilayah';
   koordinat: string; // Google Maps share link
   gallery?: string[]; // image URLs
+  wilayah_id?: string; // Link to Wilayah for wilayah-based access control
+  created_by?: string;
+  created_at?: string; // ISO date string for GitHub JSON
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export const GEREJA_KATEGORI = ['Gereja Paroki', 'Gereja Wilayah'] as const;
@@ -29,6 +34,10 @@ export interface JadwalEvent {
   imageUrl?: string; // Poster/Flyer
   linkUrl?: string; // Registration or details link
   fileUrl?: string; // Downloadable file
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 /** Standard event categories */
@@ -69,6 +78,10 @@ export interface ChurchUnit {
   isSuspended?: boolean;
   suspendedReason?: string;
   weeklySchedules: WeeklySchedule[];
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface SpecialMassEvent {
@@ -78,6 +91,10 @@ export interface SpecialMassEvent {
   location: string;
   description: string;
   date?: string; // YYYY-MM-DD format for date-based filtering
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export interface JadwalMisaData {

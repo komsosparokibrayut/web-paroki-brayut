@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
 import { MeetingBooking, MeetingPlace, InventoryItem, DateWithTime, BorrowedItemWithDetails } from "@/features/booking/types";
@@ -59,7 +59,7 @@ export function BookingDialog({
         }).filter(Boolean) as { hour: number; time: string }[];
     };
 
-    const initialBookingState = {
+    const initialBookingState = useMemo(() => ({
         placeId: "",
         date: "",
         startTime: "",
@@ -74,14 +74,28 @@ export function BookingDialog({
         dateTake: "",
         dateReturn: "",
         event: "",
+        locationType: "room" as "room" | "other",
         location: "",
         multiDatesDetails: [] as DateWithTime[],
         borrowedItems: [] as BorrowedItemWithDetails[]
-    };
+    }), []);
 
     const [newBooking, setNewBooking] = useState(initialBookingState);
     const [availableStock, setAvailableStock] = useState<Record<string, number>>({});
     const [inventoryItemsFull, setInventoryItemsFull] = useState<InventoryItem[]>([]);
+
+    const takenSlots = useMemo(() => {
+        if (!newBooking.placeId || bookingType !== 'room') return {};
+        const confirmedBookings = bookings.filter(
+            b => b.placeId === newBooking.placeId && b.status === 'confirmed'
+        );
+        const slotsByDate: Record<string, Array<{ startTime: string; endTime: string }>> = {};
+        confirmedBookings.forEach(b => {
+            if (!slotsByDate[b.date]) slotsByDate[b.date] = [];
+            slotsByDate[b.date].push({ startTime: b.startTime || '', endTime: b.endTime || '' });
+        });
+        return slotsByDate;
+    }, [bookings, newBooking.placeId, bookingType]);
 
     useEffect(() => {
         if (open) {
@@ -117,7 +131,7 @@ export function BookingDialog({
 
     const handleBook = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { isMultiDay, multiDayDetails, dateTake, dateReturn, event, location, participants, notes, borrowedItems, multiDatesDetails, ...commonBooking } = newBooking;
+        const { isMultiDay, multiDayDetails, dateTake, dateReturn, event, locationType, location, participants, notes, borrowedItems, multiDatesDetails, ...commonBooking } = newBooking;
 
         let payload: any = { type: bookingType };
 
@@ -136,9 +150,13 @@ export function BookingDialog({
             };
         } else {
             const inventoryDates = multiDatesDetails.length > 0 ? multiDatesDetails : undefined;
+            const firstItem = borrowedItems.length > 0 ? borrowedItems[0] : undefined;
+            const firstItemDateTake = firstItem?.dateTake;
+            const todayDate = new Date().toISOString().split('T')[0];
+            const inventoryDate = inventoryDates ? inventoryDates[0].date : (firstItemDateTake || commonBooking.date || todayDate);
             payload = {
                 ...payload,
-                date: inventoryDates ? inventoryDates[0].date : (dateTake || commonBooking.date),
+                date: inventoryDate || todayDate,
                 multiDatesDetails: inventoryDates,
                 userName: commonBooking.userName,
                 userContact: commonBooking.userContact,
@@ -207,6 +225,7 @@ export function BookingDialog({
                                                 }));
                                             }}
                                             disablePast
+                                            takenSlots={takenSlots}
                                         />
                                     </div>
                                 </>
@@ -219,33 +238,40 @@ export function BookingDialog({
                                         <Input id="event" value={newBooking.event} onChange={e => setNewBooking({ ...newBooking, event: e.target.value })} required placeholder="Misa Mingguan, Rapat Panitia, dll" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="location">Tempat Pakai Barang</Label>
-                                        <Select value={newBooking.location} onValueChange={(val) => setNewBooking({ ...newBooking, location: val })} required>
-                                            <SelectTrigger className="bg-white">
-                                                <SelectValue placeholder="Pilih Ruangan" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-white">
-                                                {places.map(p => (
-                                                    <SelectItem key={p.id} value={p.name}>{p.name} {p.capacity ? `(Kap: ${p.capacity})` : ''}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                        <Label>Tanggal & Waktu Pengambilan/Pengembalian</Label>
-                                        <MultiDateWithTimePicker
-                                            values={newBooking.multiDatesDetails || []}
-                                            onChange={(vals) => {
-                                                setNewBooking(prev => ({
-                                                    ...prev,
-                                                    multiDatesDetails: vals,
-                                                    dateTake: vals.length > 0 ? vals[0].date : '',
-                                                    returnDate: vals.length > 0 ? vals[vals.length - 1].date : ''
-                                                }));
-                                            }}
-                                            disablePast
-                                        />
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="location">Tempat Pakai Barang</Label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewBooking(prev => ({ 
+                                                    ...prev, 
+                                                    locationType: prev.locationType === "room" ? "other" : "room",
+                                                    location: ""
+                                                }))}
+                                                className="text-sm text-brand-dark hover:text-brand-dark/80 underline"
+                                            >
+                                                {newBooking.locationType === "room" ? "Isi Lokasi lain" : "Pilih Ruangan"}
+                                            </button>
+                                        </div>
+                                        {newBooking.locationType === "room" ? (
+                                            <Select value={newBooking.location} onValueChange={(val) => setNewBooking({ ...newBooking, location: val })} required>
+                                                <SelectTrigger className="bg-white">
+                                                    <SelectValue placeholder="Pilih Ruangan" />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white">
+                                                    {places.map(p => (
+                                                        <SelectItem key={p.id} value={p.name}>{p.name} {p.capacity ? `(Kap: ${p.capacity})` : ''}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <Input
+                                                id="location"
+                                                value={newBooking.location}
+                                                onChange={e => setNewBooking({ ...newBooking, location: e.target.value })}
+                                                required
+                                                placeholder="Ketik lokasi manual"
+                                            />
+                                        )}
                                     </div>
                                 </>
                             )}

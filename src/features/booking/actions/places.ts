@@ -2,7 +2,7 @@
 
 import { adminDb } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
-import { hasPermission } from "@/lib/roles";
+import { hasPermission, canManagePlace } from "@/lib/roles";
 import { MeetingPlace } from "../types";
 import { revalidatePath } from "next/cache";
 import { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
@@ -49,7 +49,16 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
+    if (place.id) {
+      const existingPlace = await adminDb.collection(COLLECTION).doc(place.id).get();
+      if (!existingPlace.exists) return { success: false, error: "Tempat tidak ditemukan" };
+      if (!canManagePlace(currentUser, existingPlace.data() as MeetingPlace)) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk mengubah tempat ini" };
+      }
+    }
+
     const now = Date.now();
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
     const collectionRef = adminDb.collection(COLLECTION);
     let savedId = place.id;
     if (place.id) {
@@ -57,14 +66,17 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
       const { id, ...updateData } = place;
       await collectionRef.doc(id).update({
         ...updateData,
-        updatedAt: now,
+        modified_by: userIdentifier,
+        modified_at: now,
       });
     } else {
       // Create
       const docRef = await collectionRef.add({
         ...place,
-        createdAt: now,
-        updatedAt: now,
+        created_by: userIdentifier,
+        created_at: now,
+        modified_by: userIdentifier,
+        modified_at: now,
       });
       savedId = docRef.id;
     }
@@ -83,6 +95,12 @@ export async function deleteMeetingPlace(id: string): Promise<ActionResult> {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
+    const existingPlace = await adminDb.collection(COLLECTION).doc(id).get();
+    if (!existingPlace.exists) return { success: false, error: "Tempat tidak ditemukan" };
+    if (!canManagePlace(currentUser, existingPlace.data() as MeetingPlace)) {
+      return { success: false, error: "Tidak memiliki otorisasi untuk menghapus tempat ini" };
     }
 
     await adminDb.collection(COLLECTION).doc(id).delete();

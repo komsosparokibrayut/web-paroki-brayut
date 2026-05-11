@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatAuditDate } from "@/lib/utils";
 
 export default function GeneralSettingsPage() {
   const [settings, setSettings] = useState<AdminSettings>({});
@@ -109,6 +110,16 @@ export default function GeneralSettingsPage() {
                 <p className="text-xs text-muted-foreground">{formatCurrency(settings.donation_target)}</p>
               )}
             </div>
+            {(settings.created_by || settings.modified_by) && (
+              <div className="pt-3 border-t border-slate-100 text-xs text-slate-400 space-y-0.5">
+                {settings.created_by && (
+                  <div>dibuat: {settings.created_by} ({formatAuditDate(settings.created_at)})</div>
+                )}
+                {settings.modified_by && (
+                  <div>diubah: {settings.modified_by} ({formatAuditDate(settings.modified_at)})</div>
+                )}
+              </div>
+            )}
           </CardContent>
           <CardFooter className="bg-slate-50 border-t p-4">
             <Button type="submit" disabled={isSavingSettings}>

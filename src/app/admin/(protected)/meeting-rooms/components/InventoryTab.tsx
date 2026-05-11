@@ -182,6 +182,12 @@ export function InventoryTab({
                       <p className="text-sm font-semibold text-muted-foreground">Belum Ada Data Peminjaman</p>
                     )}
                   </div>
+                  {(item.created_by || item.modified_by) && (
+                    <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                      {item.created_by && <span>dibuat oleh: {item.created_by}{item.created_at ? ` (${new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</span>}
+                      {item.modified_by && <span> · diubah oleh: {item.modified_by}{item.modified_at ? ` (${new Date(item.modified_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</span>}
+                    </p>
+                  )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
                   {canManageInventoryItem(user, item) ? (

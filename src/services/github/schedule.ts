@@ -46,14 +46,25 @@ export async function getScheduleEvents(): Promise<JadwalEvent[]> {
 /**
  * Updates the list of schedule events (Jadwal Kegiatan).
  * @param data - Array of JadwalEvent objects to persist.
+ * @param userIdentifier - User identifier for audit trail
  * @returns Promise resolving to success/error result object.
  */
 export async function updateScheduleEvents(
-  data: JadwalEvent[]
+  data: JadwalEvent[],
+  userIdentifier?: string
 ): Promise<{ success: boolean; message?: string }> {
   try {
+    const timestamp = new Date().toISOString();
+    const userId = userIdentifier || "System";
+    const auditedData = data.map(event => ({
+      ...event,
+      created_by: event.created_by || userId,
+      created_at: event.created_at || timestamp,
+      modified_by: userId,
+      modified_at: timestamp,
+    }));
     await commitFiles(
-      [{ path: JADWAL_KEGIATAN_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: JADWAL_KEGIATAN_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update jadwal kegiatan (${data.length} events)`
     );
     return { success: true };
@@ -84,14 +95,35 @@ export async function getJadwalMisa(): Promise<JadwalMisaData | null> {
 /**
  * Updates the Mass Schedule data (Jadwal Misa).
  * @param data - JadwalMisaData object to persist.
+ * @param userIdentifier - User identifier for audit trail
  * @returns Promise resolving to success/error result object.
  */
 export async function updateJadwalMisa(
-  data: JadwalMisaData
+  data: JadwalMisaData,
+  userIdentifier?: string
 ): Promise<{ success: boolean; message?: string }> {
   try {
+    const timestamp = new Date().toISOString();
+    const userId = userIdentifier || "System";
+    const auditedData = {
+      ...data,
+      churches: data.churches.map(church => ({
+        ...church,
+        created_by: church.created_by || userId,
+        created_at: church.created_at || timestamp,
+        modified_by: userId,
+        modified_at: timestamp,
+      })),
+      specialMasses: data.specialMasses.map(mass => ({
+        ...mass,
+        created_by: mass.created_by || userId,
+        created_at: mass.created_at || timestamp,
+        modified_by: userId,
+        modified_at: timestamp,
+      })),
+    };
     await commitFiles(
-      [{ path: JADWAL_MISA_FILE, content: JSON.stringify(data, null, 2) }],
+      [{ path: JADWAL_MISA_FILE, content: JSON.stringify(auditedData, null, 2) }],
       `Update jadwal misa data`
     );
     return { success: true };

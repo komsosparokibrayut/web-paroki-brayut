@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { UserRole } from "@/lib/roles";
+import ProfileModal from "@/components/admin/ProfileModal";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -47,6 +49,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function AdminSidebar() {
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
     const { user, role } = useAdminRole();
     const pathname = usePathname();
     const router = useRouter();
@@ -85,7 +88,7 @@ export function AdminSidebar() {
                 { name: "Formulir", href: "/admin/data/formulir", icon: Database },
                 { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin },
                 { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon },
-            ].filter(() => hasAccess(["data_admin"]))
+            ].filter(() => hasAccess(["data_admin", "admin_wilayah"]))
         },
         {
             title: "Settings",
@@ -160,7 +163,8 @@ export function AdminSidebar() {
     };
 
     return (
-        <Sidebar collapsible="icon" className="bg-sidebar border-r border-slate-200">
+        <>
+            <Sidebar collapsible="icon" className="bg-sidebar border-r border-slate-200">
             {/* Header with Logo */}
             <SidebarHeader className="border-b border-slate-100 p-2">
                 <Tooltip>
@@ -244,16 +248,18 @@ export function AdminSidebar() {
                             </Link>
                         </Button>
 
-                        <div className="flex items-center gap-3 px-2 py-2 rounded-md">
-                            <Avatar className="size-8">
-                                <AvatarImage src={user?.picture} alt={user?.name || "Admin"} />
-                                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
-                                    {user?.name?.charAt(0)?.toUpperCase() || "A"}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
-                                <span className="truncate font-medium text-slate-900">{user?.name || "Admin"}</span>
-                                <span className="truncate text-xs text-slate-500">{user?.email}</span>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer hover:bg-slate-50 transition-colors flex-1" onClick={() => setProfileModalOpen(true)}>
+                                <Avatar className="size-8">
+                                    <AvatarImage src={user?.picture} alt={user?.name || "Admin"} />
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
+                                        {user?.name?.charAt(0)?.toUpperCase() || "A"}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="grid flex-1 text-left text-sm leading-tight overflow-hidden">
+                                    <span className="truncate font-medium text-slate-900">{user?.name || "Admin"}</span>
+                                    <span className="truncate text-xs text-slate-500">{user?.email}</span>
+                                </div>
                             </div>
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -301,5 +307,7 @@ export function AdminSidebar() {
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>
+            <ProfileModal isOpen={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+        </>
     );
 }

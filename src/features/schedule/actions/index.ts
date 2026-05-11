@@ -24,7 +24,8 @@ export async function saveJadwalMisa(data: JadwalMisaData): Promise<ActionResult
   if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
     return { success: false, error: "Unauthorized" };
   }
-  const result = await updateJadwalMisaService(data);
+  const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+  const result = await updateJadwalMisaService(data, userIdentifier);
   if (result.success) {
     revalidatePath("/jadwal-misa");
     revalidatePath("/admin/data/jadwal-misa");
@@ -53,7 +54,8 @@ export async function saveJadwalKegiatan(data: JadwalEvent[]): Promise<ActionRes
   if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
     return { success: false, error: "Unauthorized" };
   }
-  const result = await updateScheduleEvents(data);
+  const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+  const result = await updateScheduleEvents(data, userIdentifier);
   if (result.success) {
     revalidatePath("/event");
     revalidatePath("/admin/data/jadwal-kegiatan");

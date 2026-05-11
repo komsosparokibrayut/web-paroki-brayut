@@ -16,6 +16,10 @@ export interface AdminSettings {
   donation_total?: number;
   donation_target?: number;
   meeting_room_password?: string;
+  created_by?: string;
+  created_at?: string;
+  modified_by?: string;
+  modified_at?: string;
 }
 
 export async function getAdminSettings(): Promise<AdminSettings> {
@@ -31,6 +35,28 @@ export async function getAdminSettings(): Promise<AdminSettings> {
   }
 }
 
+export async function setupAdminSettings(data: Partial<AdminSettings>): Promise<ActionResult> {
+  try {
+    const docRef = adminDb.collection(COLLECTION).doc(SETTINGS_DOC);
+    const doc = await docRef.get();
+
+    if (doc.exists) {
+      return { success: false, error: "Settings already exist" };
+    }
+
+    await docRef.set({
+      ...data,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error setting up admin settings:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function updateAdminSettings(data: Partial<AdminSettings>): Promise<ActionResult> {
   try {
     const currentUser = await getCurrentUser();
@@ -38,19 +64,30 @@ export async function updateAdminSettings(data: Partial<AdminSettings>): Promise
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
+    const userIdentifier = currentUser.name || currentUser.email || "Unknown";
+    const timestamp = Date.now();
     const docRef = adminDb.collection(COLLECTION).doc(SETTINGS_DOC);
     const doc = await docRef.get();
 
     if (doc.exists) {
+      const existingData = doc.data() as AdminSettings;
       await docRef.update({
         ...data,
-        updatedAt: Date.now(),
+        modified_by: userIdentifier,
+        modified_at: timestamp,
+        created_by: existingData.created_by || userIdentifier,
+        created_at: existingData.created_at || timestamp,
+        updatedAt: timestamp,
       });
     } else {
       await docRef.set({
         ...data,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        created_by: userIdentifier,
+        created_at: timestamp,
+        modified_by: userIdentifier,
+        modified_at: timestamp,
+        createdAt: timestamp,
+        updatedAt: timestamp,
       });
     }
 

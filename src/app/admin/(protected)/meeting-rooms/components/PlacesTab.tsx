@@ -171,6 +171,12 @@ export function PlacesTab({
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{place.description || "Tidak ada deskripsi."}</p>
+                  {(place.created_by || place.modified_by) && (
+                    <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                      {place.created_by && <span>dibuat oleh: {place.created_by}{place.created_at ? ` (${new Date(place.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</span>}
+                      {place.modified_by && <span> · diubah oleh: {place.modified_by}{place.modified_at ? ` (${new Date(place.modified_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</span>}
+                    </p>
+                  )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
                   {canManagePlace(user, place) ? (

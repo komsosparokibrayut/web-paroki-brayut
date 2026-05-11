@@ -89,6 +89,8 @@ export async function updateWilayahApprovalStatus(
       status,
       approvedBy: currentUser.uid,
       notes: notes || null,
+      modified_by: currentUser.name || currentUser.email || "Unknown",
+      modified_at: Date.now(),
       updatedAt: Date.now()
     });
 

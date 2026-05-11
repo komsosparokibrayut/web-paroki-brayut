@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -27,7 +28,12 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-export default function GerejaClient({ initialData }: { initialData: GerejaUnit[] }) {
+interface Props {
+    initialData: GerejaUnit[];
+    wilayahList: Array<{ id: string; name: string }>;
+}
+
+export default function GerejaClient({ initialData, wilayahList }: Props) {
     const [data, setData] = useState<GerejaUnit[]>(initialData);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -43,6 +49,7 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
         alamat: "",
         kategori: "Gereja Wilayah" as GerejaUnit["kategori"],
         koordinat: "",
+        wilayah_id: "",
     });
     const router = useRouter();
 
@@ -60,7 +67,8 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                 formValues.description !== (editingItem.description || "") ||
                 formValues.alamat !== (editingItem.alamat || "") ||
                 formValues.kategori !== (editingItem.kategori || "") ||
-                formValues.koordinat !== (editingItem.koordinat || "");
+                formValues.koordinat !== (editingItem.koordinat || "") ||
+                formValues.wilayah_id !== (editingItem.wilayah_id || "");
             setHasChanges(changed);
         }
     }, [formValues, editingItem]);
@@ -76,9 +84,10 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                     alamat: editingItem.alamat || "",
                     kategori: editingItem.kategori || "Gereja Wilayah",
                     koordinat: editingItem.koordinat || "",
+                    wilayah_id: editingItem.wilayah_id || "",
                 });
             } else {
-                setFormValues({ name: "", description: "", alamat: "", kategori: "Gereja Wilayah", koordinat: "" });
+                setFormValues({ name: "", description: "", alamat: "", kategori: "Gereja Wilayah", koordinat: "", wilayah_id: "" });
             }
             setHasChanges(false);
         }
@@ -116,6 +125,7 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
             kategori: formValues.kategori,
             koordinat: formValues.koordinat,
             gallery: editingItem?.gallery || [],
+            wilayah_id: formValues.wilayah_id || undefined,
         };
         setPendingFormData(newItem);
         setSaveConfirmOpen(true);
@@ -175,6 +185,7 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                             <th className="px-6 py-3">Alamat</th>
                             <th className="px-6 py-3">Kategori</th>
                             <th className="px-6 py-3">Link Google Maps</th>
+                            <th className="px-6 py-3">Dibuat/Diubah</th>
                             <th className="px-6 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -205,6 +216,13 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                                     <td className="px-6 py-4 text-slate-500 text-xs font-mono max-w-[200px] truncate" title={item.koordinat || ""}>
                                         {item.koordinat || "—"}
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-xs text-slate-500">
+                                            {item.created_by && <div>dibuat: {item.created_by}</div>}
+                                            {item.modified_by && <div>diubah: {item.modified_by}</div>}
+                                            {item.modified_at && <div className="text-slate-400">{formatAuditDate(item.modified_at)}</div>}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}
@@ -221,7 +239,7 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                                     {searchTerm ? "Tidak ada hasil pencarian" : "Belum ada data gereja"}
                                 </td>
                             </tr>
@@ -254,6 +272,23 @@ export default function GerejaClient({ initialData }: { initialData: GerejaUnit[
                                 <SelectContent>
                                     {GEREJA_KATEGORI.map(k => (
                                         <SelectItem key={k} value={k}>{k}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="wilayah">Wilayah</Label>
+                            <Select value={formValues.wilayah_id} onValueChange={(val) => setFormValues({ ...formValues, wilayah_id: val === "none" ? "" : val })}>
+                                <SelectTrigger id="wilayah">
+                                    <SelectValue placeholder="Pilih wilayah" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Tidak ada</SelectItem>
+                                    {wilayahList.map((w) => (
+                                        <SelectItem key={w.id} value={w.id}>
+                                            {w.name}
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

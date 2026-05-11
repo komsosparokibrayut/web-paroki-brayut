@@ -9,6 +9,7 @@ import ConfirmModal from "@/components/admin/ConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatAuditDate } from "@/lib/utils";
 
 export default function StatistikClient({ initialData }: { initialData: StatistikData | null }) {
     const [data, setData] = useState<StatistikData>(initialData || {
@@ -94,15 +95,17 @@ export default function StatistikClient({ initialData }: { initialData: Statisti
                     </div>
 
                     <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
-                        <p className="text-xs text-slate-400">
-                            Diperbarui:{" "}
-                            {data.lastUpdated
-                                ? new Date(data.lastUpdated).toLocaleDateString("id-ID", {
-                                    day: "numeric", month: "long", year: "numeric",
-                                    hour: "2-digit", minute: "2-digit",
-                                })
-                                : "—"}
-                        </p>
+                        <div className="text-xs text-slate-400 space-y-0.5">
+                            {data.created_by && (
+                                <div>dibuat: {data.created_by} ({formatAuditDate(data.created_at)})</div>
+                            )}
+                            {data.modified_by && (
+                                <div>diubah: {data.modified_by} ({formatAuditDate(data.modified_at)})</div>
+                            )}
+                            {!data.created_by && !data.modified_by && data.lastUpdated && (
+                                <div>Diperbarui: {new Date(data.lastUpdated).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                            )}
+                        </div>
 
                         <Button
                             type="submit"

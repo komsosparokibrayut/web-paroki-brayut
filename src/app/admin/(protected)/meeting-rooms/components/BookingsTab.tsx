@@ -37,7 +37,9 @@ export function BookingsTab({
   openAddBooking: () => void;
   openEditBooking: (booking: MeetingBooking) => void;
 }) {
-  const { user } = useAdminRole();
+  const { user, role } = useAdminRole();
+  const isAdminWilayah = role === "admin_wilayah";
+  const userWilayahId = user?.wilayah_id;
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingTypeFilter, setBookingTypeFilter] = useState("all");
@@ -293,6 +295,12 @@ export function BookingsTab({
                       {booking.submissionSource === 'manual' ? "Form Cetak (Manual)" : "Form Online"}
                     </Badge>
                   </div>
+                  {(booking.created_by || booking.modified_by) && (
+                    <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
+                      {booking.created_by && <div> dibuat oleh: {booking.created_by}{booking.created_at ? ` (${new Date(booking.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</div>}
+                      {booking.modified_by && <div> diubah oleh: {booking.modified_by}{booking.modified_at ? ` (${new Date(booking.modified_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })})` : ''}</div>}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="flex-1 space-y-3 text-sm">
                   <div>
@@ -307,14 +315,16 @@ export function BookingsTab({
                   {booking.borrowedItems && booking.borrowedItems.length > 0 && (
                     <div className="pt-2 border-t">
                       <span className="font-semibold text-xs text-muted-foreground uppercase">Barang Dipinjam</span>
-                      <ul className="list-disc list-inside mt-1 font-medium text-slate-700">
+                      <ul className="mt-1 space-y-2">
                         {booking.borrowedItems.map((item, idx) => (
-                          <li key={item.itemId || idx} className="flex items-center gap-2">
-                            ({item.quantity}x) {item.name}
-                            <span className="text-xs text-muted-foreground font-normal">
-                              (Ambil: {item.dateTake} {item.timeTake} · Kembali: {item.dateReturn} {item.timeReturn})
-                            </span>
-                            {getReturnStatusBadge(booking.returnStatus)}
+                          <li key={item.itemId || idx} className="bg-slate-50 rounded-md p-2 space-y-1">
+                            <div className="font-medium text-slate-700 flex items-center justify-between">
+                              <span>({item.quantity}x) {item.name}</span>
+                              {getReturnStatusBadge(booking.returnStatus)}
+                            </div>
+                            <div className="text-xs text-muted-foreground pl-2">
+                              Ambil: {item.dateTake} {item.timeTake} · Kembali: {item.dateReturn} {item.timeReturn}
+                            </div>
                           </li>
                         ))}
                       </ul>

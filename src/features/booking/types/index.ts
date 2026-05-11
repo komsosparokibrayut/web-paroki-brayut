@@ -7,6 +7,10 @@ export interface MeetingPlace {
   wilayah_id?: string;
   createdAt: number;
   updatedAt: number;
+  created_by?: string;
+  created_at?: number;
+  modified_by?: string;
+  modified_at?: number;
 }
 
 export interface InventoryItem {
@@ -18,6 +22,10 @@ export interface InventoryItem {
   wilayah_id?: string;
   createdAt: number;
   updatedAt: number;
+  created_by?: string;
+  created_at?: number;
+  modified_by?: string;
+  modified_at?: number;
 }
 
 export interface DateWithTime {
@@ -68,6 +76,10 @@ export interface MeetingBooking {
 
   createdAt: number;
   updatedAt: number;
+  created_by?: string;
+  created_at?: number;
+  modified_by?: string;
+  modified_at?: number;
 }
 
 export interface Event {
@@ -104,6 +116,10 @@ export interface WilayahApproval {
   timeReturn?: string;
   createdAt: number;
   updatedAt: number;
+  created_by?: string;
+  created_at?: number;
+  modified_by?: string;
+  modified_at?: number;
 }
 
 export interface MassSchedule {
@@ -116,4 +132,8 @@ export interface MassSchedule {
   wilayah_id?: string;
   createdAt: number;
   updatedAt: number;
+  created_by?: string;
+  created_at?: number;
+  modified_by?: string;
+  modified_at?: number;
 }

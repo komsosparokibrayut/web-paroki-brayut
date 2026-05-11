@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -190,6 +191,7 @@ export default function FormulirClient({ initialData, categories }: { initialDat
                             <th className="px-6 py-3">Nama Formulir</th>
                             <th className="px-6 py-3">Kategori</th>
                             <th className="px-6 py-3">Keterangan</th>
+                            <th className="px-6 py-3">Dibuat/Diubah</th>
                             <th className="px-6 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
@@ -219,6 +221,13 @@ export default function FormulirClient({ initialData, categories }: { initialDat
                                     <td className="px-6 py-4 text-slate-600 max-w-xs truncate" title={item.description}>
                                         {item.description || "-"}
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <div className="text-xs text-slate-500">
+                                            {item.created_by && <div>dibuat: {item.created_by}</div>}
+                                            {item.modified_by && <div>diubah: {item.modified_by}</div>}
+                                            {item.modified_at && <div className="text-slate-400">{formatAuditDate(item.modified_at)}</div>}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button
@@ -243,7 +252,7 @@ export default function FormulirClient({ initialData, categories }: { initialDat
                             ))
                         ) : (
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                     {searchTerm ? "Tidak ada hasil pencarian" : "Belum ada formulir"}
                                 </td>
                             </tr>
