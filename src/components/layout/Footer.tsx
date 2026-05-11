@@ -4,10 +4,50 @@ import Link from "next/link";
 import { ArrowRight, House, Church } from "lucide-react";
 import { SiInstagram, SiYoutube } from "@icons-pack/react-simple-icons";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 import Image from "next/image";
 
 export default function Footer() {
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setPhoneNumber(data.phone_number);
+          setWhatsappNumber(data.whatsapp_number);
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const formatPhoneDisplay = (num: string | null) => {
+    if (!num) return "(0274) 860-9221";
+    const digits = num.replace(/\D/g, "");
+    if (digits === "622748609221" || digits === "2748609221") {
+      return "(0274) 860-9221";
+    }
+    if (digits.startsWith("62")) {
+      const rest = digits.slice(2);
+      return `(${rest.slice(0, 4)}) ${rest.slice(4, 7)}-${rest.slice(7)}`;
+    }
+    return "(0274) 860-9221";
+  };
+
+  const phoneDisplay = formatPhoneDisplay(phoneNumber);
+  const phoneHref = phoneNumber ? `tel:${phoneNumber.replace(/\D/g, "")}` : "#";
+  const whatsappHref = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}` : "#";
+
   return (
     <footer className='bg-brand-dark text-white pt-32 pb-12 overflow-hidden relative'>
       {/* Background decorative elements - Animated */}
@@ -73,16 +113,24 @@ export default function Footer() {
             <div className='text-left md:text-right'>
               <h3 className='font-serif text-3xl mb-4'>Butuh Bantuan?</h3>
               <Link
-                href='https://wa.me/628135735199'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-2'
+                href={phoneHref}
+                className={`text-2xl md:text-4xl font-bold font-sans hover:text-brand-gold transition-colors block mb-1 ${!isLoaded ? "pointer-events-none" : ""}`}
               >
-                (0274) 860-9221
+                {isLoaded ? phoneDisplay : "\u00A0"}
               </Link>
               <p className='text-gray-500'>
                 Sekretariat Paroki (Selasa - Minggu)
               </p>
+              {isLoaded && whatsappNumber ? (
+                <Link
+                  href={whatsappHref}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='inline-flex items-center gap-2 text-brand-gold hover:text-brand-gold/80 transition-colors mt-2 text-sm font-medium'
+                >
+                  Chat via WhatsApp
+                </Link>
+              ) : null}
             </div>
           </motion.div>
         </div>

@@ -1,4 +1,5 @@
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 
 export default function MeetingRoomLayout({
@@ -12,6 +13,7 @@ export default function MeetingRoomLayout({
             <main className="flex-grow">
                 {children}
             </main>
+            <Footer />
             <WhatsAppWidget />
         </div>
     );
