@@ -57,7 +57,10 @@ export interface MeetingBooking {
   userContact: string; // Phone or Email
   purpose: string;
   status: 'pending' | 'confirmed' | 'rejected';
-  
+
+  // Wilayah scoping — set directly on bookings created via event blocking
+  wilayah_id?: string;
+
   // New Fields
   submissionSource?: 'online' | 'manual';
   isRescheduled?: boolean;

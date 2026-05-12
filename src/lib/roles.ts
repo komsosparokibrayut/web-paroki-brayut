@@ -106,6 +106,12 @@ export function canManageBooking(
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_wilayah") {
+    // Check booking's own wilayah_id first (event-blocking path: bookings created
+    // via createEventWithRoomBlock have wilayah_id set directly, no items/place)
+    if (booking.wilayah_id) {
+      return booking.wilayah_id === user.wilayah_id;
+    }
+
     // For bookings with inventory items: ALL items must belong to user's wilayah
     if (itemWilayahIds && itemWilayahIds.length > 0) {
       const allGlobal = itemWilayahIds.every(id => !id);
@@ -115,12 +121,12 @@ export function canManageBooking(
       return allItemsInOwnWilayah;
     }
 
-    // For room-only bookings (no items): check the place's wilayah_id
+    // For room-only bookings (no items, no booking.wilayah_id): check the place's wilayah_id
     if (placeWilayahId) {
       return placeWilayahId === user.wilayah_id;
     }
 
-    // Without item info AND without place info, deny (conservative)
+    // Without item info, place info, AND booking.wilayah_id, deny (conservative)
     return false;
   }
   if (user.role === "data_admin") return true;

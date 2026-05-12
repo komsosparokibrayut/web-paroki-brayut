@@ -5,8 +5,6 @@ export async function getFile(path: string): Promise<string | null> {
   try {
     const octokit = await getOctokit();
     const { owner, repo } = getRepoConfig();
-    
-    console.log(`[GitHub API] Fetching file: ${owner}/${repo}/${path}`);
 
     const { data } = await octokit.rest.repos.getContent({
       owner,
@@ -19,14 +17,14 @@ export async function getFile(path: string): Promise<string | null> {
     }
 
     return null;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 404 is expected when file doesn't exist yet - return null without logging
-    if (error.status === 404) {
-      console.log(`[GitHub API] File not found (404), returning null: ${path}`);
+    if (isOctokitNotFound(error)) {
       return null;
     }
     // Log other errors for debugging
-    console.error(`[GitHub API] Error fetching file ${path}:`, error.message, error.response?.data);
+    const err = error as { message?: string; response?: { data?: unknown } };
+    console.error(`[GitHub API] Error fetching file ${path}:`, err.message, err.response?.data);
     throw error;
   }
 }
@@ -35,8 +33,6 @@ export async function listFiles(directory: string): Promise<{ name: string; path
   try {
     const octokit = await getOctokit();
     const { owner, repo } = getRepoConfig();
-    
-    console.log(`[GitHub API] Listing files in directory: ${owner}/${repo}/${directory}`);
 
     const { data } = await octokit.rest.repos.getContent({
       owner,
@@ -55,12 +51,12 @@ export async function listFiles(directory: string): Promise<{ name: string; path
     }
 
     return [];
-  } catch (error: any) {
-    if (error.status === 404) {
-      console.log(`[GitHub API] Directory not found (404), returning empty array: ${directory}`);
+  } catch (error: unknown) {
+    if (isOctokitNotFound(error)) {
       return [];
     }
-    console.error(`[GitHub API] Error listing directory ${directory}:`, error.message, error.response?.data);
+    const err = error as { message?: string; response?: { data?: unknown } };
+    console.error(`[GitHub API] Error listing directory ${directory}:`, err.message, err.response?.data);
     throw error;
   }
 }
@@ -72,8 +68,6 @@ export async function commitFiles(
   const octokit = await getOctokit();
   const { owner, repo } = getRepoConfig();
 
-  console.log(`[GitHub API] Starting commit for ${files.length} files: ${files.map(f => f.path).join(", ")}`);
-  
   try {
     // Get the latest commit SHA
     const { data: ref } = await octokit.rest.git.getRef({
@@ -82,70 +76,68 @@ export async function commitFiles(
       ref: "heads/main",
     });
 
-  const latestCommitSha = ref.object.sha;
+    const latestCommitSha = ref.object.sha;
 
-  // Get the tree for the latest commit
-  const { data: commit } = await octokit.rest.git.getCommit({
-    owner,
-    repo,
-    commit_sha: latestCommitSha,
-  });
+    // Get the tree for the latest commit
+    const { data: commit } = await octokit.rest.git.getCommit({
+      owner,
+      repo,
+      commit_sha: latestCommitSha,
+    });
 
     const baseTreeSha = commit.tree.sha;
-    console.log(`[GitHub API] Retrieved base tree: ${baseTreeSha}`);
 
-  // Create blobs for each file
-  const blobs = await Promise.all(
-    files.map(async (file) => {
-      const content =
-        typeof file.content === "string"
-          ? file.content
-          : file.content.toString("base64");
-      const encoding = file.encoding || (typeof file.content === "string" ? "utf-8" : "base64");
+    // Create blobs for each file
+    const blobs = await Promise.all(
+      files.map(async (file) => {
+        const content =
+          typeof file.content === "string"
+            ? file.content
+            : file.content.toString("base64");
+        const encoding = file.encoding || (typeof file.content === "string" ? "utf-8" : "base64");
 
-      const { data: blob } = await octokit.rest.git.createBlob({
-        owner,
-        repo,
-        content,
-        encoding,
-      });
+        const { data: blob } = await octokit.rest.git.createBlob({
+          owner,
+          repo,
+          content,
+          encoding,
+        });
 
-      return {
-        path: file.path,
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blob.sha,
-      };
-    })
-  );
+        return {
+          path: file.path,
+          mode: "100644" as const,
+          type: "blob" as const,
+          sha: blob.sha,
+        };
+      })
+    );
 
-  // Create a new tree
-  const { data: newTree } = await octokit.rest.git.createTree({
-    owner,
-    repo,
-    base_tree: baseTreeSha,
-    tree: blobs,
-  });
+    // Create a new tree
+    const { data: newTree } = await octokit.rest.git.createTree({
+      owner,
+      repo,
+      base_tree: baseTreeSha,
+      tree: blobs,
+    });
 
-  // Create a new commit
-  const { data: newCommit } = await octokit.rest.git.createCommit({
-    owner,
-    repo,
-    message,
-    tree: newTree.sha,
-    parents: [latestCommitSha],
-  });
+    // Create a new commit
+    const { data: newCommit } = await octokit.rest.git.createCommit({
+      owner,
+      repo,
+      message,
+      tree: newTree.sha,
+      parents: [latestCommitSha],
+    });
 
-  // Update the reference
-  await octokit.rest.git.updateRef({
-    owner,
-    repo,
-    ref: "heads/main",
-    sha: newCommit.sha,
-  });
+    // Update the reference
+    await octokit.rest.git.updateRef({
+      owner,
+      repo,
+      ref: "heads/main",
+      sha: newCommit.sha,
+    });
 
-  console.log(`[GitHub API] Successfully committed ${files.length} files. New HEAD: ${newCommit.sha}`);
-  return newCommit.sha;
+    return newCommit.sha;
   } catch (error) {
     console.error(`[GitHub API] Error during commit of ${files.length} files:`, error);
     throw error;
@@ -166,15 +158,18 @@ export async function deleteFile(
     path,
   });
 
-  if ("sha" in data) {
-    await octokit.rest.repos.deleteFile({
-      owner,
-      repo,
-      path,
-      message,
-      sha: data.sha,
-    });
+  // Guard: getContent returns an array for directories, which has no SHA
+  if (!("sha" in data) || !data.sha) {
+    throw new Error(`Cannot delete ${path}: file not found or is a directory`);
   }
+
+  await octokit.rest.repos.deleteFile({
+    owner,
+    repo,
+    path,
+    message,
+    sha: data.sha,
+  });
 }
 
 /**
@@ -209,8 +204,8 @@ export async function moveFile(
     path: oldPath,
   });
 
-  if (!("sha" in oldFileData)) {
-    throw new Error(`Cannot move: ${oldPath} is not a file`);
+  if (!("sha" in oldFileData) || !oldFileData.sha) {
+    throw new Error(`Cannot move: ${oldPath} is not a file or not found`);
   }
   const oldBlobSha = oldFileData.sha;
 
@@ -247,11 +242,8 @@ export async function moveFile(
     sha: newCommit.sha,
   });
 
-  console.log(`[GitHub API] Atomically moved ${oldPath} → ${newPath}. Commit: ${newCommit.sha}`);
   return newCommit.sha;
 }
-
-
 
 export async function getDownloadUrl(path: string): Promise<string | null> {
   try {
@@ -269,12 +261,17 @@ export async function getDownloadUrl(path: string): Promise<string | null> {
     }
 
     return null;
-  } catch (error: any) {
-    if (error.status === 404) {
+  } catch (error: unknown) {
+    if (isOctokitNotFound(error)) {
       return null;
     }
-    console.error(`Error fetching download URL for ${path}:`, error);
+    const err = error as { message?: string };
+    console.error(`Error fetching download URL for ${path}:`, err.message);
     throw error;
   }
 }
 
+// Helper to safely check if an unknown error is an Octokit 404
+function isOctokitNotFound(error: unknown): boolean {
+  return (error as { status?: number }).status === 404;
+}

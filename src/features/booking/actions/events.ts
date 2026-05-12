@@ -313,6 +313,7 @@ export async function createMassScheduleWithRoomBlock(massData: {
             submissionSource: "manual",
             isRescheduled: false,
             adminNotes: "Otomatis diblokir oleh Jadwal Misa",
+            wilayah_id: massData.wilayah_id || null,
             createdAt: now,
             updatedAt: now,
           });
