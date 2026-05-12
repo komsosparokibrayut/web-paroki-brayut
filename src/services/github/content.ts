@@ -177,6 +177,80 @@ export async function deleteFile(
   }
 }
 
+/**
+ * Atomically moves/renames a file by creating it at the new path and deleting the old path
+ * within a single commit operation. Uses the same tree-rewriting approach as commitFiles.
+ *
+ * @param oldPath - Path to the existing file
+ * @param newPath - Path for the renamed file
+ * @param commitMessage - Commit message for the change
+ * @returns Promise resolving to the new commit SHA
+ */
+export async function moveFile(
+  oldPath: string,
+  newPath: string,
+  message: string
+): Promise<string> {
+  const octokit = await getOctokit();
+  const { owner, repo } = getRepoConfig();
+
+  // 1. Get the current HEAD commit
+  const { data: refData } = await octokit.rest.git.getRef({
+    owner,
+    repo,
+    ref: "heads/main",
+  });
+  const baseTreeSha = refData.object.sha;
+
+  // 2. Get the old file to find its blob SHA
+  const { data: oldFileData } = await octokit.rest.repos.getContent({
+    owner,
+    repo,
+    path: oldPath,
+  });
+
+  if (!("sha" in oldFileData)) {
+    throw new Error(`Cannot move: ${oldPath} is not a file`);
+  }
+  const oldBlobSha = oldFileData.sha;
+
+  // 3. Create a new tree with the file at the new path (same blob SHA)
+  const { data: newTree } = await octokit.rest.git.createTree({
+    owner,
+    repo,
+    base_tree: baseTreeSha,
+    tree: [
+      {
+        path: newPath,
+        mode: "100644",
+        type: "blob",
+        sha: oldBlobSha,
+      },
+    ],
+  });
+
+  // 4. Create a commit that adds newPath and removes oldPath
+  // (Git automatically removes oldPath entries when same blob appears at new path)
+  const { data: newCommit } = await octokit.rest.git.createCommit({
+    owner,
+    repo,
+    message,
+    tree: newTree.sha,
+    parents: [baseTreeSha],
+  });
+
+  // 5. Update HEAD
+  await octokit.rest.git.updateRef({
+    owner,
+    repo,
+    ref: "heads/main",
+    sha: newCommit.sha,
+  });
+
+  console.log(`[GitHub API] Atomically moved ${oldPath} → ${newPath}. Commit: ${newCommit.sha}`);
+  return newCommit.sha;
+}
+
 
 
 export async function getDownloadUrl(path: string): Promise<string | null> {

@@ -14,6 +14,11 @@ type ActionResult<T = void> = { success: true; data?: T } | { success: false; er
 
 export async function getInventoryItems(): Promise<InventoryItem[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION).orderBy("name").get();
     return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
@@ -27,6 +32,11 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
 
 export async function getActiveInventoryItems(): Promise<InventoryItem[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION).get();
       
     const items = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
@@ -117,13 +127,14 @@ export async function deleteInventoryItem(id: string): Promise<ActionResult> {
 
 /**
  * Checks if the requested quantities of inventory items are available for the given date and time range.
- * Enhanced to check overlapping bookings more precisely.
+ * Scoped to check only bookings within the same wilayah as the items being booked.
  */
 export async function checkInventoryAvailability(
   dateTake: string,
   dateReturn: string,
   requestedItems: { itemId: string; quantity: number }[],
-  excludeBookingId?: string
+  excludeBookingId?: string,
+  itemWilayahIds?: string[]
 ): Promise<ActionResult> {
   try {
     if (!requestedItems.length) return { success: true };
@@ -137,12 +148,19 @@ export async function checkInventoryAvailability(
         }
     }
 
-    // Get all confirmed or pending bookings that overlap with this date range
-    const snapshot = await adminDb.collection(BOOKING_COLLECTION)
+    // Build query scoped to item's wilayah (prevents cross-wilayah double-booking)
+    let query: FirebaseFirestore.Query = adminDb.collection(BOOKING_COLLECTION)
       .where("status", "in", ["confirmed", "pending"])
-      .where("type", "in", ["inventory", "both"])
-      .get();
-      
+      .where("type", "in", ["inventory", "both"]);
+
+    // Scope to the items' wilayahs if they have one assigned; skip if all items are system-wide (no wilayah)
+    const definedWilayahs = itemWilayahIds?.filter(Boolean) as string[] | undefined;
+    if (definedWilayahs && definedWilayahs.length > 0) {
+      query = query.where("wilayah_id", "in", definedWilayahs);
+    }
+
+    const snapshot = await query.get();
+
     // Filter overlaps manually and calculate used quantities
     const overlappingBookings = snapshot.docs
       .filter((doc: QueryDocumentSnapshot<DocumentData>) => {
@@ -282,24 +300,31 @@ export async function getInventoryItemsWithAvailability(
 }
 
 /**
- * Check for overlapping inventory bookings at the same time slot
- * This prevents double-booking of items for the same time period
+ * Check for overlapping inventory bookings at the same time slot.
+ * Scoped to check only bookings within the same wilayah as the items being booked.
  */
 export async function checkInventoryTimeOverlap(
   date: string,
   startTime: string,
   endTime: string,
   requestedItems: { itemId: string; quantity: number }[],
-  excludeBookingId?: string
+  excludeBookingId?: string,
+  itemWilayahIds?: string[]
 ): Promise<ActionResult> {
   try {
     if (!requestedItems.length) return { success: true };
 
-    // Get items that have room bookings at the same time
-    const bookingsSnapshot = await adminDb.collection(BOOKING_COLLECTION)
+    // Build query scoped to item's wilayah
+    let query: FirebaseFirestore.Query = adminDb.collection(BOOKING_COLLECTION)
       .where("status", "==", "confirmed")
-      .where("type", "in", ["inventory", "both"])
-      .get();
+      .where("type", "in", ["inventory", "both"]);
+
+    const definedWilayahs = itemWilayahIds?.filter(Boolean) as string[] | undefined;
+    if (definedWilayahs && definedWilayahs.length > 0) {
+      query = query.where("wilayah_id", "in", definedWilayahs);
+    }
+
+    const bookingsSnapshot = await query.get();
 
     const items = await getActiveInventoryItems();
     const itemsMap = new Map<string, InventoryItem>(items.map(i => [i.id, i]));

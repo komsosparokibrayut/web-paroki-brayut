@@ -34,9 +34,9 @@ export function extractGoogleDriveFileId(url: string): string | null {
   );
   if (thumbnailMatch) return thumbnailMatch[1];
 
-  // lh3.googleusercontent.com/d/FILE_ID
+  // lh3.googleusercontent.com/d/FILE_ID, /thumbnail/FILE_ID, /uc/FILE_ID
   const lh3Match = url.match(
-    /lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/
+    /lh3\.googleusercontent\.com\/(?:d|thumbnail|uc)\/([a-zA-Z0-9_-]+)/
   );
   if (lh3Match) return lh3Match[1];
 

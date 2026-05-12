@@ -12,12 +12,23 @@ const COLLECTION = "wilayah_approvals";
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error?: string };
 
 /**
- * Get all pending approvals for a specific wilayah
+ * Get all pending approvals for a specific wilayah.
+ * Auth: data_admin/super_admin see all. admin_wilayah sees only their own wilayah.
  */
 export async function getWilayahApprovals(wilayah_id?: string): Promise<WilayahApproval[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
+    // admin_wilayah: force filter to their own wilayah
+    if (currentUser.role === "admin_wilayah") {
+      wilayah_id = currentUser.wilayah_id;
+    }
+
     let query: any = adminDb.collection(COLLECTION);
-    
+
     if (wilayah_id) {
       query = query.where("wilayah_id", "==", wilayah_id);
     }
@@ -35,10 +46,16 @@ export async function getWilayahApprovals(wilayah_id?: string): Promise<WilayahA
 }
 
 /**
- * Get approvals for a specific booking
+ * Get approvals for a specific booking.
+ * Auth: requires manage_data permission.
  */
 export async function getBookingWilayahApprovals(bookingId: string): Promise<WilayahApproval[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION)
       .where("bookingId", "==", bookingId)
       .get();

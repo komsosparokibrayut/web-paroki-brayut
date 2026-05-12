@@ -13,6 +13,11 @@ type ActionResult<T = void> = { success: true; data?: T } | { success: false; er
 
 export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION).orderBy("name").get();
     return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
@@ -26,6 +31,11 @@ export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
 
 export async function getActiveMeetingPlaces(): Promise<MeetingPlace[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION).get();
       
     const places = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({

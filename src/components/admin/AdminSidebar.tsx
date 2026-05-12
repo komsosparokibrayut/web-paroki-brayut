@@ -72,23 +72,23 @@ export function AdminSidebar() {
         {
             title: "Content",
             items: [
-                { name: "Posts", href: "/admin/posts", icon: FileText },
-                { name: "Media", href: "/admin/media", icon: ImageIcon },
-                { name: "Gallery", href: "/admin/gallery", icon: ImageIcon },
-            ].filter(() => hasAccess(["news_admin", "news_reporter"]))
+                { name: "Posts", href: "/admin/posts", icon: FileText, visible: hasAccess(["news_admin", "news_reporter"]) },
+                { name: "Media", href: "/admin/media", icon: ImageIcon, visible: hasAccess(["news_admin", "news_reporter"]) },
+                { name: "Gallery", href: "/admin/gallery", icon: ImageIcon, visible: hasAccess(["news_admin", "news_reporter"]) },
+            ].filter(item => item.visible !== false)
         },
         {
             title: "Data Management",
             items: [
-                { name: "UMKM", href: "/admin/data/umkm", icon: Store },
-                { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar },
-                { name: "Booking Ruang", href: "/admin/meeting-rooms", icon: DoorOpen },
-                { name: "Gereja", href: "/admin/data/gereja", icon: Church },
-                { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar },
-                { name: "Formulir", href: "/admin/data/formulir", icon: Database },
-                { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin },
-                { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon },
-            ].filter(() => hasAccess(["data_admin", "admin_wilayah"]))
+                { name: "UMKM", href: "/admin/data/umkm", icon: Store, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Booking Ruang", href: "/admin/meeting-rooms", icon: DoorOpen, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Gereja", href: "/admin/data/gereja", icon: Church, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Formulir", href: "/admin/data/formulir", icon: Database, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+            ].filter(item => item.visible !== false)
         },
         {
             title: "Settings",

@@ -193,11 +193,10 @@ export async function updatePost(
       
       const newFilename = `posts/${datePrefix}-${finalSlug}.json`;
       
-      // Rename file via service layer
+      // Rename file via service layer (atomic move — no content needed)
       await renamePostFile(
         item.path,
         newFilename,
-        fileContent,
         `Update post: ${formData.title} (renamed)`
       );
     } else {

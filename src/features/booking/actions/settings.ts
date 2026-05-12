@@ -40,10 +40,16 @@ export async function setupAdminSettings(data: Partial<AdminSettings>): Promise<
     const docRef = adminDb.collection(COLLECTION).doc(SETTINGS_DOC);
     const doc = await docRef.get();
 
+    // If settings already exist, require auth to prevent unauthorized overwrite
     if (doc.exists) {
-      return { success: false, error: "Settings already exist" };
+      const currentUser = await getCurrentUser();
+      if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+        return { success: false, error: "Tidak memiliki otorisasi" };
+      }
+      return { success: false, error: "Settings already exist — use updateAdminSettings" };
     }
 
+    // First-time setup: allow without auth (doc doesn't exist yet)
     await docRef.set({
       ...data,
       createdAt: Date.now(),

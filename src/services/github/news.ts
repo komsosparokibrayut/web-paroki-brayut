@@ -7,7 +7,7 @@
  * @module services/github/news
  */
 
-import { getFile, listFiles, commitFiles, deleteFile } from "./content";
+import { getFile, listFiles, commitFiles, deleteFile, moveFile } from "./content";
 
 // Directory for posts
 const POSTS_DIR = "posts";
@@ -75,27 +75,20 @@ export async function deletePostFile(
 }
 
 /**
- * Renames a post file (delete old, create new).
- * 
- * ⚠️ WARNING: This operation is non-atomic. If the create operation fails after
- * delete, the original file will be lost. Consider implementing a backup/rollback
- * mechanism for critical data operations.
- * 
+ * Atomically renames a post file using a single commit.
+ * Uses moveFile() which creates a new tree with the file at the new path,
+ * then creates one commit — no risk of data loss.
+ *
  * @param oldPath - Path to the existing file
  * @param newPath - Path for the renamed file
- * @param content - Content to write to the new file
  * @param commitMessage - Commit message for the change
  * @returns Promise resolving to commit SHA.
- * @throws Error if either delete or create operation fails
  */
 export async function renamePostFile(
   oldPath: string,
   newPath: string,
-  content: string,
   commitMessage: string
 ): Promise<string> {
-  // Note: Non-atomic operation - if commitFiles fails, oldPath is already deleted
-  await deleteFile(oldPath, `Delete for rename: ${oldPath}`);
-  return commitFiles([{ path: newPath, content }], commitMessage);
+  return moveFile(oldPath, newPath, commitMessage);
 }
 

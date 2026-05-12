@@ -209,6 +209,12 @@ export async function submitBooking(
 
 export async function getBookings(): Promise<MeetingBooking[]> {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
+      console.warn("getBookings: unauthorized access attempt");
+      return [];
+    }
+
     const snapshot = await adminDb.collection(COLLECTION).get();
     
     const bookings = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
@@ -430,6 +436,9 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
       const bookingData = bookingDoc.data() as MeetingBooking;
       const itemWilayahIds: string[] = [];
+      let placeWilayahId: string | undefined;
+
+      // Resolve item wilayah_ids from borrowedItems
       if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
         const itemsSnapshot = await adminDb.collection("inventory_items").get();
         const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
@@ -438,7 +447,16 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
           if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
         }
       }
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+
+      // Resolve place wilayah_id for room-only bookings
+      if (bookingData.placeId) {
+        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+        if (placeDoc.exists) {
+          placeWilayahId = placeDoc.data()?.wilayah_id;
+        }
+      }
+
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
       }
     }
@@ -449,7 +467,7 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       modified_by: userIdentifier,
       modified_at: Date.now()
     });
-    
+
     if (status === "confirmed") {
         const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
         if (bookingDoc.exists) {
@@ -493,6 +511,8 @@ export async function updateReturnStatus(
       if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
       const bookingData = bookingDoc.data() as MeetingBooking;
       const itemWilayahIds: string[] = [];
+      let placeWilayahId: string | undefined;
+
       if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
         const itemsSnapshot = await adminDb.collection("inventory_items").get();
         const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
@@ -501,7 +521,15 @@ export async function updateReturnStatus(
           if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
         }
       }
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+
+      if (bookingData.placeId) {
+        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+        if (placeDoc.exists) {
+          placeWilayahId = placeDoc.data()?.wilayah_id;
+        }
+      }
+
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
       }
     }
@@ -545,6 +573,8 @@ export async function updateInitialConditionNotes(
       if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
       const bookingData = bookingDoc.data() as MeetingBooking;
       const itemWilayahIds: string[] = [];
+      let placeWilayahId: string | undefined;
+
       if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
         const itemsSnapshot = await adminDb.collection("inventory_items").get();
         const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
@@ -553,7 +583,15 @@ export async function updateInitialConditionNotes(
           if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
         }
       }
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+
+      if (bookingData.placeId) {
+        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+        if (placeDoc.exists) {
+          placeWilayahId = placeDoc.data()?.wilayah_id;
+        }
+      }
+
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
       }
     }
@@ -585,6 +623,8 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
       if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
       const bookingData = bookingDoc.data() as MeetingBooking;
       const itemWilayahIds: string[] = [];
+      let placeWilayahId: string | undefined;
+
       if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
         const itemsSnapshot = await adminDb.collection("inventory_items").get();
         const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
@@ -593,7 +633,15 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
           if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
         }
       }
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+
+      if (bookingData.placeId) {
+        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+        if (placeDoc.exists) {
+          placeWilayahId = placeDoc.data()?.wilayah_id;
+        }
+      }
+
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
       }
     }
@@ -624,6 +672,8 @@ export async function updateBooking(
       if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
       const bookingData = bookingDoc.data() as MeetingBooking;
       const itemWilayahIds: string[] = [];
+      let placeWilayahId: string | undefined;
+
       if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
         const itemsSnapshot = await adminDb.collection("inventory_items").get();
         const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
@@ -632,7 +682,15 @@ export async function updateBooking(
           if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
         }
       }
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds)) {
+
+      if (bookingData.placeId) {
+        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+        if (placeDoc.exists) {
+          placeWilayahId = placeDoc.data()?.wilayah_id;
+        }
+      }
+
+      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
       }
     }
@@ -689,7 +747,13 @@ export async function updateBooking(
 
     // Check inventory availability if items are updated
     if ((parsed.data.type === 'inventory' || parsed.data.type === 'both') && parsed.data.borrowedItems && parsed.data.borrowedItems.length > 0) {
-      const { checkInventoryAvailability, checkInventoryTimeOverlap } = await import("./inventory");
+      const { checkInventoryAvailability, checkInventoryTimeOverlap, getActiveInventoryItems } = await import("./inventory");
+
+      // Build itemWilayahIds from borrowedItems to scope inventory checks
+      const allItemIds = parsed.data.borrowedItems.map((i: { itemId: string }) => i.itemId);
+      const itemsData = await getActiveInventoryItems();
+      const itemsMap = new Map(itemsData.map(i => [i.id, i]));
+      const itemWilayahIds = allItemIds.map(id => itemsMap.get(id)?.wilayah_id).filter(Boolean) as string[];
 
       for (const item of parsed.data.borrowedItems) {
         const dateTake = item.dateTake || parsed.data.date;
@@ -699,7 +763,8 @@ export async function updateBooking(
           dateTake,
           dateReturn,
           [{ itemId: item.itemId, quantity: item.quantity }],
-          id
+          id,
+          itemWilayahIds
         );
 
         if (!availabilityResult.success) {
@@ -711,7 +776,8 @@ export async function updateBooking(
           item.timeTake || "09:00",
           item.timeReturn || "17:00",
           [{ itemId: item.itemId, quantity: item.quantity }],
-          id
+          id,
+          itemWilayahIds
         );
 
         if (!timeOverlapResult.success) {

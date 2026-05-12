@@ -37,7 +37,7 @@ export async function processImage(
 
 export function generateImageFilename(originalName: string, type: "banner" | "inline"): string {
   const timestamp = Date.now();
-  const hash = Math.random().toString(36).substring(2, 8);
+  const hash = crypto.randomUUID().replace(/-/g, "").substring(0, 6);
   const baseName = originalName
     .replace(/\.[^/.]+$/, "")
     .toLowerCase()

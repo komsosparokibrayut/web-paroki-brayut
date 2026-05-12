@@ -95,22 +95,32 @@ export function canEditWilayah(user: SessionUser | null, targetWilayahId: string
 }
 
 // Check if user can manage (edit/delete) a booking
-// Set itemWilayahIds if you have the inventory item wilayah_ids to determine ownership
-export function canManageBooking(user: SessionUser | null, booking: MeetingBooking, itemWilayahIds?: string[]): boolean {
+// Set itemWilayahIds if you have inventory item wilayah_ids.
+// Set placeWilayahId for room-only bookings (no items) — checked against user's wilayah_id.
+export function canManageBooking(
+  user: SessionUser | null,
+  booking: MeetingBooking,
+  itemWilayahIds?: string[],
+  placeWilayahId?: string
+): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_wilayah") {
-    // Admin Wilayah can only manage bookings where ALL items belong to their own wilayah
-    // Items with no wilayah_id are "global/paroki" - admin_wilayah cannot manage those
+    // For bookings with inventory items: ALL items must belong to user's wilayah
     if (itemWilayahIds && itemWilayahIds.length > 0) {
       const allGlobal = itemWilayahIds.every(id => !id);
-      if (allGlobal) return false; // Cannot manage global/paroki bookings
+      if (allGlobal) return false; // Cannot manage global/paroki items
 
-      // ALL items must belong to user's wilayah
       const allItemsInOwnWilayah = itemWilayahIds.every(id => id === user.wilayah_id);
       return allItemsInOwnWilayah;
     }
-    // Without item info, deny management (conservative - safer default)
+
+    // For room-only bookings (no items): check the place's wilayah_id
+    if (placeWilayahId) {
+      return placeWilayahId === user.wilayah_id;
+    }
+
+    // Without item info AND without place info, deny (conservative)
     return false;
   }
   if (user.role === "data_admin") return true;

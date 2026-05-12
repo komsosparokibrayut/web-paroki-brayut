@@ -116,6 +116,7 @@ export default function MeetingRoomsClient({
             bookings={bookings} 
             setBookings={setBookings} 
             places={places} 
+            inventory={inventory}
             isRefreshing={isRefreshingBookings} 
             onRefresh={handleRefreshBookings}
             openConfirm={openConfirm}

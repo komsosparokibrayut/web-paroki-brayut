@@ -5,7 +5,7 @@
 
 export interface PasswordValidationResult {
   isValid: boolean;
-  errors: string[];
+  errors: readonly string[];
 }
 
 const MIN_LENGTH = 12;
@@ -44,7 +44,8 @@ export function validatePassword(password: string): PasswordValidationResult {
 
   return {
     isValid: errors.length === 0,
-    errors,
+    // Return a frozen copy to prevent external mutation of the shared array
+    errors: Object.freeze(errors),
   };
 }
 

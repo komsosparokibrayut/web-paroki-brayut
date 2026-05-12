@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { MeetingBooking, MeetingPlace } from "@/features/booking/types";
+import { MeetingBooking, MeetingPlace, InventoryItem } from "@/features/booking/types";
 import { updateBookingStatus, deleteBooking, updateReturnStatus } from "@/features/booking/actions/bookings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export function BookingsTab({
   bookings,
   setBookings,
   places,
+  inventory,
   isRefreshing,
   onRefresh,
   openConfirm,
@@ -31,6 +32,7 @@ export function BookingsTab({
   bookings: MeetingBooking[];
   setBookings: React.Dispatch<React.SetStateAction<MeetingBooking[]>>;
   places: MeetingPlace[];
+  inventory: InventoryItem[];
   isRefreshing: boolean;
   onRefresh: () => void;
   openConfirm: (title: string, message: string, variant: "default" | "destructive", action: () => Promise<void>) => void;
@@ -51,6 +53,25 @@ export function BookingsTab({
   const [selectedBookingForReturn, setSelectedBookingForReturn] = useState<MeetingBooking | null>(null);
   const [returnStatus, setReturnStatus] = useState<"Masih Dipinjam" | "Sudah Dikembalikan" | "Dikembalikan dengan Kekurangan">("Masih Dipinjam");
   const [returnNotes, setReturnNotes] = useState("");
+
+  // Build auth params (itemWilayahIds + placeWilayahId) for canManageBooking
+  const getBookingAuthParams = (booking: MeetingBooking): [string[] | undefined, string | undefined] => {
+    if (!user) return [undefined, undefined];
+
+    const itemWilayahIds: string[] = [];
+    if (booking.borrowedItems && booking.borrowedItems.length > 0) {
+      for (const item of booking.borrowedItems) {
+        const itemData = inventory.find(i => i.id === item.itemId);
+        if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+      }
+    }
+
+    const placeWilayahId = booking.placeId
+      ? places.find(p => p.id === booking.placeId)?.wilayah_id
+      : undefined;
+
+    return [itemWilayahIds.length > 0 ? itemWilayahIds : undefined, placeWilayahId];
+  };
 
   const handleApprove = (id: string) => {
     openConfirm("Setujui Peminjaman", "Apakah Anda yakin ingin menyetujui peminjaman ini?", "default", async () => {
@@ -332,36 +353,46 @@ export function BookingsTab({
                   )}
                 </CardContent>
                 <CardFooter className="bg-slate-50 border-t justify-end gap-2 p-3">
-                  {user && canManageBooking(user, booking) && (booking.status === "pending" || booking.status === "rejected") && (
+                  {user && (() => {
+                    const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (booking.status === "pending" || booking.status === "rejected") && (
                     <Button variant="outline" size="sm" onClick={() => handleApprove(booking.id!)} className="text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700 ">
                       <CheckCircle className="w-4 h-4" />
                       Setujui
                     </Button>
-                  )}
-                  {user && canManageBooking(user, booking) && (
+                  )})()}
+                  {user && (() => {
+                    const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (
                     <Button variant="outline" size="sm" onClick={() => openEditBooking(booking)} className="text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700">
                       <Pencil className="w-4 h-4" />
                       Ubah
                     </Button>
-                  )}
-                  {user && canManageBooking(user, booking) && (booking.status === "pending" || booking.status === "confirmed") && (
+                  )})()}
+                  {user && (() => {
+                    const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (booking.status === "pending" || booking.status === "confirmed") && (
                     <Button variant="outline" size="sm" onClick={() => handleReject(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
                       <XCircle className="w-4 h-4" />
                       Tolak
                     </Button>
-                  )}
-                  {user && canManageBooking(user, booking) && (booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
+                  )})()}
+                  {user && (() => {
+                    const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
                     <Button variant="outline" size="sm" onClick={() => openReturnModal(booking)} className="text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700">
                       <RotateCcw className="w-4 h-4" />
                       Kembalikan
                     </Button>
-                  )}
-                  {user && canManageBooking(user, booking) && (
+                  )})()}
+                  {user && (() => {
+                    const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (
                     <Button variant="outline" size="sm" onClick={() => handleDeleteBooking(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-600">
                       <Trash2 className="w-4 h-4" />
                       Hapus
                     </Button>
-                  )}
+                  )})()}
                 </CardFooter>
               </Card>
             ))
