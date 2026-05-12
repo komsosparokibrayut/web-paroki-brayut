@@ -24,7 +24,7 @@ export async function saveGereja(data: GerejaUnit[]): Promise<ActionResult> {
     return { success: false, error: "Unauthorized" };
   }
 
-  if (currentUser.role === "admin_wilayah") {
+  if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
     for (const gereja of data) {
       if (!canManageGereja(currentUser, gereja)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Gereja ini" };

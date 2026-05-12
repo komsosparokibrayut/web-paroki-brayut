@@ -223,7 +223,7 @@ export async function getBookings(): Promise<MeetingBooking[]> {
     } as MeetingBooking));
 
     // admin_wilayah: filter to bookings in their own wilayah (via booking.wilayah_id or place.wilayah_id or item.wilayah_id)
-    // Super_admin and data_admin get all bookings (hasPermission already passed)
+    // Super_admin, admin_paroki, and data_admin get all bookings (hasPermission already passed)
     const role = currentUser.role;
     if (role === "admin_wilayah") {
       // Defer imports to avoid circular dependency at module load time
@@ -471,33 +471,37 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
-    if (currentUser.role === "admin_wilayah") {
-      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
-      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
-      const bookingData = bookingDoc.data() as MeetingBooking;
-      const itemWilayahIds: string[] = [];
-      let placeWilayahId: string | undefined;
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      // admin_paroki: skip authorization check, can manage all bookings
+      if (currentUser.role === "admin_paroki") {
+        // pass through
+      } else {
+        // admin_wilayah: must do wilayah scoping check
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+        const bookingData = bookingDoc.data() as MeetingBooking;
+        const itemWilayahIds: string[] = [];
+        let placeWilayahId: string | undefined;
 
-      // Resolve item wilayah_ids from borrowedItems
-      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
-        const itemsSnapshot = await adminDb.collection("inventory_items").get();
-        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
-        for (const item of bookingData.borrowedItems) {
-          const itemData = itemsMap.get(item.itemId);
-          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+          const itemsSnapshot = await adminDb.collection("inventory_items").get();
+          const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+          for (const item of bookingData.borrowedItems) {
+            const itemData = itemsMap.get(item.itemId);
+            if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+          }
         }
-      }
 
-      // Resolve place wilayah_id for room-only bookings
-      if (bookingData.placeId) {
-        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
-        if (placeDoc.exists) {
-          placeWilayahId = placeDoc.data()?.wilayah_id;
+        if (bookingData.placeId) {
+          const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+          if (placeDoc.exists) {
+            placeWilayahId = placeDoc.data()?.wilayah_id;
+          }
         }
-      }
 
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
-        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        }
       }
     }
 
@@ -546,31 +550,35 @@ export async function updateReturnStatus(
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
-    if (currentUser.role === "admin_wilayah") {
-      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
-      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
-      const bookingData = bookingDoc.data() as MeetingBooking;
-      const itemWilayahIds: string[] = [];
-      let placeWilayahId: string | undefined;
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      if (currentUser.role === "admin_paroki") {
+        // admin_paroki: skip authorization check
+      } else {
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+        const bookingData = bookingDoc.data() as MeetingBooking;
+        const itemWilayahIds: string[] = [];
+        let placeWilayahId: string | undefined;
 
-      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
-        const itemsSnapshot = await adminDb.collection("inventory_items").get();
-        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
-        for (const item of bookingData.borrowedItems) {
-          const itemData = itemsMap.get(item.itemId);
-          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+          const itemsSnapshot = await adminDb.collection("inventory_items").get();
+          const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+          for (const item of bookingData.borrowedItems) {
+            const itemData = itemsMap.get(item.itemId);
+            if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+          }
         }
-      }
 
-      if (bookingData.placeId) {
-        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
-        if (placeDoc.exists) {
-          placeWilayahId = placeDoc.data()?.wilayah_id;
+        if (bookingData.placeId) {
+          const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+          if (placeDoc.exists) {
+            placeWilayahId = placeDoc.data()?.wilayah_id;
+          }
         }
-      }
 
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
-        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        }
       }
     }
 
@@ -608,31 +616,35 @@ export async function updateInitialConditionNotes(
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
-    if (currentUser.role === "admin_wilayah") {
-      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
-      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
-      const bookingData = bookingDoc.data() as MeetingBooking;
-      const itemWilayahIds: string[] = [];
-      let placeWilayahId: string | undefined;
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      if (currentUser.role === "admin_paroki") {
+        // admin_paroki: skip authorization check
+      } else {
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+        const bookingData = bookingDoc.data() as MeetingBooking;
+        const itemWilayahIds: string[] = [];
+        let placeWilayahId: string | undefined;
 
-      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
-        const itemsSnapshot = await adminDb.collection("inventory_items").get();
-        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
-        for (const item of bookingData.borrowedItems) {
-          const itemData = itemsMap.get(item.itemId);
-          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+          const itemsSnapshot = await adminDb.collection("inventory_items").get();
+          const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+          for (const item of bookingData.borrowedItems) {
+            const itemData = itemsMap.get(item.itemId);
+            if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+          }
         }
-      }
 
-      if (bookingData.placeId) {
-        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
-        if (placeDoc.exists) {
-          placeWilayahId = placeDoc.data()?.wilayah_id;
+        if (bookingData.placeId) {
+          const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+          if (placeDoc.exists) {
+            placeWilayahId = placeDoc.data()?.wilayah_id;
+          }
         }
-      }
 
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
-        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        }
       }
     }
 
@@ -658,31 +670,35 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
-    if (currentUser.role === "admin_wilayah") {
-      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
-      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
-      const bookingData = bookingDoc.data() as MeetingBooking;
-      const itemWilayahIds: string[] = [];
-      let placeWilayahId: string | undefined;
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      if (currentUser.role === "admin_paroki") {
+        // admin_paroki: skip authorization check
+      } else {
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+        const bookingData = bookingDoc.data() as MeetingBooking;
+        const itemWilayahIds: string[] = [];
+        let placeWilayahId: string | undefined;
 
-      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
-        const itemsSnapshot = await adminDb.collection("inventory_items").get();
-        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
-        for (const item of bookingData.borrowedItems) {
-          const itemData = itemsMap.get(item.itemId);
-          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+          const itemsSnapshot = await adminDb.collection("inventory_items").get();
+          const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+          for (const item of bookingData.borrowedItems) {
+            const itemData = itemsMap.get(item.itemId);
+            if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+          }
         }
-      }
 
-      if (bookingData.placeId) {
-        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
-        if (placeDoc.exists) {
-          placeWilayahId = placeDoc.data()?.wilayah_id;
+        if (bookingData.placeId) {
+          const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+          if (placeDoc.exists) {
+            placeWilayahId = placeDoc.data()?.wilayah_id;
+          }
         }
-      }
 
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
-        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        }
       }
     }
 
@@ -707,31 +723,35 @@ export async function updateBooking(
       return { success: false, error: "Tidak memiliki otorisasi" };
     }
 
-    if (currentUser.role === "admin_wilayah") {
-      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
-      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
-      const bookingData = bookingDoc.data() as MeetingBooking;
-      const itemWilayahIds: string[] = [];
-      let placeWilayahId: string | undefined;
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      if (currentUser.role === "admin_paroki") {
+        // admin_paroki: skip authorization check
+      } else {
+        const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+        if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+        const bookingData = bookingDoc.data() as MeetingBooking;
+        const itemWilayahIds: string[] = [];
+        let placeWilayahId: string | undefined;
 
-      if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
-        const itemsSnapshot = await adminDb.collection("inventory_items").get();
-        const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
-        for (const item of bookingData.borrowedItems) {
-          const itemData = itemsMap.get(item.itemId);
-          if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+        if (bookingData.borrowedItems && bookingData.borrowedItems.length > 0) {
+          const itemsSnapshot = await adminDb.collection("inventory_items").get();
+          const itemsMap = new Map(itemsSnapshot.docs.map(d => [d.id, d.data()]));
+          for (const item of bookingData.borrowedItems) {
+            const itemData = itemsMap.get(item.itemId);
+            if (itemData?.wilayah_id) itemWilayahIds.push(itemData.wilayah_id);
+          }
         }
-      }
 
-      if (bookingData.placeId) {
-        const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
-        if (placeDoc.exists) {
-          placeWilayahId = placeDoc.data()?.wilayah_id;
+        if (bookingData.placeId) {
+          const placeDoc = await adminDb.collection("meeting_places").doc(bookingData.placeId).get();
+          if (placeDoc.exists) {
+            placeWilayahId = placeDoc.data()?.wilayah_id;
+          }
         }
-      }
 
-      if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
-        return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        if (!canManageBooking(currentUser, bookingData, itemWilayahIds, placeWilayahId)) {
+          return { success: false, error: "Tidak memiliki otorisasi untuk booking ini" };
+        }
       }
     }
 

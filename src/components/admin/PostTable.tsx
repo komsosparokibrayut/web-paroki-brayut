@@ -57,7 +57,7 @@ export default function PostTable({ posts, hidePagination = false, showCreateBut
   const { startTransition } = useLoading();
   const router = useRouter();
   const { user, role } = useAdminRole();
-  const isAdminWilayah = role === "admin_wilayah";
+  const isWilayahScoped = role === "admin_wilayah" || role === "admin_paroki";
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<{ slug: string; title: string } | null>(null);
@@ -275,7 +275,7 @@ export default function PostTable({ posts, hidePagination = false, showCreateBut
                   <TableCell className="py-3 px-4">
                     {/* Inline action buttons instead of dropdown */}
                     <div className="flex items-center justify-end gap-1">
-                      {!isAdminWilayah && (
+                      {!isWilayahScoped && (
                         <>
                           <TooltipProvider>
                             <Tooltip>

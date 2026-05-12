@@ -23,8 +23,13 @@ export async function getWilayahApprovals(wilayah_id?: string): Promise<WilayahA
     }
 
     // admin_wilayah: force filter to their own wilayah
-    if (currentUser.role === "admin_wilayah") {
-      wilayah_id = currentUser.wilayah_id;
+    // admin_paroki: no filter, sees all approvals
+    if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+      if (currentUser.role === "admin_paroki") {
+        // admin_paroki: skip filtering, see all
+      } else {
+        wilayah_id = currentUser.wilayah_id;
+      }
     }
 
     let query: any = adminDb.collection(COLLECTION);

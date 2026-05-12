@@ -40,8 +40,7 @@ export function BookingsTab({
   openEditBooking: (booking: MeetingBooking) => void;
 }) {
   const { user, role } = useAdminRole();
-  const isAdminWilayah = role === "admin_wilayah";
-  const userWilayahId = user?.wilayah_id;
+  const isWilayahScoped = role === "admin_wilayah" || role === "admin_paroki";
   const [bookingSearch, setBookingSearch] = useState("");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [bookingTypeFilter, setBookingTypeFilter] = useState("all");

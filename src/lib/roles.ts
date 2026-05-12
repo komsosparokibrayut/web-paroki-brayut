@@ -3,11 +3,12 @@ import { MeetingBooking, InventoryItem, MeetingPlace, BorrowedItemWithDetails } 
 import { GerejaUnit } from "@/features/schedule/types";
 import { Lingkungan, Wilayah } from "@/actions/data";
 
-export type UserRole = "super_admin" | "admin_wilayah" | "news_admin" | "news_reporter" | "data_admin";
+export type UserRole = "super_admin" | "admin_wilayah" | "admin_paroki" | "news_admin" | "news_reporter" | "data_admin";
 
 export const ROLES: Record<string, UserRole> = {
   SUPER_ADMIN: "super_admin",
   ADMIN_WILAYAH: "admin_wilayah",
+  ADMIN_PAROKI: "admin_paroki",
   NEWS_ADMIN: "news_admin",
   NEWS_REPORTER: "news_reporter",
   DATA_ADMIN: "data_admin",
@@ -16,6 +17,7 @@ export const ROLES: Record<string, UserRole> = {
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
   admin_wilayah: "Admin Wilayah",
+  admin_paroki: "Admin Paroki",
   news_admin: "News Admin",
   news_reporter: "News Reporter",
   data_admin: "Data Admin",
@@ -33,6 +35,7 @@ export type Permission =
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   super_admin: ["manage_everything", "manage_news", "manage_news_categories", "create_news_draft", "manage_data", "manage_admins"],
   admin_wilayah: ["manage_data"],
+  admin_paroki: ["manage_data"],
   news_admin: ["manage_news", "manage_news_categories", "create_news_draft"],
   news_reporter: ["create_news_draft"],
   data_admin: ["manage_data", "manage_news_categories"],
@@ -67,18 +70,17 @@ export function canManagePath(role: UserRole | null, path: string): boolean {
     return false;
   }
 
-  // Meeting rooms - admin_wilayah can access
+  // Meeting rooms - admin_wilayah and admin_paroki can access
   if (path.startsWith("/admin/meeting-rooms")) {
-    return role === "admin_wilayah" || role === "data_admin";
+    return role === "admin_wilayah" || role === "admin_paroki" || role === "data_admin";
   }
 
   // Data related paths
   if (path.startsWith("/admin/data") || path.startsWith("/admin/master/categories")) {
-    // Note: Categories might be shared, but Data Admin explicitly manages them per requirements
-    return role === "data_admin" || role === "admin_wilayah";
+    return role === "data_admin" || role === "admin_wilayah" || role === "admin_paroki";
   }
 
-  // News Admin can also manage categories (implied by "manage news category")
+  // News Admin can also manage categories
   if (path.startsWith("/admin/master/categories") && role === "news_admin") {
     return true;
   }
@@ -90,6 +92,7 @@ export function canManagePath(role: UserRole | null, path: string): boolean {
 export function canEditWilayah(user: SessionUser | null, targetWilayahId: string): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") return user.wilayah_id === targetWilayahId;
   return false;
 }
@@ -105,9 +108,9 @@ export function canManageBooking(
 ): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") {
-    // Check booking's own wilayah_id first (event-blocking path: bookings created
-    // via createEventWithRoomBlock have wilayah_id set directly, no items/place)
+    // Check booking's own wilayah_id first (event-blocking path)
     if (booking.wilayah_id) {
       return booking.wilayah_id === user.wilayah_id;
     }
@@ -121,12 +124,11 @@ export function canManageBooking(
       return allItemsInOwnWilayah;
     }
 
-    // For room-only bookings (no items, no booking.wilayah_id): check the place's wilayah_id
+    // For room-only bookings: check the place's wilayah_id
     if (placeWilayahId) {
       return placeWilayahId === user.wilayah_id;
     }
 
-    // Without item info, place info, AND booking.wilayah_id, deny (conservative)
     return false;
   }
   if (user.role === "data_admin") return true;
@@ -137,6 +139,7 @@ export function canManageBooking(
 export function canManageInventoryItem(user: SessionUser | null, item: InventoryItem): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") {
     if (!item.wilayah_id) return false;
     return user.wilayah_id === item.wilayah_id;
@@ -148,6 +151,7 @@ export function canManageInventoryItem(user: SessionUser | null, item: Inventory
 export function canManagePlace(user: SessionUser | null, place: MeetingPlace): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") {
     if (!place.wilayah_id) return false;
     return user.wilayah_id === place.wilayah_id;
@@ -159,6 +163,7 @@ export function canManagePlace(user: SessionUser | null, place: MeetingPlace): b
 export function canManageWilayahApproval(user: SessionUser | null, approvalWilayahId: string): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") return user.wilayah_id === approvalWilayahId;
   return false;
 }
@@ -173,9 +178,10 @@ export function canSeeSecuritySettings(user: SessionUser | null | undefined): bo
 export function canManageGereja(user: SessionUser | null, gereja: GerejaUnit): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") {
     if (!gereja.wilayah_id) return false;
-    return gereja.wilayah_id === user.wilayah_id;
+    return user.wilayah_id === gereja.wilayah_id;
   }
   if (user.role === "data_admin") return true;
   return false;
@@ -185,6 +191,7 @@ export function canManageGereja(user: SessionUser | null, gereja: GerejaUnit): b
 export function canManageWilayah(user: SessionUser | null, wilayah: Wilayah): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") return wilayah.id === user.wilayah_id;
   if (user.role === "data_admin") return true;
   return false;
@@ -194,6 +201,7 @@ export function canManageWilayah(user: SessionUser | null, wilayah: Wilayah): bo
 export function canManageLingkungan(user: SessionUser | null, lingkungan: Lingkungan, allWilayah: Wilayah[]): boolean {
   if (!user) return false;
   if (user.role === "super_admin") return true;
+  if (user.role === "admin_paroki") return true;
   if (user.role === "admin_wilayah") {
     const parentWilayah = allWilayah.find(w => w.lingkungan.some(l => l.id === lingkungan.id));
     if (!parentWilayah) return false;

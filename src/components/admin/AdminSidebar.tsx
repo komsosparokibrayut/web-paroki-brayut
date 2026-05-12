@@ -80,14 +80,14 @@ export function AdminSidebar() {
         {
             title: "Data Management",
             items: [
-                { name: "UMKM", href: "/admin/data/umkm", icon: Store, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Booking Ruang", href: "/admin/meeting-rooms", icon: DoorOpen, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Gereja", href: "/admin/data/gereja", icon: Church, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Formulir", href: "/admin/data/formulir", icon: Database, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin, visible: hasAccess(["data_admin", "admin_wilayah"]) },
-                { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon, visible: hasAccess(["data_admin", "admin_wilayah"]) },
+                { name: "UMKM", href: "/admin/data/umkm", icon: Store, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Jadwal Kegiatan", href: "/admin/data/jadwal-kegiatan", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Booking Ruang", href: "/admin/meeting-rooms", icon: DoorOpen, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Gereja", href: "/admin/data/gereja", icon: Church, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Jadwal Misa", href: "/admin/data/jadwal-misa", icon: Calendar, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Formulir", href: "/admin/data/formulir", icon: Database, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Wilayah", href: "/admin/data/wilayah", icon: MapPin, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
+                { name: "Pastor & Tim", href: "/admin/data/pastor-tim", icon: UserIcon, visible: hasAccess(["data_admin", "admin_wilayah", "admin_paroki"]) },
             ].filter(item => item.visible !== false)
         },
         {
