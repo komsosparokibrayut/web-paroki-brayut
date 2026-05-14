@@ -24,8 +24,13 @@ export async function saveGereja(data: GerejaUnit[]): Promise<ActionResult> {
     return { success: false, error: "Unauthorized" };
   }
 
-  if (currentUser.role === "admin_wilayah" || currentUser.role === "admin_paroki") {
+  // Only allow saving churches that belong to this admin_wilayah's wilayah.
+  // admin_wilayah may have loaded the full list (no server-side filter for gereja),
+  // but we must only persist changes to churches in their jurisdiction.
+  if (currentUser.role === "admin_wilayah") {
     for (const gereja of data) {
+      // Skip validation for churches outside their wilayah — they're not being managed
+      if (gereja.wilayah_id && gereja.wilayah_id !== currentUser.wilayah_id) continue;
       if (!canManageGereja(currentUser, gereja)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Gereja ini" };
       }

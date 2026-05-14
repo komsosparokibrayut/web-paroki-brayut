@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { formatAuditDate } from "@/lib/utils";
 import {
     Dialog,
@@ -50,8 +51,9 @@ export default function GerejaClient({ initialData, wilayahList }: Props) {
         kategori: "Gereja Wilayah" as GerejaUnit["kategori"],
         koordinat: "",
         wilayah_id: "",
-    });
+});
     const router = useRouter();
+    const { user, role } = useAdminRole();
 
     const filteredData = data.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,8 +88,10 @@ export default function GerejaClient({ initialData, wilayahList }: Props) {
                     koordinat: editingItem.koordinat || "",
                     wilayah_id: editingItem.wilayah_id || "",
                 });
-            } else {
-                setFormValues({ name: "", description: "", alamat: "", kategori: "Gereja Wilayah", koordinat: "", wilayah_id: "" });
+} else {
+                // admin_wilayah: pre-fill with their own wilayah, locked to it
+                const prefill = { name: "", description: "", alamat: "", kategori: "Gereja Wilayah" as GerejaUnit["kategori"], koordinat: "", wilayah_id: user?.wilayah_id || "" };
+                setFormValues(prefill);
             }
             setHasChanges(false);
         }
@@ -167,13 +171,15 @@ export default function GerejaClient({ initialData, wilayahList }: Props) {
                         className="pl-10"
                     />
                 </div>
-                <Button
-                    onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Gereja
-                </Button>
+{role !== "admin_wilayah" && (
+                    <Button
+                        onClick={() => { setEditingItem(null); setIsModalOpen(true); }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Gereja
+                    </Button>
+                )}
             </div>
 
             {/* Table */}
@@ -276,23 +282,43 @@ export default function GerejaClient({ initialData, wilayahList }: Props) {
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="wilayah">Wilayah</Label>
-                            <Select value={formValues.wilayah_id} onValueChange={(val) => setFormValues({ ...formValues, wilayah_id: val === "none" ? "" : val })}>
-                                <SelectTrigger id="wilayah">
-                                    <SelectValue placeholder="Pilih wilayah" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">Tidak ada</SelectItem>
-                                    {wilayahList.map((w) => (
-                                        <SelectItem key={w.id} value={w.id}>
-                                            {w.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+{role !== "admin_wilayah" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="wilayah_id">Wilayah</Label>
+                                <Select value={formValues.wilayah_id}
+                                    onValueChange={(val) => setFormValues({ ...formValues, wilayah_id: val })}>
+                                    <SelectTrigger id="wilayah_id">
+                                        <SelectValue placeholder="Pilih Wilayah" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Tidak ada</SelectItem>
+                                        {wilayahList.map((w) => (
+                                            <SelectItem key={w.id} value={w.id}>
+                                                {w.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        {role === "admin_wilayah" && (
+                            <div className="space-y-2">
+                                <Label htmlFor="wilayah_id">Wilayah</Label>
+                                <Select value={formValues.wilayah_id || user?.wilayah_id || ""}
+                                    onValueChange={(val) => setFormValues({ ...formValues, wilayah_id: val })}>
+                                    <SelectTrigger id="wilayah_id">
+                                        <SelectValue placeholder="Pilih Wilayah" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {wilayahList.filter(w => w.id === user?.wilayah_id).map((w) => (
+                                            <SelectItem key={w.id} value={w.id}>
+                                                {w.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label htmlFor="alamat">Alamat</Label>
