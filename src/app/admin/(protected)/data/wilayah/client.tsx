@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,9 +64,9 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
     const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'wilayah' | 'lingkungan', id: string, name: string, parentId?: string } | null>(null);
     const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
     const [pendingData, setPendingData] = useState<{ type: 'wilayah' | 'lingkungan', item: Wilayah | Lingkungan, name: string } | null>(null);
-
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const { user, role } = useAdminRole();
 
     const filteredData = data.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -170,7 +171,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
         const newData = data.filter(item => item.id !== deleteConfirm.id);
         setData(newData);
         setDeleteConfirm(null);
-        saveData(newData, "Wilayah berhasil dihapus!");
+        saveData(newData, undefined, "Wilayah berhasil dihapus!");
     };
 
     const handleSubmitWilayah = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -202,7 +203,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
         setIsWilayahModalOpen(false);
         setSaveConfirmOpen(false);
         setPendingData(null);
-        saveData(newData, editingWilayah ? "Wilayah berhasil diperbarui!" : "Wilayah berhasil ditambahkan!");
+        saveData(newData, editingWilayah ? wilayahFormValues.name : undefined, editingWilayah ? "Wilayah berhasil diperbarui!" : "Wilayah berhasil ditambahkan!");
     };
 
     // Lingkungan Handlers
@@ -230,7 +231,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
 
         setData(newData);
         setDeleteConfirm(null);
-        saveData(newData, "Lingkungan berhasil dihapus!");
+        saveData(newData, undefined, "Lingkungan berhasil dihapus!");
     };
 
     const handleSubmitLingkungan = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -267,7 +268,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
         setIsLingkunganModalOpen(false);
         setSaveConfirmOpen(false);
         setPendingData(null);
-        saveData(newData, editingLingkungan ? "Lingkungan berhasil diperbarui!" : "Lingkungan berhasil ditambahkan!");
+        saveData(newData, undefined, editingLingkungan ? "Lingkungan berhasil diperbarui!" : "Lingkungan berhasil ditambahkan!");
     };
 
     const handleConfirmSave = () => {
@@ -279,14 +280,14 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
         }
     };
 
-    const saveData = (newData: Wilayah[], action?: string) => {
+const saveData = (newData: Wilayah[], editingName?: string, successMessage?: string) => {
         startTransition(async () => {
-            const result = await saveWilayahLingkungan(newData);
+            const result = await saveWilayahLingkungan(newData, editingName);
             if (!result.success) {
                 toast.error("Gagal menyimpan: " + result.error);
                 router.refresh();
             } else {
-                if (action) toast.success(action);
+                if (successMessage) toast.success(successMessage);
                 router.refresh();
             }
         });
@@ -306,10 +307,12 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                         className="pl-10"
                     />
                 </div>
-                <Button onClick={handleAddWilayah} className="bg-blue-600 hover:bg-blue-700 gap-2">
-                    <Plus className="h-4 w-4" />
-                    Tambah Wilayah
-                </Button>
+{role !== "admin_wilayah" && (
+                    <Button onClick={handleAddWilayah} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                        <Plus className="h-4 w-4" />
+                        Tambah Wilayah
+                    </Button>
+                )}
             </div>
 
             {/* List */}
@@ -436,7 +439,7 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                         <DialogTitle>{editingWilayah ? "Edit Wilayah" : "Tambah Wilayah"}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmitWilayah} className="space-y-4">
-                        <div className="space-y-2">
+<div className="space-y-2">
                             <Label htmlFor="name">Nama Wilayah</Label>
                             <Input
                                 id="name"
@@ -444,7 +447,12 @@ export default function WilayahClient({ initialData }: { initialData: Wilayah[] 
                                 onChange={(e) => setWilayahFormValues({ ...wilayahFormValues, name: e.target.value })}
                                 required
                                 placeholder="Contoh: Wilayah I"
+                                readOnly={role === "admin_wilayah"}
+                                className={role === "admin_wilayah" ? "bg-slate-100 cursor-not-allowed" : ""}
                             />
+                            {role === "admin_wilayah" && (
+                                <p className="text-xs text-slate-400">Nama wilayah tidak dapat diubah</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="coordinator">Ketua Wilayah</Label>

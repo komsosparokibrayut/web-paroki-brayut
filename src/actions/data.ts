@@ -242,15 +242,22 @@ export async function getWilayahLingkungan(): Promise<Wilayah[]> {
   }
 }
 
-export async function saveWilayahLingkungan(data: Wilayah[]) {
+export async function saveWilayahLingkungan(data: Wilayah[], editingName?: string) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
 
-    for (const wilayah of data) {
-      if (!canManageWilayah(currentUser, wilayah)) {
+for (const wilayah of data) {
+      // admin_wilayah: can only manage their own wilayah (by id), and cannot change its name
+      if (currentUser.role === "admin_wilayah") {
+        if (wilayah.id !== currentUser.wilayah_id) continue; // skip other wilayah entirely
+        // admin_wilayah cannot rename their own wilayah
+        if (editingName && editingName !== wilayah.name) {
+          return { success: false, error: "Admin Wilayah tidak dapat mengubah nama Wilayah" };
+        }
+      } else if (!canManageWilayah(currentUser, wilayah)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Wilayah/Lingkungan ini" };
       }
       for (const lingkungan of wilayah.lingkungan) {
