@@ -29,8 +29,11 @@ export async function saveGereja(data: GerejaUnit[]): Promise<ActionResult> {
   // but we must only persist changes to churches in their jurisdiction.
   if (currentUser.role === "admin_wilayah") {
     for (const gereja of data) {
-      // Skip validation for churches outside their wilayah — they're not being managed
-      if (gereja.wilayah_id && gereja.wilayah_id !== currentUser.wilayah_id) continue;
+      // admin_wilayah may only manage churches within their own wilayah.
+      // Reject any attempt to modify churches from other wilayah.
+      if (gereja.wilayah_id && gereja.wilayah_id !== currentUser.wilayah_id) {
+        return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Gereja ini" };
+      }
       if (!canManageGereja(currentUser, gereja)) {
         return { success: false, error: "Tidak memiliki otorisasi untuk mengubah data Gereja ini" };
       }
