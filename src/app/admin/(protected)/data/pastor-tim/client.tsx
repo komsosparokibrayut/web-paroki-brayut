@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import ConfirmModal from "@/components/admin/ConfirmModal";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ import {
 
 export default function PastorTimClient({ initialData }: { initialData: PastorTimKerjaData }) {
     const [data, setData] = useState<PastorTimKerjaData>(initialData);
+    const { role } = useAdminRole();
     const [activeTab, setActiveTab] = useState<"pastor" | "struktur">("pastor");
 
     // Expanded state for sections
@@ -323,13 +325,15 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                 <div className="bg-white rounded-lg shadow-sm border border-slate-200">
                     <div className="p-4 border-b border-slate-200 flex justify-between items-center">
                         <h2 className="font-semibold text-slate-800">Daftar Pastor</h2>
-                        <Button
-                            onClick={() => { setEditingPastor(null); setIsPastorModalOpen(true); }}
-                            className="bg-blue-600 hover:bg-blue-700 gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Tambah Pastor
-                        </Button>
+                        {role !== "admin_wilayah" && (
+                            <Button
+                                onClick={() => { setEditingPastor(null); setIsPastorModalOpen(true); }}
+                                className="bg-blue-600 hover:bg-blue-700 gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Tambah Pastor
+                            </Button>
+                        )}
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -355,18 +359,20 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon"
-                                                        onClick={() => { setEditingPastor(p); setIsPastorModalOpen(true); }}
-                                                        className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50">
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon"
-                                                        onClick={() => setDeleteConfirm({ type: 'pastor', id: p.id, name: p.name })}
-                                                        className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
+                                                {role !== "admin_wilayah" && (
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button variant="ghost" size="icon"
+                                                            onClick={() => { setEditingPastor(p); setIsPastorModalOpen(true); }}
+                                                            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon"
+                                                            onClick={() => setDeleteConfirm({ type: 'pastor', id: p.id, name: p.name })}
+                                                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -386,13 +392,15 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                         <p className="text-sm text-slate-500">
                             {data.seksi.length} seksi &middot; Kelola struktur organisasi paroki
                         </p>
-                        <Button
-                            onClick={() => { setEditingSection(null); setIsSectionModalOpen(true); }}
-                            className="bg-blue-600 hover:bg-blue-700 gap-2"
-                        >
-                            <FolderPlus className="h-4 w-4" />
-                            Tambah Seksi
-                        </Button>
+                        {role !== "admin_wilayah" && (
+                            <Button
+                                onClick={() => { setEditingSection(null); setIsSectionModalOpen(true); }}
+                                className="bg-blue-600 hover:bg-blue-700 gap-2"
+                            >
+                                <FolderPlus className="h-4 w-4" />
+                                Tambah Seksi
+                            </Button>
+                        )}
                     </div>
 
                     {data.seksi.length === 0 ? (
@@ -427,14 +435,18 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                 disabled={sIdx === data.seksi.length - 1} onClick={() => moveSection(sIdx, 'down')}>
                                                 <ArrowDown className="h-3.5 w-3.5" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                                                onClick={() => { setEditingSection(section); setIsSectionModalOpen(true); }}>
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                                onClick={() => setDeleteConfirm({ type: 'section', id: section.id, name: section.name })}>
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
+                                            {role !== "admin_wilayah" && (
+                                                <>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                                        onClick={() => { setEditingSection(section); setIsSectionModalOpen(true); }}>
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                                        onClick={() => setDeleteConfirm({ type: 'section', id: section.id, name: section.name })}>
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
@@ -442,14 +454,16 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                     {isExpanded && (
                                         <div className="p-4 space-y-3">
                                             <div className="flex justify-end">
-                                                <Button
-                                                    variant="outline" size="sm"
-                                                    onClick={() => { setEditingGroup({ sectionId: section.id, group: null }); setIsGroupModalOpen(true); }}
-                                                    className="gap-1.5 text-xs"
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                    Tambah Grup
-                                                </Button>
+                                                {role !== "admin_wilayah" && (
+                                                    <Button
+                                                        variant="outline" size="sm"
+                                                        onClick={() => { setEditingGroup({ sectionId: section.id, group: null }); setIsGroupModalOpen(true); }}
+                                                        className="gap-1.5 text-xs"
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5" />
+                                                        Tambah Grup
+                                                    </Button>
+                                                )}
                                             </div>
 
                                             {section.groups.length === 0 ? (
@@ -476,14 +490,18 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                     )}
                                                                 </div>
                                                                 <div className="flex items-center gap-0.5">
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                                                                        onClick={() => { setEditingGroup({ sectionId: section.id, group }); setIsGroupModalOpen(true); }}>
-                                                                        <Pencil className="h-3 w-3" />
-                                                                    </Button>
-                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                                                        onClick={() => setDeleteConfirm({ type: 'group', id: group.id, parentId: section.id, name: group.name })}>
-                                                                        <Trash2 className="h-3 w-3" />
-                                                                    </Button>
+                                                                    {role !== "admin_wilayah" && (
+                                                                            <>
+                                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                                                                    onClick={() => { setEditingGroup({ sectionId: section.id, group }); setIsGroupModalOpen(true); }}>
+                                                                                    <Pencil className="h-3 w-3" />
+                                                                                </Button>
+                                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                                                                    onClick={() => setDeleteConfirm({ type: 'group', id: group.id, parentId: section.id, name: group.name })}>
+                                                                                    <Trash2 className="h-3 w-3" />
+                                                                                </Button>
+                                                                            </>
+                                                                        )}
                                                                 </div>
                                                             </div>
 
@@ -513,16 +531,18 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                                         </div>
                                                                                     </td>
                                                                                     <td className="px-3 py-2 text-right">
-                                                                                        <div className="flex justify-end gap-0.5">
-                                                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                                                                                                onClick={() => { setEditingMember({ sectionId: section.id, groupId: group.id, member: m }); setIsMemberModalOpen(true); }}>
-                                                                                                <Pencil className="h-3 w-3" />
-                                                                                            </Button>
-                                                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                                                                                onClick={() => setDeleteConfirm({ type: 'member', id: m.id, parentId: group.id, grandParentId: section.id, name: m.name })}>
-                                                                                                <Trash2 className="h-3 w-3" />
-                                                                                            </Button>
-                                                                                        </div>
+                                                                                        {role !== "admin_wilayah" && (
+                                                                                            <div className="flex justify-end gap-0.5">
+                                                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                                                                                    onClick={() => { setEditingMember({ sectionId: section.id, groupId: group.id, member: m }); setIsMemberModalOpen(true); }}>
+                                                                                                    <Pencil className="h-3 w-3" />
+                                                                                                </Button>
+                                                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                                                                                    onClick={() => setDeleteConfirm({ type: 'member', id: m.id, parentId: group.id, grandParentId: section.id, name: m.name })}>
+                                                                                                    <Trash2 className="h-3 w-3" />
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        )}
                                                                                     </td>
                                                                                 </tr>
                                                                             ))}
@@ -532,14 +552,16 @@ export default function PastorTimClient({ initialData }: { initialData: PastorTi
                                                                         </tbody>
                                                                     </table>
                                                                     <div className="px-3 py-2 border-t border-slate-100">
-                                                                        <Button
-                                                                            variant="ghost" size="sm"
-                                                                            onClick={() => { setEditingMember({ sectionId: section.id, groupId: group.id, member: null }); setIsMemberModalOpen(true); }}
-                                                                            className="gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                                        >
-                                                                            <UserPlus className="h-3.5 w-3.5" />
-                                                                            Tambah Anggota
-                                                                        </Button>
+                                                                        {role !== "admin_wilayah" && (
+                                                                            <Button
+                                                                                variant="ghost" size="sm"
+                                                                                onClick={() => { setEditingMember({ sectionId: section.id, groupId: group.id, member: null }); setIsMemberModalOpen(true); }}
+                                                                                className="gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                                            >
+                                                                                <UserPlus className="h-3.5 w-3.5" />
+                                                                                Tambah Anggota
+                                                                            </Button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             )}
