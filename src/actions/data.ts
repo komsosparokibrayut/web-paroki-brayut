@@ -318,6 +318,9 @@ export async function savePastorTimKerja(data: PastorTimKerjaData) {
     if (!currentUser || !hasPermission(currentUser.role, "manage_data")) {
       return { success: false, error: "Unauthorized" };
     }
+    if (currentUser.role === "admin_wilayah") {
+      return { success: false, error: "Admin wilayah tidak diizinkan mengelola data pastor & tim" };
+    }
     const timestamp = new Date().toISOString();
     const userIdentifier = currentUser.name || currentUser.email || "Unknown";
     const auditedData = {
