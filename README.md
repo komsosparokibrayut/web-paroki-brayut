@@ -1,270 +1,263 @@
-# Web Paroki MD - Comprehensive Project Guide
+# Web Paroki Brayut — Paroki Brayut Church Website
 
-Welcome to the **Web Paroki MD** project documentation. This manual consolidates all project guides into a single comprehensive reference.
+**Version:** 1.2.0 | **Stack:** Next.js 15 (App Router) + TypeScript + shadcn/ui + Firebase Auth + GitHub JSON (content) + Vercel
 
 ---
 
 ## 1. Project Overview
 
-A modern, stateless blog CMS built with Next.js 15 (App Router), using GitHub as the single source of truth for content storage and Vercel for serverless hosting. No traditional database required.
+Web Paroki Brayut is a bilingual (Indonesian/English) church website for Paroki Brayut, managed through a role-based admin panel. Content is stored in GitHub JSON files, and authentication uses Firebase session cookies.
 
-### Features
-
--   ✅ **GitHub as Storage** - All content stored as Markdown files in a GitHub repository
--   ✅ **WebP Image Optimization** - Automatic image conversion and optimization
--   ✅ **GitHub App Authentication** - Secure repository operations
--   ✅ **Password Authentication** - Simple username/password login for admins
--   ✅ **Multi-Admin Support** - Add multiple admin users via environment variables
--   ✅ **Static Generation + ISR** - Fast page loads with on-demand revalidation
--   ✅ **Markdown Editor** - Rich editing experience with preview
--   ✅ **Contact Form** - Submissions stored as GitHub issues
--   ✅ **Free Tier Compliant** - Runs entirely on free tiers (Vercel + GitHub)
-
-### Architecture
-
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│   Readers   │─────▶│   Next.js    │─────▶│   GitHub    │
-│             │      │   (Vercel)   │      │   (Content) │
-└─────────────┘      └──────────────┘      └─────────────┘
-                            │
-                            ▼
-                     ┌──────────────┐
-                     │   Editors    │
-                     │  (OAuth)     │
-                     └──────────────┘
-```
-
-### Prerequisites
-
-1.  **GitHub Account** - For content storage and authentication
-2.  **Vercel Account** - For deployment (free tier)
-3.  **Node.js 18+** - For local development
+**Key differences from a standard blog CMS:**
+- **GitHub as content storage** — all structured content (jadwal misa, bookings, pastor tim, wilayah, etc.) lives in JSON files in a GitHub repository
+- **Firebase Auth** — not NextAuth; session cookies for stateless server-side validation
+- **Role-based access** — `admin_paroki` (full access) vs `admin_wilayah` (scoped per wilayah)
 
 ---
 
-## 2. Setup & Installation
+## 2. Tech Stack
 
-### 2.1. Create Content Repository
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router, RSC) |
+| Language | TypeScript (strict) |
+| UI | shadcn/ui + Radix + Tailwind CSS |
+| Auth | Firebase Auth (session cookies) |
+| Content storage | GitHub JSON files (via GitHub App) |
+| Database | Firestore (booking waitlist, contact submissions) |
+| Hosting | Vercel |
+| Testing | Vitest 3 |
 
-Create a new GitHub repository for your blog content (e.g., `blog-content`):
+---
 
-```bash
-mkdir blog-content
-cd blog-content
-git init
-mkdir -p posts images/banners images/inline
-echo "# Blog Content" > README.md
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/blog-content.git
-git push -u origin main
+## 3. Features
+
+### Public Site
+- **Home** — hero banner, info card, quick links
+- **Misa & Seremoni** — weekly mass schedule + special masses (multi-language: Indonesia, Latin, English, Jawa)
+- **Pelayanan** — pastor profile, organizational structure (seksi & tim kerja)
+- **Lingkungan** — list of lingkungan/worship communities by wilayah
+- **Galeri** — photo gallery with album support
+- **Booking** — meeting room & facility reservation system with availability check
+- **Contact** — contact form, WhatsApp link, sekretariat hours
+- **Blog/News** — articles, pastor reflections, announcements
+- **UMKM** — church community business directory
+
+### Admin Panel (`/admin`)
+Accessible at `/admin/login` — restricted to authenticated admins only.
+
+#### Role: `admin_paroki` (full access)
+All CRUD operations across all modules.
+
+#### Role: `admin_wilayah` (scoped)
+Limited to data within their assigned wilayah:
+
+| Module | admin_wilayah Access |
+|---|---|
+| **Bookings** | View all bookings; manage (confirm/cancel) scoped to their wilayah |
+| **Gereja** | View all churches; edit only churches in their wilayah; cannot add new |
+| **Wilayah & Lingkungan** | Edit their own wilayah data (except name); manage lingkungan within it; cannot add new wilayah |
+| **Pastor & Tim** | View only — no create/update/delete |
+| **Jadwal Misa** | View only — no create/update/delete |
+| **Galeri, Blog, UMKM, dll.** | View only — no create/update/delete |
+
+---
+
+## 4. Authentication & Authorization
+
+### Firebase Session Cookie Auth
+- Login at `/admin/login` — email + password via Firebase Auth
+- Session cookie (30-day) issued on successful login
+- Middleware validates session cookie on every `/admin/*` request
+- No NextAuth dependency
+
+### Roles
+- `admin_paroki` — full CRUD across all content modules
+- `admin_wilayah` — CRUD scoped to assigned `wilayah_id`
+
+### RBAC Implementation
+- **UI layer** — buttons/actions conditionally rendered based on `useAdminRole()`
+- **Server layer** — every server action validates `currentUser.role` before committing
+- **Defense in depth** — UI hiding is cosmetic; server-side guards are authoritative
+
+---
+
+## 5. Content Architecture (GitHub JSON)
+
+All content stored as JSON in the configured GitHub repository:
+
+| File | Content |
+|---|---|
+| `content/booking/meeting-rooms.json` | Meeting room inventory |
+| `content/pastor-tim/pastor-tim.json` | Pastor profiles + organizational structure |
+| `content/gereja/gereja.json` | Church list with wilayah mapping |
+| `content/wilayah/wilayah.json` | Wilayah + lingkungan data |
+| `content/landing/home.json` | Homepage content |
+| `content/landing/contact.json` | Contact settings, WhatsApp, hours |
+| `content/blog/posts/*.md` | Blog articles (markdown) |
+| `content/galeri/*.json` | Gallery albums |
+| `content/misa/*.json` | Mass schedules |
+| `content/kategori/*.json` | Blog categories |
+| `content/users.json` | Admin user list |
+
+### Firestore Collections
+- `bookings` — facility reservation requests (status tracking, conflict detection)
+- `contact_submissions` — visitor contact form submissions
+- `waiting_list` — queued booking requests when all slots are full
+
+---
+
+## 6. Project Structure
+
+```
+src/
+├── actions/              # Server Actions (authoritative RBAC guards)
+│   ├── auth.ts           # Firebase session cookie auth
+│   ├── bookings.ts       # Booking CRUD + availability checks
+│   └── data.ts           # Bulk content save (gereja, wilayah, pastor-tim, dll.)
+├── app/
+│   ├── (public)/         # Public pages (no auth required)
+│   │   ├── jadwal-misa/
+│   │   ├── pastor-tim/
+│   │   ├── lingkungan/
+│   │   ├── galeri/
+│   │   ├── booking/
+│   │   └── blog/
+│   └── admin/(protected)/ # Admin panel (session cookie required)
+│       ├── data/         # Content management (gereja, wilayah, pastor-tim, dll.)
+│       ├── bookings/     # Booking management
+│       └── settings/
+├── components/
+│   ├── ui/               # shadcn/ui components
+│   └── admin/            # Admin-specific components (role guards, dialogs)
+├── features/             # Feature-scoped modules
+│   ├── auth/             # Firebase auth helpers
+│   ├── booking/          # Booking schema, actions, types
+│   └── gereja/           # Gereja types + actions
+├── lib/
+│   ├── firebase/         # Firebase client + admin SDK
+│   ├── github/           # GitHub API helpers (Octokit)
+│   ├── roles.ts          # 13 role permission functions
+│   └── password-validation.ts
+└── types/                # Shared TypeScript interfaces
+
+tests/
+├── lib/                  # Unit tests (roles, schemas, utils)
+├── schemas/              # Zod schema validation tests
+└── integration/          # Server action integration tests
 ```
 
-### 2.2. Create GitHub App
+---
 
-1.  Go to GitHub Settings → Developer settings → GitHub Apps → New GitHub App
-2.  Fill in:
-    -   **GitHub App name**: `blog-cms-YOUR_NAME`
-    -   **Homepage URL**: `http://localhost:3000`
-    -   **Webhook**: Uncheck "Active"
-    -   **Repository permissions**:
-        -   Contents: Read & Write
-        -   Issues: Read & Write (for contact form)
-    -   **Where can this GitHub App be installed?**: Only on this account
-3.  Click "Create GitHub App"
-4.  Generate a private key and download it
-5.  Note the **App ID**
-6.  Install the app on your content repository
-7.  Note the **Installation ID** from the URL
+## 7. Setup & Installation
 
-### 2.3. Configure Environment Variables
+### Prerequisites
+- Node.js 20+
+- GitHub App installed on the content repository
+- Firebase project (Auth + Firestore)
 
-Copy `.env.local.example` to `.env.local`:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local`:
+### Environment Variables
 
 ```env
-# GitHub App Configuration
+# Firebase Admin
+FIREBASE_PROJECT_ID=your_project
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@...
+FIREBASE_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
+
+# Firebase Client
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+
+# GitHub App (content storage)
 GITHUB_APP_ID=123456
-GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-Your private key here (paste entire content)
------END RSA PRIVATE KEY-----"
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
 GITHUB_APP_INSTALLATION_ID=12345678
+CONTENT_REPO_OWNER=your_username
+CONTENT_REPO_NAME=web-paroki-content
 
-# Content Repository
-CONTENT_REPO_OWNER=your_github_username
-CONTENT_REPO_NAME=blog-content
+# HMAC Secret (session cookie signing)
+HMAC_SECRET=your_32char_minimum_secret
 
-# Admin Authentication
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=your_secure_password
-ADMIN_NAME=Your Name
-ADMIN_EMAIL=your.email@example.com
-
-# NextAuth Configuration
-NEXTAUTH_SECRET=your_random_secret_min_32_characters
-NEXTAUTH_URL=http://localhost:3000
+# Admin accounts (add _2, _3, etc. for multiple admins)
+ADMIN_EMAIL_1=admin@brayut.org
+ADMIN_PASSWORD_1=plain_password_for_first_login_will_be_hashed
+ADMIN_NAME_1=Pastor Paroki
+ADMIN_ROLE_1=admin_paroki
 ```
 
-Generate a secure `NEXTAUTH_SECRET`:
-
-```bash
-openssl rand -base64 32
-```
-
-### 2.4. Run Development Server
+### Local Development
 
 ```bash
 npm install
 npm run dev
+# Visit http://localhost:3000
+# Admin at http://localhost:3000/admin/login
 ```
 
-Visit:
--   **Blog**: http://localhost:3000
--   **Admin**: http://localhost:3000/admin
+### Build & Test
 
----
-
-## 3. Admin User Management
-
-This guide explains how to add and manage multiple admin users for your blog CMS.
-
-### Method 1: Environment Variables (Recommended)
-
-Simply add numbered environment variables in `.env.local` - **no code changes needed**:
-
-```env
-# First admin (default)
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=secure_password_1
-ADMIN_NAME=Admin User
-ADMIN_EMAIL=admin@example.com
-
-# Second admin
-ADMIN_USERNAME_2=editor
-ADMIN_PASSWORD_2=secure_password_2
-ADMIN_NAME_2=Editor User
-ADMIN_EMAIL_2=editor@example.com
-
-# Third admin
-ADMIN_USERNAME_3=author
-ADMIN_PASSWORD_3=secure_password_3
-ADMIN_NAME_3=Author User
-ADMIN_EMAIL_3=author@example.com
+```bash
+npm run build    # Next.js production build
+npm test          # Vitest test suite (136 tests)
 ```
 
-The system automatically detects and loads all admin users from environment variables. You can add as many as you need by incrementing the number suffix (_2, _3, _4, etc.).
+---
 
-### Removing Admin Access
+## 8. Deployment
 
-1.  Delete their environment variables from `.env.local` (or Vercel settings)
-2.  Restart the application (or redeploy)
+### Vercel (Recommended)
 
-### Troubleshooting Login
+1. Push to GitHub
+2. Import project in Vercel
+3. Add all environment variables
+4. Deploy — `vercel.json` runs `npm run build && npm test` as the build command
 
--   **"Invalid credentials"**: Check username/password in `.env.local` or Vercel. Ensure no trailing spaces.
--   **Admin Panel 404/Access Denied**: Ensure you are logged in at `/admin/login`.
+**Build command:** `npm run build && npm test`  
+**Node version:** 20.x
 
 ---
 
-## 4. Security Implementation
+## 9. Testing
 
-### OWASP Top 10 Compliance
+Vitest 3 with TypeScript strict mode disabled for test environment compatibility.
 
-#### A01:2021 - Broken Access Control
--   ✅ **NextAuth JWT-based authentication** with 24-hour session timeout
--   ✅ **Middleware protection** for all `/admin/*` routes
--   ✅ **Rate limiting** on login attempts (5 attempts per 15 minutes)
+```
+npm test          # Run all tests (4 files, 136 tests)
+npm run test:watch # Watch mode for development
+```
 
-#### A02:2021 - Cryptographic Failures
--   ✅ **Bcrypt password hashing** (cost factor: 10)
--   ✅ **HTTPS enforcement** (via Vercel)
--   ✅ **Secure session storage** (httpOnly cookies via NextAuth)
-
-#### A03:2021 - Injection
--   ✅ **XSS prevention** in markdown rendering
--   ✅ **Script tag removal** from user inputs
--   ✅ **Zod schema validation** for all inputs
-
-#### A05:2021 - Security Misconfiguration
--   ✅ **Security headers** configured (CSP, X-Frame-Options, etc.)
--   ✅ **Default credentials removed** (fallback only for development)
-
-### Password Hashing
-
-For production, you SHOULD NOT store plain text passwords in environment variables.
-
-1.  Generate a hash:
-    ```bash
-    node scripts/hash-password.js your_secure_password
-    ```
-2.  Update `.env.local`:
-    ```env
-    ADMIN_PASSWORD="$2b$10$your_bcrypt_hash_here"
-    ```
+| Test File | Coverage |
+|---|---|
+| `tests/lib/roles.test.ts` | 13 role functions, 83 assertions |
+| `tests/lib/password-validation.test.ts` | Password rules, requirements |
+| `tests/schemas/booking.test.ts` | Zod schemas for booking/event |
+| `tests/integration/users.test.ts` | User invite + profile server actions |
 
 ---
 
-## 5. Deployment Guide
+## 10. Security
 
-### Vercel Deployment Steps
-
-1.  **Push** your code to GitHub.
-2.  **Import** the project in Vercel.
-3.  **Environment Variables**: Add all variables from `.env.local` to Vercel Project Settings.
-4.  **Update `NEXTAUTH_URL`** to `https://your-domain.vercel.app`.
-5.  **Deploy**.
-
-### Common Deployment Error
-
-If you see: `Error: [@octokit/auth-app] installationId option is required...`
-
-**Fix**: You forgot to add the GitHub App environment variables to Vercel.
-1.  Go to **Settings** → **Environment Variables**
-2.  Add `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_INSTALLATION_ID`, etc.
-3.  **Redeploy** (Deployments → Redeploy).
+- **Session cookies** — Firebase Auth session cookies (30-day), signed with HMAC secret
+- **RBAC** — server-side role validation on every action
+- **XSS** — DOMPurify on all markdown/rich text rendering
+- **Input validation** — Zod schemas on all server action payloads
+- **`error: unknown`** — no bare `catch (e: any)`, all catch blocks use proper type narrowing
 
 ---
 
-## 6. Pre-Deployment Checklist
+## 11. Version History
 
-Complete this before going live:
-
-### ✅ Authentication
--   [ ] All admin passwords are bcrypt hashes
--   [ ] `NEXTAUTH_SECRET` is strong (32+ chars)
--   [ ] Admin usernames are not "admin"
-
-### ✅ Environment Variables
--   [ ] `.env.local` is NOT in Git (`.gitignore` checked)
--   [ ] All variables set in Vercel Dashboard
--   [ ] GitHub App private key verified (includes `\n`)
-
-### ✅ GitHub Configuration
--   [ ] GitHub App installed ONLY on content repo
--   [ ] Limits: Contents (Read & Write), Issues (Read & Write)
-
-### ✅ Code Security
--   [ ] `npm audit` returns 0 high vulnerabilities
--   [ ] Security headers active (CSP, X-Frame-Options)
+| Version | Date | Summary |
+|---|---|---|
+| 1.2.0 | 2026-05-14 | admin_wilayah RBAC hardening: Gereja, Wilayah, pastor-tim scoped access |
+| 1.1.3 | 2026-05-13 | Booking conflict prevention, audit trails, permission fixes |
+| 1.1.2 | 2026-05-12 | Firebase session cookie migration (replaced previous auth) |
+| 1.1.1 | 2026-05-10 | Booking system, meeting room inventory |
+| 1.1.0 | 2026-05-08 | Bilingual support (ID/EN/Latin), multi-language mass schedule |
+| 1.0.0 | 2026-05-01 | Initial release |
 
 ---
 
-## 7. Security Review
-
-Periodic review items:
-
--   [ ] **Access Control**: Verify middleware and rate limiting
--   [ ] **Crypto**: Ensure no plaintext passwords
--   [ ] **Logging**: Check failed login logs
--   [ ] **Dependencies**: Update npm packages regularly
-
----
-
-**Last Updated:** 2026-01-19
+**Last Updated:** 2026-05-14  
 **Maintainer:** Paroki Brayut Dev Team
