@@ -222,46 +222,17 @@ export async function getBookings(): Promise<MeetingBooking[]> {
       ...doc.data()
     } as MeetingBooking));
 
-    // admin_wilayah: filter to bookings in their own wilayah (via booking.wilayah_id or place.wilayah_id or item.wilayah_id)
+// admin_wilayah: see ALL bookings, but manage only those in their own wilayah
+    // (manage permission is enforced client-side via canManageBooking + server-side in each action)
     // Super_admin, admin_paroki, and data_admin get all bookings (hasPermission already passed)
     const role = currentUser.role;
     if (role === "admin_wilayah") {
-      // Defer imports to avoid circular dependency at module load time
-      const { getMeetingPlaces } = await import("./places");
-      const { getActiveInventoryItems } = await import("./inventory");
-
-      const [placesData, itemsData] = await Promise.all([
-        getMeetingPlaces(),
-        getActiveInventoryItems()
-      ]);
-
-      const placeWilayahMap = new Map(placesData.map(p => [p.id, p.wilayah_id]));
-      const itemWilayahMap = new Map(itemsData.map(i => [i.id, i.wilayah_id]));
-
-      return bookings
-        .filter(b => {
-          // Check booking's own wilayah_id (event-blocking path)
-          if (b.wilayah_id) return b.wilayah_id === currentUser.wilayah_id;
-          // Check place's wilayah_id
-          if (b.placeId) {
-            const pw = placeWilayahMap.get(b.placeId);
-            if (pw) return pw === currentUser.wilayah_id;
-          }
-          // Check inventory items' wilayah_ids
-          if (b.borrowedItems && b.borrowedItems.length > 0) {
-            const itemWilayahs = b.borrowedItems
-              .map(item => itemWilayahMap.get(item.itemId))
-              .filter(Boolean);
-            if (itemWilayahs.length > 0) {
-              return itemWilayahs.every(iw => iw === currentUser.wilayah_id);
-            }
-          }
-          return false;
-        })
-        .sort((a, b) => {
-          if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
-          return (a.startTime || "").localeCompare(b.startTime || "");
-        });
+      // No server-side filter — admin_wilayah sees all bookings
+      // Action buttons are controlled by canManageBooking on the client
+      return bookings.sort((a, b) => {
+        if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
+        return (a.startTime || "").localeCompare(b.startTime || "");
+      });
     }
 
     // super_admin / data_admin: return all bookings sorted
