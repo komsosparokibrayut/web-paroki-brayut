@@ -54,9 +54,9 @@ export async function uploadImages(
     );
 
     return { success: true, paths: uploadedPaths };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error uploading images:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -100,8 +100,8 @@ export async function deleteImage(path: string) {
     await deleteFile(filePath, `Delete image: ${filePath}`);
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting image:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

@@ -117,8 +117,9 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable builtin heading to use custom one  
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
+        // Disable builtins that have separate packages for custom config
+        link: false,
+        underline: false,
       }),
       Underline,
       TextStyle,

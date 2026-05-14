@@ -81,8 +81,8 @@ export async function saveUMKM(data: UMKMData[]) {
     revalidatePath("/data/umkm");
     revalidatePath("/admin/data/umkm");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -123,8 +123,8 @@ export async function saveStatistik(data: StatistikData) {
     revalidatePath("/profil/wilayah"); 
     revalidatePath("/admin/data/statistik");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -289,8 +289,8 @@ export async function saveWilayahLingkungan(data: Wilayah[]) {
     revalidatePath("/profil/wilayah");
     revalidatePath("/admin/data/wilayah");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -350,8 +350,8 @@ export async function savePastorTimKerja(data: PastorTimKerjaData) {
     revalidatePath("/profil/pastor-tim"); 
     revalidatePath("/admin/data/pastor-tim");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -388,8 +388,8 @@ export async function saveFormulir(data: Formulir[]) {
     revalidatePath("/data/formulir"); 
     revalidatePath("/admin/data/formulir");
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

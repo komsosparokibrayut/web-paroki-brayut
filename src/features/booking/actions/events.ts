@@ -161,9 +161,9 @@ export async function createEventWithRoomBlock(eventData: {
     revalidatePath("/admin/events");
     revalidatePath("/meeting-room");
     return { success: true, data: eventDoc.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating event:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -326,9 +326,9 @@ export async function createMassScheduleWithRoomBlock(massData: {
     revalidatePath("/admin/mass-schedule");
     revalidatePath("/meeting-room");
     return { success: true, data: massDoc.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating mass schedule:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

@@ -62,9 +62,9 @@ async function saveCategoryFile(type: CategoryType, categories: string[]): Promi
             `Update ${type} categories`
         );
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`Error saving ${type} categories:`, error);
-        return { success: false, error: error.message };
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
 
@@ -87,8 +87,8 @@ export async function addCategory(type: CategoryType, category: string): Promise
         categories.sort();
 
         return await saveCategoryFile(type, categories);
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
 
@@ -101,8 +101,8 @@ export async function deleteCategory(type: CategoryType, category: string): Prom
         let categories = await getCategoryFile(type);
         categories = categories.filter(c => c !== category);
         return await saveCategoryFile(type, categories);
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
 
@@ -122,7 +122,7 @@ export async function updateCategory(type: CategoryType, oldCategory: string, ne
 
         const newCategories = categories.map(c => c === oldCategory ? trimmed : c).sort();
         return await saveCategoryFile(type, newCategories);
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }

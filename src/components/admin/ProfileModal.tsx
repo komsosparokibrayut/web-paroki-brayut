@@ -101,8 +101,8 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       toast.success("Password berhasil diperbarui");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setIsUpdatingPassword(false);
-    } catch (error: any) {
-      toast.error(error.message || "Gagal memperbarui password");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error) || "Gagal memperbarui password");
     } finally {
       setIsLoading(false);
     }

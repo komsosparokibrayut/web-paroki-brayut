@@ -40,7 +40,7 @@ export async function GET(
         },
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error fetching image ${imagePath}:`, error);
       return new NextResponse("Error fetching image", { status: 500 });
     }

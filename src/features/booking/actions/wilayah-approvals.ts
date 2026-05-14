@@ -127,9 +127,9 @@ export async function updateWilayahApprovalStatus(
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating wilayah approval:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

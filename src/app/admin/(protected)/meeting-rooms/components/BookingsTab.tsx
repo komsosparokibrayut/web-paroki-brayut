@@ -429,7 +429,7 @@ export function BookingsTab({
 
                 <div className="space-y-2">
                   <Label>Status Pengembalian</Label>
-                  <Select value={returnStatus} onValueChange={(val: any) => setReturnStatus(val)}>
+                  <Select value={returnStatus} onValueChange={(val) => setReturnStatus(val as typeof returnStatus)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih Status" />
                     </SelectTrigger>

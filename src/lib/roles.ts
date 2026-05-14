@@ -140,6 +140,7 @@ export function canManageInventoryItem(user: SessionUser | null, item: Inventory
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_paroki") return true;
+  if (user.role === "data_admin") return true;
   if (user.role === "admin_wilayah") {
     if (!item.wilayah_id) return false;
     return user.wilayah_id === item.wilayah_id;
@@ -152,6 +153,7 @@ export function canManagePlace(user: SessionUser | null, place: MeetingPlace): b
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_paroki") return true;
+  if (user.role === "data_admin") return true;
   if (user.role === "admin_wilayah") {
     if (!place.wilayah_id) return false;
     return user.wilayah_id === place.wilayah_id;
@@ -164,6 +166,7 @@ export function canManageWilayahApproval(user: SessionUser | null, approvalWilay
   if (!user) return false;
   if (user.role === "super_admin") return true;
   if (user.role === "admin_paroki") return true;
+  if (user.role === "data_admin") return true;
   if (user.role === "admin_wilayah") return user.wilayah_id === approvalWilayahId;
   return false;
 }

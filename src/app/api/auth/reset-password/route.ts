@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: "Jika email terdaftar sebagai admin, link reset password akan dikirim.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Password reset error:", error);
     return NextResponse.json({
       message: "Jika email terdaftar sebagai admin, link reset password akan dikirim.",

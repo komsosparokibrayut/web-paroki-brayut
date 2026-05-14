@@ -57,9 +57,9 @@ export async function setupAdminSettings(data: Partial<AdminSettings>): Promise<
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error setting up admin settings:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -101,8 +101,8 @@ export async function updateAdminSettings(data: Partial<AdminSettings>): Promise
     revalidatePath("/admin/settings");
     revalidatePath("/");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating admin settings:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

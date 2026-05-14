@@ -94,9 +94,9 @@ export async function saveMeetingPlace(place: Omit<MeetingPlace, "id" | "created
     revalidatePath("/admin/meeting-rooms/places");
     revalidatePath("/meeting-room");
     return { success: true, data: savedId };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error saving meeting place:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -118,8 +118,8 @@ export async function deleteMeetingPlace(id: string): Promise<ActionResult> {
     revalidatePath("/admin/meeting-rooms/places");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting meeting place:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

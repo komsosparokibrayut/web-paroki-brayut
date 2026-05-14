@@ -60,8 +60,8 @@ export async function addCategory(category: string): Promise<{ success: boolean;
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error saving category:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

@@ -77,9 +77,9 @@ export async function setMeetingRoomPassword(password: string): Promise<{ succes
     const passwordHash = hashPassword(password);
     await adminDb.collection('settings').doc('meeting_room').set({ passwordHash }, { merge: true });
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error setting password:", error);
-    return { success: false, error: `${error.message}. Stack: ${error.stack}` };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

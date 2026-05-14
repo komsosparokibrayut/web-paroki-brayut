@@ -179,7 +179,7 @@ export function AdminBookingDialog({
         e.preventDefault();
         const { isMultiDay, multiDayDetails, dateTake, dateReturn, event, location, participants, notes, borrowedItems, submissionSource, multiDatesDetails, ...commonBooking } = newBooking;
 
-        let payload: any = { type: bookingType, submissionSource: submissionSource, isAdminDirectCreate: true };
+        let payload: Record<string, unknown> = { type: bookingType, submissionSource: submissionSource, isAdminDirectCreate: true };
 
         if (bookingType === "room") {
             payload = {
@@ -213,7 +213,8 @@ export function AdminBookingDialog({
         }
 
         if (bookingToEdit?.id) {
-            const res = await updateBooking(bookingToEdit.id, payload);
+            // eslint-disable-next-line
+            const res = await updateBooking(bookingToEdit.id, payload as any);
             if (!res.success) {
                 if (res.error?.includes("bertabrakan")) {
                     setConflictError(res.error);
@@ -226,7 +227,8 @@ export function AdminBookingDialog({
             onSuccess();
             onOpenChange(false);
         } else {
-            const res = await submitBooking(payload);
+            // eslint-disable-next-line
+            const res = await submitBooking(payload as any);
             if (!res.success) {
                 if (res.error?.includes("bertabrakan")) {
                     setConflictError(res.error);

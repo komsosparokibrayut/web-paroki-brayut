@@ -96,9 +96,9 @@ export async function createSessionCookie(idToken: string): Promise<{ success: b
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Session creation failed:", error);
-    return { success: false, error: error.message || "Failed to create session." };
+    return { success: false, error: error instanceof Error ? error.message : String(error) || "Failed to create session." };
   }
 }
 

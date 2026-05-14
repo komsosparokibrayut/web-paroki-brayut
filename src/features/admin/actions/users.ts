@@ -64,9 +64,9 @@ export async function inviteAdmin(email: string, role: UserRole, password?: stri
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to invite admin:", error);
-        return { success: false, error: error.message || "Failed to invite admin" };
+        return { success: false, error: error instanceof Error ? error.message : String(error) || "Failed to invite admin" };
     }
 }
 
@@ -132,8 +132,8 @@ const isSelf = currentUser.uid === targetUserId;
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message || "Failed to update admin profile" };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) || "Failed to update admin profile" };
     }
 }
 
@@ -151,8 +151,8 @@ export async function removeAdmin(targetUserId: string) {
 
         revalidatePath("/admin/settings/admins");
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message || "Failed to remove admin" };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) || "Failed to remove admin" };
     }
 }
 
@@ -174,8 +174,8 @@ export async function resetAdminPassword(targetUserId: string, newPassword: stri
         await adminAuth.updateUser(targetUserId, { password: newPassword });
 
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message || "Failed to reset password" };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) || "Failed to reset password" };
     }
 }
 

@@ -115,9 +115,9 @@ export async function createPost(formData: {
     revalidatePath("/artikel", "layout");
 
     return { success: true, slug };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating post:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -212,9 +212,9 @@ export async function updatePost(
     revalidatePath("/artikel", "layout");
 
     return { success: true, slug: finalSlug };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating post:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -243,9 +243,9 @@ export async function deletePost(slug: string) {
     revalidatePath("/artikel", "layout");
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting post:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 

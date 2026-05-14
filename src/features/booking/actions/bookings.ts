@@ -201,9 +201,9 @@ export async function submitBooking(
     revalidatePath("/meeting-room");
     revalidatePath("/admin/meeting-rooms");
     return { success: true, data: docRef.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error submitting booking:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -529,9 +529,9 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating booking status:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -597,9 +597,9 @@ export async function updateReturnStatus(
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating return status:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -657,9 +657,9 @@ export async function updateInitialConditionNotes(
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating initial condition notes:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -707,9 +707,9 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting booking:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -862,8 +862,8 @@ export async function updateBooking(
     revalidatePath("/admin/meeting-rooms");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating booking:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }

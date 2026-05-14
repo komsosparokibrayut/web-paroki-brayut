@@ -95,9 +95,9 @@ export async function saveInventoryItem(item: Omit<InventoryItem, "id" | "create
     revalidatePath("/admin/meeting-rooms/inventory");
     revalidatePath("/meeting-room");
     return { success: true, data: savedId };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error saving inventory item:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -119,9 +119,9 @@ export async function deleteInventoryItem(id: string): Promise<ActionResult> {
     revalidatePath("/admin/meeting-rooms/inventory");
     revalidatePath("/meeting-room");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting inventory item:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -362,8 +362,8 @@ export async function checkInventoryTimeOverlap(
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error checking inventory time overlap:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
