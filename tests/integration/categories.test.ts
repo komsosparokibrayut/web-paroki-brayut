@@ -58,7 +58,7 @@ vi.mock("@/lib/roles", () => ({
     if (!role) return false;
     if (role === "super_admin") return true;
     if (role === "news_admin") return permission === "manage_news_categories" || permission === "manage_news";
-    if (role === "data_admin") return permission === "manage_news_categories" || permission === "manage_data";
+    if (role === "data_admin") return permission === "manage_data";
     if (role === "admin_wilayah") return permission === "manage_data";
     if (role === "admin_paroki") return permission === "manage_data";
     return false;
@@ -111,6 +111,26 @@ describe("categories.ts — addCategory", () => {
   it("rejects authenticated user without manage_news_categories permission", async () => {
     mockGetCurrentUser.mockResolvedValue({
       uid: "uid1", email: "a@b.com", name: "Test", picture: "", role: "admin_wilayah",
+    });
+    const { addCategory } = await import("@/actions/categories");
+    const result = await addCategory("NewCategory");
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Unauthorized");
+  });
+
+  it("rejects data_admin (has manage_data but not manage_news_categories permission)", async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      uid: "uid1", email: "data@test.com", name: "Data Admin", picture: "", role: "data_admin",
+    });
+    const { addCategory } = await import("@/actions/categories");
+    const result = await addCategory("NewCategory");
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Unauthorized");
+  });
+
+  it("rejects news_reporter (only has create_news_draft permission)", async () => {
+    mockGetCurrentUser.mockResolvedValue({
+      uid: "uid1", email: "reporter@test.com", name: "News Reporter", picture: "", role: "news_reporter",
     });
     const { addCategory } = await import("@/actions/categories");
     const result = await addCategory("NewCategory");

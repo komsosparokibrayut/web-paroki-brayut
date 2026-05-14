@@ -89,6 +89,33 @@ const regularUser = {
   wilayah_id: "W001",
 };
 
+const adminWilayahUser = {
+  uid: "uid_wilayah",
+  email: "wilayah@paroki.com",
+  name: "Admin Wilayah",
+  picture: "",
+  role: "admin_wilayah" as const,
+  wilayah_id: "W002",
+};
+
+const dataAdminUser = {
+  uid: "uid_data",
+  email: "data@paroki.com",
+  name: "Data Admin",
+  picture: "",
+  role: "data_admin" as const,
+  wilayah_id: undefined,
+};
+
+const newsReporterUser = {
+  uid: "uid_reporter",
+  email: "reporter@paroki.com",
+  name: "News Reporter",
+  picture: "",
+  role: "news_reporter" as const,
+  wilayah_id: "W003",
+};
+
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 function createMockFile(name: string, size: number = 1024): File {
   const content = new ArrayBuffer(size);
@@ -133,6 +160,36 @@ describe("uploadImages", () => {
 
   it("rejects admin_paroki (no manage_news permission)", async () => {
     mockGetCurrentUser.mockResolvedValueOnce(regularUser);
+
+    const file = createMockFile("test.png", 5000);
+    const result = await uploadImages(createMockFormData([file]), "inline");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+  });
+
+  it("rejects admin_wilayah (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(adminWilayahUser);
+
+    const file = createMockFile("test.png", 5000);
+    const result = await uploadImages(createMockFormData([file]), "inline");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+  });
+
+  it("rejects data_admin (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(dataAdminUser);
+
+    const file = createMockFile("test.png", 5000);
+    const result = await uploadImages(createMockFormData([file]), "inline");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+  });
+
+  it("rejects news_reporter (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsReporterUser);
 
     const file = createMockFile("test.png", 5000);
     const result = await uploadImages(createMockFormData([file]), "inline");
@@ -270,6 +327,36 @@ describe("deleteImage", () => {
 
   it("rejects admin_paroki (no manage_news permission)", async () => {
     mockGetCurrentUser.mockResolvedValueOnce(regularUser);
+
+    const result = await deleteImage("/images/photo.webp");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects admin_wilayah (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(adminWilayahUser);
+
+    const result = await deleteImage("/images/photo.webp");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects data_admin (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(dataAdminUser);
+
+    const result = await deleteImage("/images/photo.webp");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/unauthorized/i);
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  it("rejects news_reporter (no manage_news permission)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsReporterUser);
 
     const result = await deleteImage("/images/photo.webp");
 

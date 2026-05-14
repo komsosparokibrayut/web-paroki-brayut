@@ -141,6 +141,7 @@ import {
 const adminParokiUser = { uid: "uid1", email: "paroki@paroki.com", name: "Admin Paroki", picture: "", role: "admin_paroki" as const, wilayah_id: "W001" };
 const wilayahW001User = { uid: "uid2", email: "wilayah@paroki.com", name: "Admin Wilayah W001", picture: "", role: "admin_wilayah" as const, wilayah_id: "W001" };
 const newsReporterUser = { uid: "uid4", email: "reporter@paroki.com", name: "Reporter", picture: "", role: "news_reporter" as const, wilayah_id: undefined };
+const newsAdminUser = { uid: "uid5", email: "newsadmin@paroki.com", name: "News Admin", picture: "", role: "news_admin" as const, wilayah_id: undefined };
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 const TODAY = new Date().toISOString().split("T")[0];
@@ -197,6 +198,11 @@ describe("getBookings", () => {
     mockGetCurrentUser.mockResolvedValueOnce(newsReporterUser);
     expect(await getBookings()).toEqual([]);
   });
+
+  it("news_admin is rejected (has manage_news but not manage_data)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsAdminUser);
+    expect(await getBookings()).toEqual([]);
+  });
 });
 
 describe("submitBooking", () => {
@@ -246,6 +252,14 @@ describe("submitBooking", () => {
 
     // With IP unknown_ip, rate-limit is skipped so booking succeeds
     expect(result.success).toBe(true);
+  });
+
+  it("news_admin is rejected (has manage_news but not manage_data)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsAdminUser);
+    const result = await submitBooking({ ...makeBooking(), isAdminDirectCreate: true });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/otorisasi/i);
   });
 });
 
@@ -333,6 +347,17 @@ describe("updateBookingStatus", () => {
     expect(result.error).toMatch(/otorisasi/i);
   });
 
+  it("news_admin is rejected (has manage_news but not manage_data)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsAdminUser);
+    const col = mockAdminDb.collection("meeting_bookings");
+    await col.doc("b1").set({ ...makeBooking(), status: "pending" });
+
+    const result = await updateBookingStatus("b1", "confirmed");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/otorisasi/i);
+  });
+
   it("returns error for non-existent booking", async () => {
     mockGetCurrentUser.mockResolvedValueOnce(adminParokiUser);
     // The admin_paroki path skips the "not found" check before auth.
@@ -388,6 +413,17 @@ describe("deleteBooking (cancelBooking)", () => {
   it("rejects unauthenticated delete", async () => {
     mockGetCurrentUser.mockResolvedValueOnce(null);
     // Seed the doc so auth check is what fails
+    const col = mockAdminDb.collection("meeting_bookings");
+    await col.doc("b1").set({ ...makeBooking(), status: "pending" });
+
+    const result = await deleteBooking("b1");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/otorisasi/i);
+  });
+
+  it("news_admin is rejected (has manage_news but not manage_data)", async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(newsAdminUser);
     const col = mockAdminDb.collection("meeting_bookings");
     await col.doc("b1").set({ ...makeBooking(), status: "pending" });
 

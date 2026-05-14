@@ -183,8 +183,14 @@ export async function submitBooking(
     // Assign Submission Source
     bookingDataToSave.submissionSource = submissionSource || (isAdminDirectCreate ? 'manual' : 'online');
 
-    const now = Date.now();
+const now = Date.now();
     const currentUser = isAdminDirectCreate ? await getCurrentUser() : null;
+
+    // RBAC: admin direct create requires manage_data permission
+    if (isAdminDirectCreate && currentUser && !hasPermission(currentUser.role, "manage_data")) {
+      return { success: false, error: "Tidak memiliki otorisasi" };
+    }
+
     const userIdentifier = currentUser ? (currentUser.name || currentUser.email || "Unknown") : "Public";
     const docRef = await adminDb.collection(COLLECTION).add({
       ...bookingDataToSave,
