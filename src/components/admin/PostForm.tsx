@@ -83,7 +83,7 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
             description: post?.frontmatter.description || "",
             author: post?.frontmatter.author || user?.name || "Admin Paroki",
             categories: post?.frontmatter.categories || [],
-            content: post?.content || { ops: [] },
+            content: post?.content || { type: "doc", content: [] },
             banner: post?.frontmatter.banner || "",
             published: post?.frontmatter.published || false,
             publishedAt: post?.frontmatter.publishedAt ? new Date(post.frontmatter.publishedAt) : undefined,
@@ -152,10 +152,23 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
     }, []);
 
     const onSubmit = async (values: z.infer<typeof formSchema>, publishStatus?: boolean) => {
-        // Validation check for empty content
-        const hasContent = values.content &&
-            (typeof values.content === 'string' ? values.content.trim() !== "" :
-                values.content.ops && values.content.ops.length > 0);
+        // Validation check for empty content (handles Tiptap JSON, Quill Delta, and String)
+        const hasContent = (() => {
+            if (!values.content) return false;
+            if (typeof values.content === 'string') return values.content.trim() !== "";
+            if (values.content.type === 'doc' && Array.isArray(values.content.content)) {
+                const hasTextOrMedia = (nodes: any[]): boolean => {
+                    return nodes.some(node => {
+                        if (node.type === 'text' && node.text && node.text.trim() !== '') return true;
+                        if (node.type === 'image' || node.type === 'youtube' || node.type === 'iframe') return true;
+                        if (Array.isArray(node.content)) return hasTextOrMedia(node.content);
+                        return false;
+                    });
+                };
+                return hasTextOrMedia(values.content.content);
+            }
+            return !!(values.content.ops && values.content.ops.length > 0);
+        })();
 
         if (!hasContent) {
             setError("Content is required.");
@@ -557,6 +570,11 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
                                                     </div>
                                                 )}
                                             </div>
+                                            {form.formState.errors.categories && (
+                                                <p className="text-xs font-medium text-red-500 mt-1">
+                                                    {form.formState.errors.categories.message}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <FormField
