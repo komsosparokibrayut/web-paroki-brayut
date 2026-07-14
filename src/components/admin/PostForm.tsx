@@ -195,7 +195,7 @@ export default function PostForm({ post, mode, categories: masterCategories }: P
             const data = {
                 ...values,
                 description: values.description || "",
-                content: values.content,
+                content: JSON.parse(JSON.stringify(values.content)),
                 published: finalPublished,
                 publishedAt: values.publishedAt ? values.publishedAt.toISOString() : undefined,
                 newSlug: values.slug, // Pass new slug for rename
