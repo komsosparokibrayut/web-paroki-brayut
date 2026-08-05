@@ -46,7 +46,7 @@ export async function getActiveInventoryItems(): Promise<InventoryItem[]> {
     
     return items
       .filter(p => p.isActive)
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   } catch (error) {
     console.error("Error fetching active inventory items:", error);
     return [];

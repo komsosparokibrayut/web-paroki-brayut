@@ -24,6 +24,17 @@ export default async function LingkunganPage() {
             />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+                <div className="h-[480px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <iframe
+                        src="https://www.google.com/maps/d/embed?mid=1WHJFN7kdnwtvjFU-CChlovjUYBsKa4w&ehbc=2E312F"
+                        width="100%"
+                        height="480"
+                        title="Peta Wilayah Paroki Brayut"
+                        loading="lazy"
+                        className="border-0"
+                    />
+                </div>
+
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
                     <div className="text-center space-y-2">
                         <h3 className="text-brand-dark font-bold text-2xl">Data Statistik Paroki</h3>

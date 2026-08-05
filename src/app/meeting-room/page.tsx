@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getBookings } from "@/features/booking/actions/bookings";
-import { getMeetingPlaces } from "@/features/booking/actions/places";
+import { getPublicMeetingPlaces } from "@/features/booking/actions/places";
 import { getActiveInventoryItems } from "@/features/booking/actions/inventory";
 import { isMeetingRoomAuthenticated } from "@/features/booking/actions/auth";
 import { getWilayahLingkungan } from "@/actions/data";
@@ -17,7 +17,7 @@ export default async function MeetingRoomPage() {
     const [bookings, places, inventoryItems, wilayahs] = isAuthenticated 
         ? await Promise.all([
             getBookings(),
-            getMeetingPlaces(),
+            getPublicMeetingPlaces(),
             getActiveInventoryItems(),
             getWilayahLingkungan(),
         ])

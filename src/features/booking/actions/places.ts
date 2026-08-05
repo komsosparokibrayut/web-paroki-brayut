@@ -3,6 +3,7 @@
 import { adminDb } from "@/lib/firebase/server";
 import { getCurrentUser } from "@/lib/firebase/auth";
 import { hasPermission, canManagePlace } from "@/lib/roles";
+import { isMeetingRoomAuthenticated } from "./auth";
 import { MeetingPlace } from "../types";
 import { revalidatePath } from "next/cache";
 import { QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
@@ -19,10 +20,14 @@ export async function getMeetingPlaces(): Promise<MeetingPlace[]> {
     }
 
     const snapshot = await adminDb.collection(COLLECTION).orderBy("name").get();
-    return snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
+    const places = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
       id: doc.id,
       ...doc.data()
     } as MeetingPlace));
+
+    return currentUser.role === "admin_wilayah"
+      ? places.filter(place => place.wilayah_id === currentUser.wilayah_id)
+      : places;
   } catch (error) {
     console.error("Error fetching places:", error);
     return [];
@@ -43,11 +48,30 @@ export async function getActiveMeetingPlaces(): Promise<MeetingPlace[]> {
       ...doc.data()
     } as MeetingPlace));
     
-    return places
+    const activePlaces = places
       .filter(p => p.isActive)
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    return currentUser.role === "admin_wilayah"
+      ? activePlaces.filter(place => place.wilayah_id === currentUser.wilayah_id)
+      : activePlaces;
   } catch (error) {
     console.error("Error fetching active places:", error);
+    return [];
+  }
+}
+
+export async function getPublicMeetingPlaces(): Promise<MeetingPlace[]> {
+  try {
+    if (!(await isMeetingRoomAuthenticated())) return [];
+
+    const snapshot = await adminDb.collection(COLLECTION).get();
+    return snapshot.docs
+      .map((doc: QueryDocumentSnapshot<DocumentData>) => ({ id: doc.id, ...doc.data() } as MeetingPlace))
+      .filter(place => place.isActive)
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } catch (error) {
+    console.error("Error fetching public places:", error);
     return [];
   }
 }
