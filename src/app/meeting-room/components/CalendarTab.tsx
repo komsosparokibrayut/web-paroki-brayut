@@ -155,7 +155,7 @@ export function CalendarTab({
                                             </div>
                                             <div className="space-y-1">
                                                 {(() => {
-                                                    const sorted = dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                                    const sorted = dayBookings.sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""));
                                                     const MAX_VISIBLE = 2;
                                                     const visible = sorted.slice(0, MAX_VISIBLE);
                                                     const overflowBookings = sorted.slice(MAX_VISIBLE);

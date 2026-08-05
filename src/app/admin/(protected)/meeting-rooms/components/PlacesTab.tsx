@@ -75,7 +75,7 @@ export function PlacesTab({
 
   const filteredPlaces = places.filter(p => {
     const q = placeSearch.toLowerCase();
-    return !q || p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q);
+    return !q || (p.name || "").toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q);
   });
   const placePageCount = Math.max(1, Math.ceil(filteredPlaces.length / PLACE_PAGE_SIZE));
   const pagedPlaces = filteredPlaces.slice((placePage - 1) * PLACE_PAGE_SIZE, placePage * PLACE_PAGE_SIZE);

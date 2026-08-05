@@ -34,9 +34,14 @@ export default function ContactPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-900 mb-1">Alamat Gereja</h3>
-                                    <p className="text-gray-600 text-sm leading-relaxed">
-                                        Jl. Godean Km. 13, Brayut, Sinduadi, Mlati, Sleman, Daerah Istimewa Yogyakarta 55284
-                                    </p>
+                                    <a
+                                        href="https://maps.google.com/?q=Gereja+Santo+Yusuf+Tambakrejo,+Rejodani+1,+Sariharjo,+Ngaglik,+Sleman"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-brand-blue text-sm leading-relaxed hover:underline"
+                                    >
+                                        Gereja Santo Yusuf Tambakrejo Rejodani 1, Sariharjo, Ngaglik Kabupaten Sleman, DIY 55581
+                                    </a>
                                 </div>
                             </div>
 
@@ -48,8 +53,16 @@ export default function ContactPage() {
                                 <div>
                                     <h3 className="font-bold text-gray-900 mb-1">Kontak</h3>
                                     <div className="text-gray-600 text-sm space-y-1">
-                                        <p>0274-123456 (Sekretariat)</p>
-                                        <p>0812-3456-7890 (WA Center)</p>
+                                        <p className="font-medium text-gray-900">(0274) 860-9221</p>
+                                        <p>Sekretariat Paroki (Selasa - Minggu)</p>
+                                        <a
+                                            href="https://wa.me/628135735199"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-brand-blue hover:underline"
+                                        >
+                                            628135735199
+                                        </a>
                                         <a href="mailto:sekretariat@parokibrayut.org" className="text-brand-blue hover:underline">
                                             sekretariat@parokibrayut.org
                                         </a>
@@ -65,15 +78,10 @@ export default function ContactPage() {
                                 <div>
                                     <h3 className="font-bold text-gray-900 mb-1">Jam Sekretariat</h3>
                                     <div className="text-gray-600 text-sm space-y-1">
-                                        <div className="flex justify-between gap-4">
-                                            <span>Senin - Sabtu</span>
-                                            <span className="font-medium">08.00 - 16.00 WIB</span>
-                                        </div>
-                                        <div className="flex justify-between gap-4">
-                                            <span>Minggu</span>
-                                            <span className="font-medium">08.00 - 12.00 WIB</span>
-                                        </div>
-                                        <p className="text-xs text-red-500 pt-1 italic">*Libur pada hari raya nasional</p>
+                                        <p>Selasa - Jumat: 09.00 - 17.00</p>
+                                        <p>Sabtu: 08.00 - 15.00</p>
+                                        <p>Minggu: 09.00 - 15.00</p>
+                                        <p className="text-xs text-red-500 pt-1 italic">*Senin &amp; Libur Nasional Tutup</p>
                                     </div>
                                 </div>
                             </div>

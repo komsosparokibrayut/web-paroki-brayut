@@ -77,7 +77,7 @@ export function InventoryTab({
 
   const filteredInventory = inventory.filter(item => {
     const q = inventorySearch.toLowerCase();
-    return !q || item.name.toLowerCase().includes(q) || (item.description || "").toLowerCase().includes(q);
+    return !q || (item.name || "").toLowerCase().includes(q) || (item.description || "").toLowerCase().includes(q);
   });
   const inventoryPageCount = Math.max(1, Math.ceil(filteredInventory.length / INV_PAGE_SIZE));
   const pagedInventory = filteredInventory.slice((inventoryPage - 1) * INV_PAGE_SIZE, inventoryPage * INV_PAGE_SIZE);
