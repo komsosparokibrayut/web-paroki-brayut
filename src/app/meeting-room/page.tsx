@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getBookings } from "@/features/booking/actions/bookings";
+import { getPublicBookings } from "@/features/booking/actions/bookings";
 import { getPublicMeetingPlaces } from "@/features/booking/actions/places";
 import { getActiveInventoryItems } from "@/features/booking/actions/inventory";
 import { isMeetingRoomAuthenticated } from "@/features/booking/actions/auth";
@@ -12,21 +12,20 @@ export const metadata: Metadata = {
 
 export default async function MeetingRoomPage() {
     const isAuthenticated = await isMeetingRoomAuthenticated();
-    
-    // Only fetch data if authenticated to save reads
-    const [bookings, places, inventoryItems, wilayahs] = isAuthenticated 
-        ? await Promise.all([
-            getBookings(),
-            getPublicMeetingPlaces(),
-            getActiveInventoryItems(),
-            getWilayahLingkungan(),
-        ])
-        : [[], [], [], []];
+
+    // Public data: always fetch confirmed/pending bookings for the calendar
+    // Admin-only data: fetch full list only when authenticated
+    const [publicBookings, places, inventoryItems, wilayahs] = await Promise.all([
+        getPublicBookings(),
+        getPublicMeetingPlaces(),
+        getActiveInventoryItems(),
+        getWilayahLingkungan(),
+    ]);
 
     return (
-        <MeetingRoomClient 
-            isAuthenticated={isAuthenticated} 
-            initialBookings={bookings} 
+        <MeetingRoomClient
+            isAuthenticated={isAuthenticated}
+            initialBookings={publicBookings}
             places={places}
             inventoryItems={inventoryItems}
             wilayahs={wilayahs.map(w => ({ id: w.id, name: w.name }))}

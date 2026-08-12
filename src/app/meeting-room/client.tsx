@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { MeetingBooking, MeetingPlace, InventoryItem } from "@/features/booking/types";
-import { getBookings } from "@/features/booking/actions/bookings";
+import { getPublicBookings } from "@/features/booking/actions/bookings";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -37,7 +37,7 @@ export default function MeetingRoomClient({
     const [isRefreshing, startRefresh] = useTransition();
     const handleRefresh = () => {
         startRefresh(async () => {
-            const fresh = await getBookings();
+            const fresh = await getPublicBookings();
             setBookings(fresh);
         });
     };

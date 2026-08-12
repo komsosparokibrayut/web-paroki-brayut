@@ -213,6 +213,49 @@ const now = Date.now();
   }
 }
 
+/**
+ * Public-safe bookings fetcher.
+ * Returns only confirmed and pending bookings with sensitive fields stripped.
+ * Used by the public /meeting-room page (no Firebase auth required).
+ */
+export async function getPublicBookings(): Promise<MeetingBooking[]> {
+  try {
+    const snapshot = await adminDb
+      .collection(COLLECTION)
+      .where("status", "in", ["confirmed", "pending"])
+      .get();
+
+    const bookings = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        type: data.type,
+        placeId: data.placeId,
+        date: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        userName: data.userName,
+        purpose: data.purpose,
+        status: data.status,
+        multiDates: data.multiDates,
+        multiDatesDetails: data.multiDatesDetails,
+        borrowedItems: data.borrowedItems,
+        isRescheduled: data.isRescheduled,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      } as MeetingBooking;
+    });
+
+    return bookings.sort((a, b) => {
+      if (a.date !== b.date) return (b.date || "").localeCompare(a.date || "");
+      return (a.startTime || "").localeCompare(b.startTime || "");
+    });
+  } catch (error) {
+    console.error("Error fetching public bookings:", error);
+    return [];
+  }
+}
+
 export async function getBookings(): Promise<MeetingBooking[]> {
   try {
     const currentUser = await getCurrentUser();
