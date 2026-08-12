@@ -60,7 +60,9 @@ export function MultiDateWithTimePicker({
     return slots.some(slot => {
       const slotStart = parseInt(slot.startTime.split(':')[0]);
       const slotEnd = parseInt(slot.endTime.split(':')[0]);
-      return hour >= slotStart && hour <= slotEnd;
+      // A slot occupies [start, end). Hour h is blocked if h >= start && h < end.
+      // The end hour itself is free (booking ends at that time).
+      return hour >= slotStart && hour < slotEnd;
     });
   };
 
@@ -69,8 +71,8 @@ export function MultiDateWithTimePicker({
     return Array.from({ length: 17 }).map((_, i) => {
       const hour = i + 6;
       if (disablePast && isTodaySelected && hour < currentHour) return null;
-      if (isSlotTaken(dateStr, hour)) return null;
-      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+      const taken = isSlotTaken(dateStr, hour);
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
 
@@ -81,8 +83,8 @@ export function MultiDateWithTimePicker({
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isTodaySelected && hour < currentHour) return null;
-      if (isSlotTaken(dateStr, hour)) return null;
-      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+      const taken = isSlotTaken(dateStr, hour);
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
 
@@ -91,8 +93,8 @@ export function MultiDateWithTimePicker({
     return Array.from({ length: 17 }).map((_, i) => {
       const hour = i + 6;
       if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
-      if (dateStr && isSlotTaken(dateStr, hour)) return null;
-      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+      const taken = dateStr ? isSlotTaken(dateStr, hour) : false;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
 
@@ -103,8 +105,8 @@ export function MultiDateWithTimePicker({
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
-      if (dateStr && isSlotTaken(dateStr, hour)) return null;
-      return { hour, time: `${hour.toString().padStart(2, '0')}:00` };
+      const taken = dateStr ? isSlotTaken(dateStr, hour) : false;
+      return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
 
@@ -165,12 +167,19 @@ export function MultiDateWithTimePicker({
                     <div className="space-y-1">
 <label className="text-xs font-medium">Waktu Mulai</label>
                                               <Select value={startTime} onValueChange={setStartTime}>
-                                                <SelectTrigger className="bg-white h-8">
+                                                <SelectTrigger className="bg-white h-8 w-[90px]">
                                                   <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent className="bg-white">
                                                   {getAddDateStartOptions().map((opt) => (
-                                                    <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                                                    <SelectItem
+                                                      key={opt!.time}
+                                                      value={opt!.time}
+                                                      disabled={opt!.taken}
+                                                      className={opt!.taken ? "text-red-500 data-[disabled]:opacity-100" : ""}
+                                                    >
+                                                      {opt!.time}{opt!.taken ? " *Terisi" : ""}
+                                                    </SelectItem>
                                                   ))}
                                                 </SelectContent>
                                               </Select>
@@ -178,12 +187,19 @@ export function MultiDateWithTimePicker({
                     <div className="space-y-1">
 <label className="text-xs font-medium">Waktu Selesai</label>
                                               <Select value={endTime} onValueChange={setEndTime}>
-                                                <SelectTrigger className="bg-white h-8">
+                                                <SelectTrigger className="bg-white h-8 w-[90px]">
                                                   <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent className="bg-white">
                                                   {getAddDateEndOptions().map((opt) => (
-                                                    <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                                                    <SelectItem
+                                                      key={opt!.time}
+                                                      value={opt!.time}
+                                                      disabled={opt!.taken}
+                                                      className={opt!.taken ? "text-red-500 data-[disabled]:opacity-100" : ""}
+                                                    >
+                                                      {opt!.time}{opt!.taken ? " *Terisi" : ""}
+                                                    </SelectItem>
                                                   ))}
                                                 </SelectContent>
                                               </Select>
@@ -212,30 +228,44 @@ export function MultiDateWithTimePicker({
                 <span className="flex-1 text-sm">{formatted}</span>
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-muted-foreground" />
-                  <Select 
-                    value={item.startTime} 
+                  <Select
+                    value={item.startTime}
                     onValueChange={(val) => updateDateTime(item.date, 'startTime', val)}
                   >
-                    <SelectTrigger className="bg-white h-7 w-[70px] text-xs">
+                    <SelectTrigger className="bg-white h-7 w-[85px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       {getStartTimeOptions(item.date).map((opt) => (
-                        <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                        <SelectItem
+                          key={opt!.time}
+                          value={opt!.time}
+                          disabled={opt!.taken}
+                          className={opt!.taken ? "text-red-500 data-[disabled]:opacity-100" : ""}
+                        >
+                          {opt!.time}{opt!.taken ? " *Terisi" : ""}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <span className="text-xs text-muted-foreground">-</span>
-                  <Select 
-                    value={item.endTime} 
+                  <Select
+                    value={item.endTime}
                     onValueChange={(val) => updateDateTime(item.date, 'endTime', val)}
                   >
-                    <SelectTrigger className="bg-white h-7 w-[70px] text-xs">
+                    <SelectTrigger className="bg-white h-7 w-[85px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       {getEndTimeOptions(item.date, item.startTime).map((opt) => (
-                        <SelectItem key={opt!.time} value={opt!.time}>{opt!.time}</SelectItem>
+                        <SelectItem
+                          key={opt!.time}
+                          value={opt!.time}
+                          disabled={opt!.taken}
+                          className={opt!.taken ? "text-red-500 data-[disabled]:opacity-100" : ""}
+                        >
+                          {opt!.time}{opt!.taken ? " *Terisi" : ""}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
