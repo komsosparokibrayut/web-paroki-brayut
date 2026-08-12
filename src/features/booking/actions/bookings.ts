@@ -241,6 +241,13 @@ export async function getPublicBookings(): Promise<MeetingBooking[]> {
         multiDatesDetails: data.multiDatesDetails,
         borrowedItems: data.borrowedItems,
         isRescheduled: data.isRescheduled,
+        submissionSource: data.submissionSource,
+        location: data.location,
+        inventoryDateTake: data.inventoryDateTake,
+        returnDate: data.returnDate,
+        returnStatus: data.returnStatus,
+        returnNotes: data.returnNotes,
+        initialConditionNotes: data.initialConditionNotes,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
       } as MeetingBooking;

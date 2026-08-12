@@ -125,19 +125,21 @@ export function BookingDetailModal({
                             </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <div className="mt-0.5 bg-green-100 p-1.5 rounded-md text-green-700 shrink-0 h-fit">
-                                <Phone className="h-4 w-4" />
+                        {b.userContact && (
+                            <div className="flex gap-3">
+                                <div className="mt-0.5 bg-green-100 p-1.5 rounded-md text-green-700 shrink-0 h-fit">
+                                    <Phone className="h-4 w-4" />
+                                </div>
+                                <div className="space-y-1 min-w-0">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Kontak</p>
+                                    <p className="text-sm font-medium text-slate-900 truncate">
+                                        <a href={`https://wa.me/${b.userContact.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-brand-blue hover:underline">
+                                            {b.userContact}
+                                        </a>
+                                    </p>
+                                </div>
                             </div>
-                            <div className="space-y-1 min-w-0">
-                                <p className="text-xs font-semibold text-muted-foreground uppercase">Kontak</p>
-                                <p className="text-sm font-medium text-slate-900 truncate">
-                                    <a href={`https://wa.me/${b.userContact.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-brand-blue hover:underline">
-                                        {b.userContact}
-                                    </a>
-                                </p>
-                            </div>
-                        </div>
+                        )}
 
                         {(() => {
                             const parsedParticipants = b.purpose?.match(/Peserta:\s*(\d+)/)?.[1] || "0";
