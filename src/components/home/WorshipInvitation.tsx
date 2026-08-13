@@ -22,6 +22,7 @@ interface WorshipInvitationProps {
       location: string;
       description: string;
       date?: string;
+      recurrence?: 'first-friday' | 'weekly' | 'monthly';
     }>;
   } | null;
 }
@@ -92,6 +93,25 @@ export default function WorshipInvitation({
     const times = scheduleMap.get(dayName);
     return times ? formatTimeList(times) : "";
   };
+
+  // Find Jumat Pertama from specialMasses (recurrence: 'first-friday')
+  const jumatPertama = useMemo(() => {
+    const masses = jadwalMisaData?.specialMasses || [];
+    const jp = masses.find((m) => m.recurrence === "first-friday");
+    return jp?.time || "18.30 WIB";
+  }, [jadwalMisaData?.specialMasses]);
+
+  // Compute next first Friday of current month
+  const nextFirstFriday = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    // Find first Friday (day 5 = Friday in JS Date)
+    const dayOffset = (5 - firstDay.getDay() + 7) % 7;
+    const firstFriday = new Date(year, month, 1 + dayOffset);
+    return firstFriday;
+  }, []);
 
   const mingguSchedule = getDaySchedule("Minggu");
   const sabtuSchedule = getDaySchedule("Sabtu");
@@ -244,10 +264,10 @@ export default function WorshipInvitation({
               Jumat Pertama
             </h3>
             <p className='font-serif text-xl mb-2 transition-colors'>
-              18.30 WIB
+              {jumatPertama}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
-              Adorasi & Misa
+              Adorasi & Misa · {nextFirstFriday.getDate()} {MONTH_NAMES[nextFirstFriday.getMonth()]}
             </p>
           </motion.div>
         </div>

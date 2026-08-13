@@ -90,7 +90,8 @@ export interface SpecialMassEvent {
   time: string;
   location: string;
   description: string;
-  date?: string; // YYYY-MM-DD format for date-based filtering
+  date?: string; // YYYY-MM-DD format for one-off events
+  recurrence?: 'first-friday' | 'weekly' | 'monthly'; // recurring pattern
   created_by?: string;
   created_at?: string;
   modified_by?: string;
