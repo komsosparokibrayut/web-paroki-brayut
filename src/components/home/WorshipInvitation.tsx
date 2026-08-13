@@ -22,7 +22,7 @@ interface WorshipInvitationProps {
       location: string;
       description: string;
       date?: string;
-      recurrence?: 'first-friday' | 'weekly' | 'monthly';
+      recurrence?: "first-friday" | "weekly" | "monthly";
     }>;
   } | null;
 }
@@ -183,7 +183,7 @@ export default function WorshipInvitation({
               Senin - Jumat
             </h3>
             <p className='font-serif text-xl mb-2 transition-colors'>
-              {harianSchedule || "06.00 WIB"}
+              {harianSchedule || "05.30 WIB"}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
               Misa Harian
@@ -267,7 +267,8 @@ export default function WorshipInvitation({
               {jumatPertama}
             </p>
             <p className='text-xs text-gray-500 transition-colors'>
-              Adorasi & Misa · {nextFirstFriday.getDate()} {MONTH_NAMES[nextFirstFriday.getMonth()]}
+              Jadwal Misa Selanjutnya · {nextFirstFriday.getDate()}{" "}
+              {MONTH_NAMES[nextFirstFriday.getMonth()]}
             </p>
           </motion.div>
         </div>
