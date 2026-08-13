@@ -533,11 +533,32 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
     }
 
     const userIdentifier = currentUser.name || currentUser.email || "Unknown";
-    await adminDb.collection(COLLECTION).doc(id).update({
+    const updatePayload: Record<string, unknown> = {
       status,
       modified_by: userIdentifier,
       modified_at: Date.now()
-    });
+    };
+
+    // When rejecting a booking that involves inventory, clear returnStatus
+    // so the items don't stay marked as "Masih Dipinjam".
+    if (status === "rejected") {
+      updatePayload.returnStatus = null;
+      updatePayload.returnNotes = null;
+    }
+
+    // When (re-)confirming a booking with inventory and no returnStatus yet,
+    // initialize it to "Masih Dipinjam" so admin can track it.
+    if (status === "confirmed") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (bookingDoc.exists) {
+        const existing = bookingDoc.data() as MeetingBooking;
+        if ((existing.type === "inventory" || existing.type === "both") && !existing.returnStatus) {
+          updatePayload.returnStatus = "Masih Dipinjam";
+        }
+      }
+    }
+
+    await adminDb.collection(COLLECTION).doc(id).update(updatePayload);
 
     if (status === "confirmed") {
         const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();

@@ -207,9 +207,13 @@ function timeToMinutes(time: string): number {
 
 export async function getInventoryBorrowingStats(): Promise<Map<string, { totalHours: number; totalMinutes: number; bookingCount: number }>> {
   try {
+    // Only count bookings that have been returned (Lama dipinjam).
+    // Rejected bookings have returnStatus cleared (null); pending bookings have no returnStatus yet.
+    // Both "Sudah Dikembalikan" and "Dikembalikan dengan Kekurangan" count as returned.
     const snapshot = await adminDb.collection(BOOKING_COLLECTION)
       .where("status", "==", "confirmed")
       .where("type", "in", ["inventory", "both"])
+      .where("returnStatus", "in", ["Sudah Dikembalikan", "Dikembalikan dengan Kekurangan"])
       .get();
 
     const statsMap = new Map<string, { totalHours: number; totalMinutes: number; bookingCount: number }>();
