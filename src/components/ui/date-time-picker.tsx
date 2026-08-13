@@ -66,6 +66,19 @@ export function MultiDateWithTimePicker({
     });
   };
 
+  // Range-overlap check for END time: a booking [startHour, endHour] overlaps
+  // a taken slot [slotStart, slotEnd] iff startHour < slotEnd && endHour > slotStart.
+  // Ending exactly at slotStart is OK; starting exactly at slotEnd is OK.
+  const isEndTimeTaken = (dateStr: string, startHour: number, endHour: number) => {
+    const slots = takenSlots[dateStr];
+    if (!slots || slots.length === 0) return false;
+    return slots.some(slot => {
+      const slotStart = parseInt(slot.startTime.split(':')[0]);
+      const slotEnd = parseInt(slot.endTime.split(':')[0]);
+      return startHour < slotEnd && endHour > slotStart;
+    });
+  };
+
   const getStartTimeOptions = (dateStr: string) => {
     const isTodaySelected = isDateToday(parse(dateStr, "yyyy-MM-dd", new Date()) || new Date(0));
     return Array.from({ length: 17 }).map((_, i) => {
@@ -83,7 +96,7 @@ export function MultiDateWithTimePicker({
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isTodaySelected && hour < currentHour) return null;
-      const taken = isSlotTaken(dateStr, hour);
+      const taken = isEndTimeTaken(dateStr, startHour, hour);
       return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
@@ -105,7 +118,7 @@ export function MultiDateWithTimePicker({
       const hour = i + 7;
       if (hour <= startHour) return null;
       if (disablePast && isDateToday(selectedDate || new Date(0)) && hour < currentHour) return null;
-      const taken = dateStr ? isSlotTaken(dateStr, hour) : false;
+      const taken = dateStr ? isEndTimeTaken(dateStr, startHour, hour) : false;
       return { hour, time: `${hour.toString().padStart(2, '0')}:00`, taken };
     }).filter(Boolean);
   };
