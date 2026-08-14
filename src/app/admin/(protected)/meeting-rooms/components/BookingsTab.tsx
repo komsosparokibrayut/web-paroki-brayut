@@ -133,7 +133,11 @@ export function BookingsTab({
     }
   };
 
-  const getReturnStatusBadge = (status?: string) => {
+  const getReturnStatusBadge = (status?: string, bookingStatus?: string) => {
+    // Pending inventory/both bookings: items are not yet borrowed
+    if (bookingStatus === "pending") {
+      return <Badge className="bg-slate-50 text-slate-600 border-slate-200">Menunggu Konfirmasi</Badge>;
+    }
     switch (status) {
       case "Sudah Dikembalikan":
         return <Badge className="bg-green-50 text-green-600 border-green-200">Sudah Dikembalikan</Badge>;
@@ -303,9 +307,9 @@ export function BookingsTab({
                             + Barang
                           </Badge>
                         )}
-                       {(booking.type === 'inventory' || booking.type === 'both') && booking.status === 'confirmed' && (
+                       {(booking.type === 'inventory' || booking.type === 'both') && booking.status !== 'rejected' && (
                          <div className="mt-1">
-                           {getReturnStatusBadge(booking.returnStatus)}
+                           {getReturnStatusBadge(booking.returnStatus, booking.status)}
                          </div>
                        )}
                      </div>
@@ -340,7 +344,7 @@ export function BookingsTab({
                           <li key={item.itemId || idx} className="bg-slate-50 rounded-md p-2 space-y-1">
                             <div className="font-medium text-slate-700 flex items-center justify-between">
                               <span>({item.quantity}x) {item.name}</span>
-                              {getReturnStatusBadge(booking.returnStatus)}
+                              {getReturnStatusBadge(booking.returnStatus, booking.status)}
                             </div>
                             <div className="text-xs text-muted-foreground pl-2">
                               Ambil: {item.dateTake} {item.timeTake} · Kembali: {item.dateReturn} {item.timeReturn}

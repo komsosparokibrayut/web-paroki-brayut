@@ -49,6 +49,11 @@ export function BookingDetailModal({
                                 Manual
                             </Badge>
                         )}
+                        {(b.type === 'inventory' || b.type === 'both') && b.status === 'pending' && (
+                            <Badge className="bg-slate-100 text-slate-600 border-slate-200">
+                                Menunggu Konfirmasi
+                            </Badge>
+                        )}
                         {b.returnStatus && (b.type === 'inventory' || b.type === 'both') && (
                             <Badge className={
                                 b.returnStatus === 'Sudah Dikembalikan' 

@@ -73,9 +73,13 @@ export interface MeetingBooking {
   returnDate?: string;
 
   // Return Status
+  // 'Menunggu Konfirmasi': derived display state when booking is still pending (returnStatus unset)
   returnStatus?: 'Masih Dipinjam' | 'Sudah Dikembalikan' | 'Dikembalikan dengan Kekurangan';
   returnNotes?: string;
   initialConditionNotes?: string;
+  // Actual borrow window: set when returnStatus transitions
+  borrowStartedAt?: number; // ms epoch when status set to "Masih Dipinjam"
+  returnedAt?: number; // ms epoch when status set to a returned state
 
   createdAt: number;
   updatedAt: number;
