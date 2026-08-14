@@ -22,7 +22,7 @@ interface WorshipInvitationProps {
       location: string;
       description: string;
       date?: string;
-      recurrence?: "first-friday" | "weekly" | "monthly";
+      recurrence?: 'first-friday' | 'weekly' | 'monthly' | 'weekday';
     }>;
   } | null;
 }
@@ -101,6 +101,13 @@ export default function WorshipInvitation({
     return jp?.time || "18.30 WIB";
   }, [jadwalMisaData?.specialMasses]);
 
+  // Find Misa Harian from specialMasses (recurrence: 'weekday')
+  const misaHarian = useMemo(() => {
+    const masses = jadwalMisaData?.specialMasses || [];
+    const mh = masses.find((m) => m.recurrence === "weekday");
+    return mh?.time || null;
+  }, [jadwalMisaData?.specialMasses]);
+
   // Compute next first Friday of current month
   const nextFirstFriday = useMemo(() => {
     const now = new Date();
@@ -116,6 +123,8 @@ export default function WorshipInvitation({
   const mingguSchedule = getDaySchedule("Minggu");
   const sabtuSchedule = getDaySchedule("Sabtu");
   const harianSchedule = useMemo(() => {
+    // Prefer specialMasses 'weekday' recurrence over weekly schedule scan
+    if (misaHarian) return misaHarian;
     const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
     const allTimes: string[] = [];
     days.forEach((day) => {
@@ -128,7 +137,7 @@ export default function WorshipInvitation({
     });
     allTimes.sort();
     return allTimes.length > 0 ? formatTimeList(allTimes) : null;
-  }, [scheduleMap]);
+  }, [scheduleMap, misaHarian]);
 
   const noteText = useMemo(() => {
     const now = new Date();
