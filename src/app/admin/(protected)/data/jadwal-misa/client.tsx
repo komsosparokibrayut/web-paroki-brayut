@@ -58,7 +58,7 @@ interface SpecialMassForm {
     recurrence: string;
 }
 
-type SpecialMassRecurrence = 'first-friday' | 'weekly' | 'monthly';
+type SpecialMassRecurrence = 'first-friday' | 'weekly' | 'monthly' | 'weekday';
 
 export default function JadwalMisaAdminClient({ initialData }: { initialData: JadwalMisaData | null }) {
     const defaultData: JadwalMisaData = {
@@ -530,6 +530,7 @@ export default function JadwalMisaAdminClient({ initialData }: { initialData: Ja
                                 <SelectContent>
                                     <SelectItem value="none">Tidak berulang</SelectItem>
                                     <SelectItem value="first-friday">Jumat Pertama setiap bulan</SelectItem>
+                                    <SelectItem value="weekday">Misa Harian (Senin–Jumat, kecuali Jumat pertama)</SelectItem>
                                     <SelectItem value="weekly">Setiap minggu</SelectItem>
                                     <SelectItem value="monthly">Setiap bulan</SelectItem>
                                 </SelectContent>

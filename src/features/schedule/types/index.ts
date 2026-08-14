@@ -91,7 +91,7 @@ export interface SpecialMassEvent {
   location: string;
   description: string;
   date?: string; // YYYY-MM-DD format for one-off events
-  recurrence?: 'first-friday' | 'weekly' | 'monthly'; // recurring pattern
+  recurrence?: 'first-friday' | 'weekly' | 'monthly' | 'weekday'; // recurring pattern; 'weekday' = Senin-Jumat (kecuali Jumat pertama)
   created_by?: string;
   created_at?: string;
   modified_by?: string;
