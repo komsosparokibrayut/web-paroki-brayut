@@ -544,16 +544,21 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
     if (status === "rejected") {
       updatePayload.returnStatus = null;
       updatePayload.returnNotes = null;
+      updatePayload.borrowStartedAt = null;
+      updatePayload.returnedAt = null;
     }
 
     // When (re-)confirming a booking with inventory and no returnStatus yet,
-    // initialize it to "Masih Dipinjam" so admin can track it.
+    // initialize it to "Masih Dipinjam" so admin can track it, and start the
+    // actual borrow window from this moment.
     if (status === "confirmed") {
       const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
       if (bookingDoc.exists) {
         const existing = bookingDoc.data() as MeetingBooking;
         if ((existing.type === "inventory" || existing.type === "both") && !existing.returnStatus) {
           updatePayload.returnStatus = "Masih Dipinjam";
+          updatePayload.borrowStartedAt = Date.now();
+          updatePayload.returnedAt = null;
         }
       }
     }
@@ -635,6 +640,22 @@ export async function updateReturnStatus(
       modified_by: currentUser.name || currentUser.email || "Unknown",
       modified_at: Date.now()
     };
+
+    // Track actual borrow window for duration stats
+    if (returnStatus === "Masih Dipinjam") {
+      // (Re-)started borrowing: restart the clock, clear returned marker
+      updateData.borrowStartedAt = Date.now();
+      updateData.returnedAt = null;
+    } else {
+      // Returned states: close the window. Backfill borrowStartedAt for
+      // legacy bookings that never got one (fall back to modified/created ts).
+      updateData.returnedAt = Date.now();
+      const doc = await adminDb.collection(COLLECTION).doc(id).get();
+      const existing = doc.data() as MeetingBooking | undefined;
+      if (!existing?.borrowStartedAt) {
+        updateData.borrowStartedAt = existing?.modified_at || existing?.created_at || Date.now();
+      }
+    }
 
     if (returnNotes !== undefined) {
       updateData.returnNotes = returnNotes;

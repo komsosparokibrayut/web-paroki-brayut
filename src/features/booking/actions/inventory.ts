@@ -221,16 +221,22 @@ export async function getInventoryBorrowingStats(): Promise<Map<string, { totalH
     snapshot.docs.forEach(doc => {
       const booking = doc.data() as MeetingBooking;
       if (!booking.borrowedItems || booking.borrowedItems.length === 0) return;
-      if (!booking.startTime || !booking.endTime) return;
 
-      // Calculate duration in minutes
-      const startMinutes = timeToMinutes(booking.startTime);
-      const endMinutes = timeToMinutes(booking.endTime);
-      let durationMinutes = endMinutes - startMinutes;
-      
-      // Handle cases where end time is on the next day (unlikely but safe)
-      if (durationMinutes < 0) {
-        durationMinutes += 24 * 60;
+      let durationMinutes: number;
+
+      if (booking.borrowStartedAt && booking.returnedAt && booking.returnedAt > booking.borrowStartedAt) {
+        // Preferred: actual borrow window from status transitions
+        durationMinutes = Math.round((booking.returnedAt - booking.borrowStartedAt) / 60000);
+      } else {
+        // Legacy fallback: planned duration from booking start/end time
+        if (!booking.startTime || !booking.endTime) return;
+        const startMinutes = timeToMinutes(booking.startTime);
+        const endMinutes = timeToMinutes(booking.endTime);
+        durationMinutes = endMinutes - startMinutes;
+        // Handle cases where end time is on the next day (unlikely but safe)
+        if (durationMinutes < 0) {
+          durationMinutes += 24 * 60;
+        }
       }
 
       // Add to each borrowed item

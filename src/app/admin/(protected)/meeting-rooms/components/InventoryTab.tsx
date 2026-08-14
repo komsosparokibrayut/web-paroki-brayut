@@ -174,9 +174,11 @@ export function InventoryTab({
                   <p className="text-sm text-muted-foreground">{item.description || "Tidak ada deskripsi."}</p>
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <p className="text-xs text-muted-foreground mb-1">Total Durasi Peminjaman:</p>
-                    {borrowingStats[item.id] && borrowingStats[item.id].totalHours > 0 ? (
+                    {borrowingStats[item.id] && (borrowingStats[item.id].totalHours > 0 || borrowingStats[item.id].totalMinutes > 0) ? (
                       <p className="text-sm font-semibold text-brand-dark">
-                        {borrowingStats[item.id].totalHours} jam ({borrowingStats[item.id].bookingCount} peminjaman)
+                        {borrowingStats[item.id].totalHours > 0
+                          ? `${borrowingStats[item.id].totalHours} jam${borrowingStats[item.id].totalMinutes % 60 > 0 ? ` ${borrowingStats[item.id].totalMinutes % 60} menit` : ""}`
+                          : `${borrowingStats[item.id].totalMinutes} menit`} ({borrowingStats[item.id].bookingCount} peminjaman)
                       </p>
                     ) : (
                       <p className="text-sm font-semibold text-muted-foreground">Belum Ada Data Peminjaman</p>
