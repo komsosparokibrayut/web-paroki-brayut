@@ -59,6 +59,51 @@ const bookingSchema = z.object({
     message: "Waktu selesai harus setelah waktu mulai",
   });
 
+async function validateBookingInventory(
+  data: z.infer<typeof bookingSchema>,
+  excludeBookingId?: string
+): Promise<ActionResult> {
+  if ((data.type === 'inventory' || data.type === 'both') && data.borrowedItems && data.borrowedItems.length > 0) {
+    const { checkInventoryAvailability, checkInventoryTimeOverlap, getActiveInventoryItems } = await import("./inventory");
+
+    const allItemIds = data.borrowedItems.map((i: { itemId: string }) => i.itemId);
+    const itemsData = await getActiveInventoryItems();
+    const itemsMap = new Map(itemsData.map(i => [i.id, i]));
+    const itemWilayahIds = allItemIds.map(id => itemsMap.get(id)?.wilayah_id).filter(Boolean) as string[];
+
+    for (const item of data.borrowedItems) {
+      const dateTake = item.dateTake || data.date;
+      const dateReturn = item.dateReturn || data.date;
+
+      const availabilityResult = await checkInventoryAvailability(
+        dateTake,
+        dateReturn,
+        [{ itemId: item.itemId, quantity: item.quantity }],
+        excludeBookingId,
+        itemWilayahIds
+      );
+
+      if (!availabilityResult.success) {
+        return { success: false, error: availabilityResult.error };
+      }
+
+      const timeOverlapResult = await checkInventoryTimeOverlap(
+        dateTake,
+        item.timeTake || "09:00",
+        item.timeReturn || "17:00",
+        [{ itemId: item.itemId, quantity: item.quantity }],
+        excludeBookingId,
+        itemWilayahIds
+      );
+
+      if (!timeOverlapResult.success) {
+        return { success: false, error: timeOverlapResult.error };
+      }
+    }
+  }
+  return { success: true };
+}
+
 export async function submitBooking(
   booking: Omit<MeetingBooking, "id" | "status" | "createdAt" | "updatedAt"> & { isAdminDirectCreate?: boolean }
 ): Promise<ActionResult<string>> {
@@ -103,6 +148,9 @@ export async function submitBooking(
         }
       }
     }
+
+    const inventoryResult = await validateBookingInventory(parsed.data);
+    if (!inventoryResult.success) return inventoryResult;
 
     // Handle multiDatesDetails - create separate bookings for each date
     if (parsed.data.multiDatesDetails && parsed.data.multiDatesDetails.length > 0) {
@@ -532,6 +580,16 @@ export async function updateBookingStatus(id: string, status: "confirmed" | "rej
       }
     }
 
+    // Prevent rejecting a confirmed booking — it can only be deleted
+    if (status === "rejected") {
+      const bookingDoc = await adminDb.collection(COLLECTION).doc(id).get();
+      if (!bookingDoc.exists) return { success: false, error: "Booking tidak ditemukan" };
+      const existing = bookingDoc.data() as MeetingBooking;
+      if (existing.status === "confirmed") {
+        return { success: false, error: "Booking yang sudah dikonfirmasi tidak dapat ditolak. Hapus booking jika perlu." };
+      }
+    }
+
     const userIdentifier = currentUser.name || currentUser.email || "Unknown";
     const updatePayload: Record<string, unknown> = {
       status,
@@ -874,46 +932,8 @@ export async function updateBooking(
         }
     }
 
-    // Check inventory availability if items are updated
-    if ((parsed.data.type === 'inventory' || parsed.data.type === 'both') && parsed.data.borrowedItems && parsed.data.borrowedItems.length > 0) {
-      const { checkInventoryAvailability, checkInventoryTimeOverlap, getActiveInventoryItems } = await import("./inventory");
-
-      // Build itemWilayahIds from borrowedItems to scope inventory checks
-      const allItemIds = parsed.data.borrowedItems.map((i: { itemId: string }) => i.itemId);
-      const itemsData = await getActiveInventoryItems();
-      const itemsMap = new Map(itemsData.map(i => [i.id, i]));
-      const itemWilayahIds = allItemIds.map(id => itemsMap.get(id)?.wilayah_id).filter(Boolean) as string[];
-
-      for (const item of parsed.data.borrowedItems) {
-        const dateTake = item.dateTake || parsed.data.date;
-        const dateReturn = item.dateReturn || parsed.data.date;
-
-        const availabilityResult = await checkInventoryAvailability(
-          dateTake,
-          dateReturn,
-          [{ itemId: item.itemId, quantity: item.quantity }],
-          id,
-          itemWilayahIds
-        );
-
-        if (!availabilityResult.success) {
-          return { success: false, error: availabilityResult.error };
-        }
-
-        const timeOverlapResult = await checkInventoryTimeOverlap(
-          dateTake,
-          item.timeTake || "09:00",
-          item.timeReturn || "17:00",
-          [{ itemId: item.itemId, quantity: item.quantity }],
-          id,
-          itemWilayahIds
-        );
-
-        if (!timeOverlapResult.success) {
-          return { success: false, error: timeOverlapResult.error };
-        }
-      }
-    }
+    const inventoryResult = await validateBookingInventory(parsed.data, id);
+    if (!inventoryResult.success) return inventoryResult;
 
     const { isAdminDirectCreate, submissionSource, ...bookingDataToSave } = parsed.data as any;
     

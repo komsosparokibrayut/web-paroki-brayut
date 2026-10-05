@@ -135,6 +135,7 @@ import {
   getBookings,
   updateBookingStatus,
   deleteBooking,
+  updateBooking,
 } from "@/features/booking/actions/bookings";
 
 // ─── User fixtures ────────────────────────────────────────────────────────────
@@ -431,5 +432,59 @@ describe("deleteBooking (cancelBooking)", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/otorisasi/i);
+  });
+});
+const inventoryChecks = vi.hoisted(() => ({
+  getActiveInventoryItems: vi.fn(),
+  checkInventoryAvailability: vi.fn(),
+  checkInventoryTimeOverlap: vi.fn(),
+}));
+vi.mock("@/features/booking/actions/inventory", () => inventoryChecks);
+
+describe("shared booking inventory validation", () => {
+  beforeEach(() => {
+    mockAdminDb._reset();
+    mockGetCurrentUser.mockReset();
+    mockGetCurrentUser.mockResolvedValue(adminParokiUser);
+    inventoryChecks.getActiveInventoryItems.mockReset().mockResolvedValue([{ id: "item1", wilayah_id: "W001" }]);
+    inventoryChecks.checkInventoryAvailability.mockReset().mockResolvedValue({ success: true });
+    inventoryChecks.checkInventoryTimeOverlap.mockReset().mockResolvedValue({ success: true });
+  });
+
+  it.each(["create", "update"])("%s preserves dates, defaults, wilayah scope, and booking exclusion", async (operation) => {
+    const booking = makeBooking({ type: "inventory", borrowedItems: [{ itemId: "item1", name: "Chair", quantity: 2 }] });
+    await mockAdminDb.collection("meeting_bookings").doc("b1").set({ ...booking, status: "pending" });
+    const result = operation === "create"
+      ? await submitBooking({ ...booking, isAdminDirectCreate: true } as any)
+      : await updateBooking("b1", booking as any);
+    expect(result.success).toBe(true);
+    const excludedId = operation === "update" ? "b1" : undefined;
+    expect(inventoryChecks.checkInventoryAvailability).toHaveBeenCalledWith(TODAY, TODAY, [{ itemId: "item1", quantity: 2 }], excludedId, ["W001"]);
+    expect(inventoryChecks.checkInventoryTimeOverlap).toHaveBeenCalledWith(TODAY, "09:00", "17:00", [{ itemId: "item1", quantity: 2 }], excludedId, ["W001"]);
+  });
+
+  it.each([
+    ["create", "checkInventoryAvailability"], ["update", "checkInventoryAvailability"],
+    ["create", "checkInventoryTimeOverlap"], ["update", "checkInventoryTimeOverlap"],
+  ] as const)("%s stops before saving when %s fails", async (operation, check) => {
+    inventoryChecks[check].mockResolvedValue({ success: false, error: "Inventory conflict" });
+    const booking = makeBooking({ type: "inventory", borrowedItems: [{ itemId: "item1", name: "Chair", quantity: 2 }] });
+    const original = { ...booking, status: "pending" };
+    if (operation === "update") await mockAdminDb.collection("meeting_bookings").doc("b1").set(original);
+    const result = operation === "create"
+      ? await submitBooking({ ...booking, isAdminDirectCreate: true } as any)
+      : await updateBooking("b1", booking as any);
+    expect(result).toEqual({ success: false, error: "Inventory conflict" });
+    expect(Object.values(collections.meeting_bookings || {})).toEqual(operation === "update" ? [{ id: "b1", ...original }] : []);
+    if (check === "checkInventoryAvailability") expect(inventoryChecks.checkInventoryTimeOverlap).not.toHaveBeenCalled();
+  });
+
+  it("keeps a confirmed booking unchanged when rejection is attempted", async () => {
+    const col = mockAdminDb.collection("meeting_bookings");
+    await col.doc("b1").set({ ...makeBooking(), status: "confirmed" });
+    const result = await updateBookingStatus("b1", "rejected");
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("sudah dikonfirmasi");
+    expect((await col.doc("b1").get()).data()?.status).toBe("confirmed");
   });
 });

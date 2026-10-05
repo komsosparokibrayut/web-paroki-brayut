@@ -374,7 +374,7 @@ export function BookingsTab({
                   )})()}
                   {user && (() => {
                     const [itemWilayahIds, placeWilayahId] = getBookingAuthParams(booking);
-                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && (booking.status === "pending" || booking.status === "confirmed") && (
+                    return canManageBooking(user, booking, itemWilayahIds, placeWilayahId) && booking.status === "pending" && (
                     <Button variant="outline" size="sm" onClick={() => handleReject(booking.id!)} className="text-red-500 border-red-200 hover:bg-red-100 hover:text-red-700">
                       <XCircle className="w-4 h-4" />
                       Tolak
